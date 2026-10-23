@@ -30,5 +30,10 @@ if [ "$(jq 'length' <<<"$tags")" -gt 0 ]; then
   args+=(--tags "$tags")
 fi
 
-aws ecs register-task-definition "${args[@]}" \
-  --query 'taskDefinition.taskDefinitionArn' --output text
+arn=$(aws ecs register-task-definition "${args[@]}" \
+  --query 'taskDefinition.taskDefinitionArn' --output text)
+if [[ "$arn" != arn:aws:ecs:*:task-definition/"$family":* ]]; then
+  echo "::error::registering $family returned '$arn', not a revision ARN" >&2
+  exit 1
+fi
+echo "$arn"

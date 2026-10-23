@@ -110,12 +110,13 @@ jobs:
 
       - name: Pin a revision of each family to this commit's image
         id: pin
+        # Assigned before being written: `echo "x=$(cmd)"` succeeds even when
+        # `cmd` fails, which once let an AccessDenied through as an empty ARN.
         run: |
-          {
-            echo "api=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_API" "$IMAGE")"
-            echo "migrate=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_MIGRATE" "$IMAGE")"
-            echo "seed=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_SEED" "$IMAGE")"
-          } >> "$GITHUB_OUTPUT"
+          api=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_API" "$IMAGE")
+          migrate=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_MIGRATE" "$IMAGE")
+          seed=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_SEED" "$IMAGE")
+          printf 'api=%s\nmigrate=%s\nseed=%s\n' "$api" "$migrate" "$seed" >> "$GITHUB_OUTPUT"
 
       # Before the roll, so the new code never meets the old schema. Migrations
       # must therefore be additive (expand, then contract in a later release):

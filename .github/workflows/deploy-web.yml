@@ -103,7 +103,10 @@ jobs:
 
       - name: Pin a revision to this commit's image
         id: pin
-        run: echo "web=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_WEB" "$IMAGE")" >> "$GITHUB_OUTPUT"
+        # Assigned before being written: `echo "x=$(cmd)"` succeeds even when `cmd` fails.
+        run: |
+          web=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_WEB" "$IMAGE")
+          echo "web=$web" >> "$GITHUB_OUTPUT"
 
       - name: Roll the service — and fail on a circuit-breaker rollback
         id: roll

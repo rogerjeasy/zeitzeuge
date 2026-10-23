@@ -133,10 +133,20 @@
         "rds:DeleteDBCluster",
         "rds:DeleteDBInstance",
         "dynamodb:DeleteTable",
-        "iam:*",
         "kms:ScheduleKeyDeletion"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "NoIamExceptPassingTaskRolesToEcs",
+      "Effect": "Deny",
+      "Action": "iam:*",
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "iam:PassedToService": "ecs-tasks.amazonaws.com"
+        }
+      }
     }
   ]
 }

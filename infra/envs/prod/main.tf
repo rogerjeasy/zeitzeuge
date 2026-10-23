@@ -323,6 +323,7 @@ module "cicd" {
   tags    = local.tags
 
   github_repo              = var.github_repo
+  github_subject_prefix    = var.github_subject_prefix
   github_oidc_provider_arn = var.github_oidc_provider_arn
   permissions_boundary_arn = local.permissions_boundary_arn
 }

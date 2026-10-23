@@ -136,9 +136,13 @@ aws secretsmanager put-secret-value --region eu-central-2 \
 
 ## E. GitHub
 
-The repository is **`rogerjeasy/zeitzeuge`** (public) — the deploy role trusts
-only `repo:rogerjeasy/zeitzeuge:ref:refs/heads/main`, so deploy jobs must not
-use a GitHub *environment* (that changes the OIDC subject and the role refuses it).
+The repository is **`rogerjeasy/zeitzeuge`** (public). It uses GitHub's
+**immutable OIDC subjects** (owner and repository ids, not names), so the deploy
+role trusts exactly `repo:rogerjeasy@58919295/zeitzeuge@1431496127:ref:refs/heads/main`.
+That prefix is `github_subject_prefix` in `envs/prod/terraform.tfvars` (git-ignored —
+re-read it with `gh api repos/rogerjeasy/zeitzeuge/actions/oidc/customization/sub`).
+Deploy jobs must not use a GitHub *environment*: that changes the subject too,
+and the role refuses it.
 
 | # | Step | Check |
 |---|---|---|

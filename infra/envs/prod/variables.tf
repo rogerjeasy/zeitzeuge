@@ -21,6 +21,12 @@ variable "github_repo" {
   type        = string
 }
 
+variable "github_subject_prefix" {
+  description = "OIDC subject prefix GitHub issues for github_repo (immutable format: repo:<owner>@<id>/<name>@<id>). null = classic repo:<owner>/<name>."
+  type        = string
+  default     = null
+}
+
 variable "github_oidc_provider_arn" {
   description = "From `terraform output github_oidc_provider_arn` in infra/bootstrap."
   type        = string

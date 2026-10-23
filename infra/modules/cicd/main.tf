@@ -3,7 +3,8 @@
 # The keyless deploy path. GitHub Actions presents a short-lived OIDC token;
 # this role accepts it only from one repository, one branch, one audience.
 #
-#   trust        repo:rogerjeasy/zeitzeuge:ref:refs/heads/main, aud sts
+#   trust        repo:rogerjeasy@58919295/zeitzeuge@1431496127:ref:refs/heads/main
+#                (GitHub's immutable subject), aud sts
 #   permissions  policies/github-deploy.json: push images, run the migrate
 #                task, roll services, update agent code, invalidate the edge.
 #                No IAM, no deletes, no Terraform — infrastructure changes are
@@ -36,11 +37,13 @@ data "aws_iam_policy_document" "trust" {
     }
 
     # Exact match, never a wildcard: `repo:owner/name:*` would let any branch —
-    # or a fork's pull request — deploy to production.
+    # or a fork's pull request — deploy to production. The immutable subject
+    # (owner and repository *ids*) also survives a rename and cannot be claimed
+    # by whoever creates a repository of the same name later.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:${var.allowed_ref}"]
+      values   = ["${coalesce(var.github_subject_prefix, "repo:${var.github_repo}")}:ref:${var.allowed_ref}"]
     }
   }
 }
