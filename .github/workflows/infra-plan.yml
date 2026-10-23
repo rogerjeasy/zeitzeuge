@@ -1,0 +1,42 @@
+name: infra-check
+
+# Static checks only. Infrastructure is applied by the builder — a human with
+# MFA — after reading the plan (`make plan` / `make apply`). The CI deploy role
+# deliberately has no IAM or infrastructure permissions, so a compromised
+# workflow can ship an image but can never change the account.
+
+on:
+  pull_request:
+    paths: ["infra/**", "orchestration/**"]
+  push:
+    branches: [main]
+    paths: ["infra/**", "orchestration/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.2
+      - name: Format
+        run: terraform fmt -check -recursive infra
+      - name: Validate every root and module
+        run: |
+          for dir in infra/bootstrap infra/envs/prod infra/modules/*; do
+            # Modules that take an aliased provider (us-east-1) cannot be
+            # validated alone; envs/prod supplies it and validates them.
+            if grep -q configuration_aliases "$dir/versions.tf"; then
+              echo "$dir: validated through infra/envs/prod"; continue
+            fi
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false -input=false >/dev/null
+            terraform -chdir="$dir" validate
+            echo "::endgroup::"
+          done
+      - name: Policy documents are valid JSON
+        run: for f in infra/policies/*.json; do python3 -m json.tool "$f" >/dev/null || exit 1; done

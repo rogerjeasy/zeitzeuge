@@ -1,0 +1,110 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EcrAuth",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "PushImages",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage",
+        "ecr:BatchGetImage",
+        "ecr:DescribeImages"
+      ],
+      "Resource": "arn:aws:ecr:${region}:${account_id}:repository/${project}/*"
+    },
+    {
+      "Sid": "RollServices",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:UpdateService",
+        "ecs:DescribeServices"
+      ],
+      "Resource": "arn:aws:ecs:${region}:${account_id}:service/${project}-${env}/*"
+    },
+    {
+      "Sid": "RunMigrations",
+      "Effect": "Allow",
+      "Action": "ecs:RunTask",
+      "Resource": "arn:aws:ecs:${region}:${account_id}:task-definition/${project}-${env}-api-migrate:*"
+    },
+    {
+      "Sid": "WatchTasks",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeTasks"
+      ],
+      "Resource": "arn:aws:ecs:${region}:${account_id}:task/${project}-${env}/*"
+    },
+    {
+      "Sid": "ReadTaskDefinitions",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeTaskDefinition"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "UpdateAgents",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:UpdateFunctionCode",
+        "lambda:GetFunction",
+        "lambda:PublishVersion"
+      ],
+      "Resource": "arn:aws:lambda:${region}:${account_id}:function:${project}-${env}-agent-*"
+    },
+    {
+      "Sid": "ListAgents",
+      "Effect": "Allow",
+      "Action": "lambda:ListFunctions",
+      "Resource": "*"
+    },
+    {
+      "Sid": "InvalidateTheEdge",
+      "Effect": "Allow",
+      "Action": "cloudfront:CreateInvalidation",
+      "Resource": "arn:aws:cloudfront::${account_id}:distribution/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${project}",
+          "aws:ResourceTag/Env": "${env}"
+        }
+      }
+    },
+    {
+      "Sid": "PassOnlyProjectRoles",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::${account_id}:role/${project}-${env}-*",
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "ecs-tasks.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "NeverTouchTheArchive",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeleteBucket",
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion",
+        "rds:DeleteDBCluster",
+        "rds:DeleteDBInstance",
+        "dynamodb:DeleteTable",
+        "iam:*",
+        "kms:ScheduleKeyDeletion"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

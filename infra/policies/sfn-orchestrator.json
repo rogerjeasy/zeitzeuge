@@ -1,0 +1,155 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "RunAgentFunctions",
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:${region}:${account_id}:function:${project}-${env}-agent-*"
+    },
+    {
+      "Sid": "RunLongAgentsOnFargate",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:RunTask"
+      ],
+      "Resource": "arn:aws:ecs:${region}:${account_id}:task-definition/${project}-${env}-agent-*"
+    },
+    {
+      "Sid": "ManageOwnAgentTasks",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:StopTask",
+        "ecs:DescribeTasks"
+      ],
+      "Resource": "arn:aws:ecs:${region}:${account_id}:task/${project}-${env}/*"
+    },
+    {
+      "Sid": "SyncWaitRules",
+      "Effect": "Allow",
+      "Action": [
+        "events:PutTargets",
+        "events:PutRule",
+        "events:DescribeRule"
+      ],
+      "Resource": [
+        "arn:aws:events:${region}:${account_id}:rule/StepFunctionsGetEventsForECSTaskRule",
+        "arn:aws:events:${region}:${account_id}:rule/StepFunctionsGetEventsForStepFunctionsExecutionRule"
+      ]
+    },
+    {
+      "Sid": "PassTaskRoles",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::${account_id}:role/${project}-${env}-ecs-task-agents",
+        "arn:aws:iam::${account_id}:role/${project}-${env}-ecs-task-execution"
+      ]
+    },
+    {
+      "Sid": "CallFalsifierEndpoint",
+      "Effect": "Allow",
+      "Action": "sagemaker:InvokeEndpoint",
+      "Resource": "arn:aws:sagemaker:${region}:${account_id}:endpoint/${project}-${env}-*"
+    },
+    {
+      "Sid": "DirectModelCallsFromChoiceStates",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:eu-*::foundation-model/*",
+        "arn:aws:bedrock:${region}:${account_id}:inference-profile/eu.*"
+      ]
+    },
+    {
+      "Sid": "InvokeThroughOwnApplicationProfiles",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:${region}:${account_id}:application-inference-profile/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${project}",
+          "aws:ResourceTag/Env": "${env}"
+        }
+      }
+    },
+    {
+      "Sid": "NeverRouteOutsideTheEU",
+      "Effect": "Deny",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:*:*:inference-profile/global.*"
+    },
+    {
+      "Sid": "DistributedMapOverInventory",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::${project}-${env}-sfn-inventory",
+        "arn:aws:s3:::${project}-${env}-sfn-inventory/*"
+      ]
+    },
+    {
+      "Sid": "ChildExecutionsForDistributedMap",
+      "Effect": "Allow",
+      "Action": [
+        "states:StartExecution",
+        "states:DescribeExecution",
+        "states:StopExecution"
+      ],
+      "Resource": "arn:aws:states:${region}:${account_id}:stateMachine:${project}-${env}-*"
+    },
+    {
+      "Sid": "LogsAndTracing",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogDelivery",
+        "logs:GetLogDelivery",
+        "logs:UpdateLogDelivery",
+        "logs:DeleteLogDelivery",
+        "logs:ListLogDeliveries",
+        "logs:PutResourcePolicy",
+        "logs:DescribeResourcePolicies",
+        "logs:DescribeLogGroups",
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "xray:GetSamplingRules"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DeadLetter",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:SendMessage"
+      ],
+      "Resource": "arn:aws:sqs:${region}:${account_id}:${project}-${env}-*-dlq"
+    },
+    {
+      "Sid": "ProjectKeysOnly",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:${region}:${account_id}:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${project}",
+          "aws:ResourceTag/Env": "${env}"
+        }
+      }
+    }
+  ]
+}

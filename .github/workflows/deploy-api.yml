@@ -1,0 +1,90 @@
+name: deploy-api
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/api/**", "packages/schemas/**", ".github/workflows/deploy-api.yml"]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-central-2
+  ECR_REPO: zeitzeuge/api
+  ECS_CLUSTER: zeitzeuge-prod
+  ECS_SERVICE: zeitzeuge-prod-api
+  # Set by infra/modules/compute-api once it is applied; see its README.
+  MIGRATE_NETWORK: ${{ vars.ECS_MIGRATE_NETWORK_CONFIG }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pipx install poetry==2.5.1
+      - run: poetry install --no-interaction
+        working-directory: apps/api
+
+      - run: poetry run ruff check src tests
+        working-directory: apps/api
+      - run: poetry run mypy src
+        working-directory: apps/api
+      # The unit suite runs against moto and SQLite: no services, a few
+      # seconds. Cross-tenant isolation needs Postgres and is gated in
+      # `checks.yml`, which runs on the same commit.
+      - run: poetry run pytest -q
+        working-directory: apps/api
+
+  deploy:
+    needs: test        # tests gate the deploy; never the other way round
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          # Fargate is x86. An arm64 image from an Apple-silicon dev machine
+          # fails at task start with exec-format error, so pin the platform.
+          docker buildx build \
+            --platform linux/amd64 \
+            -t "$REGISTRY/$ECR_REPO:${{ github.sha }}" \
+            -t "$REGISTRY/$ECR_REPO:latest" \
+            --push apps/api
+
+      - name: Migrate — and wait for it — before rolling the service
+        run: |
+          TASK=$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --task-definition "$ECS_SERVICE-migrate" \
+            --launch-type FARGATE \
+            --network-configuration "$MIGRATE_NETWORK" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "migrate task: $TASK"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK"
+          CODE=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          if [ "$CODE" != "0" ]; then
+            echo "::error::migration exited with $CODE — the service was NOT rolled"
+            exit 1
+          fi
+      - name: Roll the service
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
+            --force-new-deployment >/dev/null
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"

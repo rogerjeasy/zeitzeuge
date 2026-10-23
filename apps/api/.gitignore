@@ -1,0 +1,18 @@
+# Environment — `.env.example` is the committed one.
+.env
+.env.*
+!.env.example
+
+# Poetry creates the venv in-project when POETRY_VIRTUALENVS_IN_PROJECT is set.
+.venv/
+# poetry.lock IS committed: a lock file is the only way CI and the image build
+# the same dependency set as the laptop that tested them.
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.sqlite

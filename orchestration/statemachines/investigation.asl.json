@@ -1,0 +1,142 @@
+{
+  "Comment": "ZEITZEUGE — one photograph, intake to archivist sign-off. Skeleton: states and wiring are real, task ARNs are templated, agent payloads are TODO.",
+  "StartAt": "Intake",
+  "QueryLanguage": "JSONata",
+  "States": {
+    "Intake": {
+      "Type": "Task",
+      "Resource": "${agent_intake_arn}",
+      "Comment": "Validate asset, build derivatives, extract EXIF, pair recto/verso.",
+      "Retry": [{ "ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 2, "BackoffRate": 2 }],
+      "Next": "Perception"
+    },
+
+    "Perception": {
+      "Type": "Parallel",
+      "Comment": "Tier 1 — independent observers. None of them may see another's output.",
+      "Branches": [
+        { "StartAt": "Skyline",    "States": { "Skyline":    { "Type": "Task", "Resource": "${agent_skyline_arn}",    "End": true } } },
+        { "StartAt": "Built",      "States": { "Built":      { "Type": "Task", "Resource": "${agent_built_arn}",      "End": true } } },
+        { "StartAt": "Vehicles",   "States": { "Vehicles":   { "Type": "Task", "Resource": "${agent_vehicles_arn}",   "End": true } } },
+        { "StartAt": "Signage",    "States": { "Signage":    { "Type": "Task", "Resource": "${agent_signage_arn}",    "End": true } } },
+        { "StartAt": "Verso",      "States": { "Verso":      { "Type": "Task", "Resource": "${agent_verso_arn}",      "End": true } } },
+        { "StartAt": "Materiality","States": { "Materiality":{ "Type": "Task", "Resource": "${agent_material_arn}",   "End": true } } }
+      ],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "PartialPerception" }],
+      "Next": "Grounding"
+    },
+
+    "PartialPerception": {
+      "Type": "Pass",
+      "Comment": "One flaky observer must not kill an investigation. Record the gap as evidence and continue with lower confidence.",
+      "Next": "Grounding"
+    },
+
+    "Grounding": {
+      "Type": "Task",
+      "Resource": "${agent_grounding_arn}",
+      "Comment": "Tier 2 — resolve observations against the Schwyz gazetteer, swisstopo, GWR, Wikidata.",
+      "Retry": [{ "ErrorEquals": ["States.ALL"], "MaxAttempts": 3, "BackoffRate": 2, "IntervalSeconds": 2 }],
+      "Next": "Hypothesise"
+    },
+
+    "Hypothesise": {
+      "Type": "Task",
+      "Resource": "${agent_hypothesise_arn}",
+      "Comment": "Tier 3 — generate competing location/date hypotheses with priors. Never one answer.",
+      "Next": "Falsify"
+    },
+
+    "Falsify": {
+      "Type": "Map",
+      "Comment": "Each hypothesis must survive an attempt to kill it. Terrain falsification runs here.",
+      "MaxConcurrency": 4,
+      "ItemProcessor": {
+        "ProcessorConfig": { "Mode": "INLINE" },
+        "StartAt": "TerrainFalsification",
+        "States": {
+          "TerrainFalsification": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:sagemakerruntime:invokeEndpoint",
+            "Arguments": {
+              "EndpointName": "${falsifier_endpoint}",
+              "ContentType": "application/json",
+              "Body": "{% $string($states.input) %}"
+            },
+            "Comment": "DEM raycast: does the horizon this hypothesis predicts match the photographed skyline?",
+            "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "FalsifierUnavailable" }],
+            "Next": "ChronologyCheck"
+          },
+          "FalsifierUnavailable": {
+            "Type": "Task",
+            "Resource": "${agent_cached_horizon_arn}",
+            "Comment": "Fallback: precomputed ridgelines from S3. The demo does not depend on a warm endpoint.",
+            "Next": "ChronologyCheck"
+          },
+          "ChronologyCheck": {
+            "Type": "Task",
+            "Resource": "${agent_chronology_arn}",
+            "Comment": "Dating by what could not yet exist: refute any date that predates an object in frame.",
+            "End": true
+          }
+        }
+      },
+      "Next": "RedTeam"
+    },
+
+    "RedTeam": {
+      "Type": "Task",
+      "Resource": "${agent_redteam_arn}",
+      "Comment": "An independent model argues against the surviving hypotheses. Independence is the point — different provider where possible.",
+      "Next": "Adjudicate"
+    },
+
+    "Adjudicate": {
+      "Type": "Task",
+      "Resource": "${agent_adjudicate_arn}",
+      "Comment": "Weigh evidence, set per-field confidence, and abstain where the evidence does not reach threshold. Calibrated silence is a feature.",
+      "Next": "SensitivityGuard"
+    },
+
+    "SensitivityGuard": {
+      "Type": "Task",
+      "Resource": "${agent_sensitivity_arn}",
+      "Comment": "Face DETECTION only, never identification. publication_hold defaults on for identifiable people in photographs under 100 years old.",
+      "Next": "Produce"
+    },
+
+    "Produce": {
+      "Type": "Task",
+      "Resource": "${agent_produce_arn}",
+      "Comment": "Emit the catalogue record with a provenance block per field: ISAD(G), EAD, DC, IIIF, RiC-O, XMP.",
+      "Next": "AwaitArchivist"
+    },
+
+    "AwaitArchivist": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Comment": "Human sign-off as a durable state. A run may wait days for a reviewer to return — the token, not a poll loop, holds the place.",
+      "Arguments": {
+        "FunctionName": "${agent_notify_arn}",
+        "Payload": { "taskToken": "{% $states.context.Task.Token %}" }
+      },
+      "HeartbeatSeconds": 86400,
+      "TimeoutSeconds": 604800,
+      "Catch": [{ "ErrorEquals": ["States.Timeout"], "Next": "ReviewExpired" }],
+      "Next": "Learn"
+    },
+
+    "ReviewExpired": {
+      "Type": "Pass",
+      "Comment": "Seven days without review: park the record in the queue, do not publish.",
+      "End": true
+    },
+
+    "Learn": {
+      "Type": "Task",
+      "Resource": "${agent_learn_arn}",
+      "Comment": "Write the correction back to collection memory. human_override_rate should fall over time — that is the product's true north.",
+      "End": true
+    }
+  }
+}

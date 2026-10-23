@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+.git
+*.tsbuildinfo
+.env*
+Dockerfile
+.dockerignore
+README.md
+AGENTS.md
+CLAUDE.md

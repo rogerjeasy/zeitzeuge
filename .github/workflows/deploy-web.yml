@@ -1,0 +1,57 @@
+name: deploy-web
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/web/**", "packages/schemas/**"]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-central-2
+  ECR_REPO: zeitzeuge/web
+  ECS_CLUSTER: zeitzeuge-prod
+  ECS_SERVICE: zeitzeuge-prod-web
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - run: npm ci
+        working-directory: apps/web
+
+      - run: npm run lint && npx tsc --noEmit
+        working-directory: apps/web
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      # Next.js standalone server (proxy.ts and per-request i18n need one).
+      # Same-origin API paths are baked in by the Dockerfile's defaults.
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          docker buildx build --platform linux/arm64 \
+            -t "$REGISTRY/$ECR_REPO:${{ github.sha }}" \
+            -t "$REGISTRY/$ECR_REPO:latest" \
+            --push apps/web
+      - name: Roll the service
+        run: |
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force-new-deployment >/dev/null
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"

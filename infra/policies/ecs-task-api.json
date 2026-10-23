@@ -1,0 +1,106 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PresignAndReadAssets",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::${project}-${env}-originals",
+        "arn:aws:s3:::${project}-${env}-originals/*",
+        "arn:aws:s3:::${project}-${env}-derivatives",
+        "arn:aws:s3:::${project}-${env}-derivatives/*",
+        "arn:aws:s3:::${project}-${env}-exports",
+        "arn:aws:s3:::${project}-${env}-exports/*"
+      ]
+    },
+    {
+      "Sid": "UserAvatars",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::${project}-${env}-assets/avatars/*"
+    },
+    {
+      "Sid": "CognitoIsTheCredentialStore",
+      "Effect": "Allow",
+      "Action": [
+        "cognito-idp:AdminInitiateAuth",
+        "cognito-idp:AdminRespondToAuthChallenge",
+        "cognito-idp:AdminCreateUser",
+        "cognito-idp:AdminDeleteUser",
+        "cognito-idp:AdminDisableUser",
+        "cognito-idp:AdminEnableUser",
+        "cognito-idp:AdminGetUser",
+        "cognito-idp:AdminSetUserPassword",
+        "cognito-idp:AdminSetUserMFAPreference",
+        "cognito-idp:AdminUpdateUserAttributes",
+        "cognito-idp:AdminAddUserToGroup",
+        "cognito-idp:AdminUserGlobalSignOut",
+        "cognito-idp:SignUp",
+        "cognito-idp:ConfirmSignUp",
+        "cognito-idp:ForgotPassword",
+        "cognito-idp:ConfirmForgotPassword",
+        "cognito-idp:ResendConfirmationCode",
+        "cognito-idp:GetUser",
+        "cognito-idp:ChangePassword",
+        "cognito-idp:GlobalSignOut",
+        "cognito-idp:RevokeToken"
+      ],
+      "Resource": "${cognito_user_pool_arn}"
+    },
+    {
+      "Sid": "DatabaseCredential",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:${region}:${account_id}:secret:${project}/${env}/*"
+    },
+    {
+      "Sid": "DriveInvestigations",
+      "Effect": "Allow",
+      "Action": [
+        "states:StartExecution",
+        "states:DescribeExecution",
+        "states:SendTaskSuccess",
+        "states:SendTaskFailure",
+        "states:GetExecutionHistory"
+      ],
+      "Resource": "arn:aws:states:${region}:${account_id}:stateMachine:${project}-${env}-*"
+    },
+    {
+      "Sid": "SessionState",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Query"
+      ],
+      "Resource": "arn:aws:dynamodb:${region}:${account_id}:table/${project}-${env}-*"
+    },
+    {
+      "Sid": "DecryptWithProjectKeysOnly",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:${region}:${account_id}:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${project}",
+          "aws:ResourceTag/Env": "${env}"
+        }
+      }
+    }
+  ]
+}

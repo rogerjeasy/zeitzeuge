@@ -1,0 +1,118 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CeilingForEveryZeitzeugeRole",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:*",
+        "s3:*",
+        "dynamodb:*",
+        "rds-data:*",
+        "rds-db:connect",
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "states:*",
+        "lambda:InvokeFunction",
+        "lambda:GetFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:PublishVersion",
+        "ecs:*",
+        "ecr:*",
+        "sagemaker:InvokeEndpoint",
+        "sagemaker:InvokeEndpointAsync",
+        "logs:*",
+        "xray:*",
+        "cloudwatch:PutMetricData",
+        "events:*",
+        "sqs:*",
+        "sns:Publish",
+        "textract:*",
+        "translate:*",
+        "rekognition:Detect*",
+        "aoss:APIAccessAll",
+        "execute-api:ManageConnections",
+        "execute-api:Invoke",
+        "cognito-idp:*",
+        "cloudfront:CreateInvalidation",
+        "ssm:GetParameters",
+        "ssmmessages:*",
+        "sts:GetCallerIdentity"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLikeIfExists": {
+          "aws:RequestedRegion": [
+            "eu-*",
+            "us-east-1"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "PassOnlyZeitzeugeRoles",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::707938860881:role/zeitzeuge-*"
+    },
+    {
+      "Sid": "NeverRouteOutsideTheEU",
+      "Effect": "Deny",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:*:*:inference-profile/global.*"
+    },
+    {
+      "Sid": "TheArchiveIsWriteOnce",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion",
+        "s3:PutLifecycleConfiguration",
+        "s3:PutBucketVersioning",
+        "s3:PutObjectRetention",
+        "s3:BypassGovernanceRetention"
+      ],
+      "Resource": [
+        "arn:aws:s3:::zeitzeuge-*-originals",
+        "arn:aws:s3:::zeitzeuge-*-originals/*"
+      ]
+    },
+    {
+      "Sid": "NoDestructionNoExposure",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeleteBucket",
+        "s3:PutBucketPolicy",
+        "s3:DeleteBucketPolicy",
+        "s3:PutBucketAcl",
+        "s3:PutObjectAcl",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutAccountPublicAccessBlock",
+        "dynamodb:DeleteTable",
+        "dynamodb:DeleteBackup",
+        "ecr:DeleteRepository",
+        "ecr:SetRepositoryPolicy",
+        "logs:DeleteLogGroup",
+        "states:DeleteStateMachine",
+        "bedrock:DeleteGuardrail",
+        "bedrock:DeleteModelInvocationLoggingConfiguration",
+        "sqs:DeleteQueue",
+        "events:DeleteRule",
+        "cognito-idp:DeleteUserPool",
+        "cognito-idp:UpdateUserPool",
+        "cognito-idp:DeleteUserPoolClient",
+        "cognito-idp:UpdateUserPoolClient",
+        "cognito-idp:SetUserPoolMfaConfig",
+        "cognito-idp:DeleteGroup"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

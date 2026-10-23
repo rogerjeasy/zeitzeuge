@@ -1,0 +1,2230 @@
+{
+  "meta": {
+    "title": "ZEITZEUGE — Agentische Provenienzanalyse für historische Fotoarchive",
+    "description": "ZEITZEUGE macht aus einem unbestimmten Foto einen archivreifen, belegten Katalogeintrag — mit 17 spezialisierten KI-Agenten, verankert in schweizerischen Geodaten. Und schweigt, wenn die Belege nicht reichen.",
+    "skipToContent": "Zum Inhalt springen"
+  },
+  "nav": {
+    "problem": "Problem",
+    "evidence": "Beweisbuch",
+    "architecture": "Architektur",
+    "capabilities": "Fähigkeiten",
+    "governance": "Governance",
+    "signIn": "Anmelden",
+    "demo": "Demo starten",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schliessen",
+    "theme": "Erscheinungsbild",
+    "themeLight": "Hell",
+    "themeDark": "Dunkel",
+    "themeSystem": "System",
+    "language": "Sprache",
+    "about": "Über uns",
+    "contact": "Kontakt"
+  },
+  "hero": {
+    "eyebrow": "Pilot · Staatsarchiv des Kantons Schwyz",
+    "titleLine1": "Ein historisches Foto",
+    "titleLine2": "ist ein Zeuge.",
+    "subtitle": "ZEITZEUGE stellt keine Frage — es führt ein Kreuzverhör. 18 spezialisierte Agenten, sechs Modellfamilien, verankert in amtlichen Schweizer Geodaten. Jede Aussage nennt ihre Belege. Was sich nicht belegen lässt, wird nicht behauptet.",
+    "motto": "«Wir befragen das Bild.»",
+    "primaryCta": "Demo starten",
+    "secondaryCta": "Als Gast ansehen",
+    "ctaNote": "Kein Konto nötig — die Gastansicht öffnet einen vorbereiteten Bestand.",
+    "metrics": {
+      "described": "Bilder erschlossen",
+      "minutesSaved": "Ø Zeit pro Bild gespart",
+      "precision": "Präzision auf dem Gold-Set",
+      "abstention": "bewusste Enthaltung"
+    },
+    "agentsLabel": "Agenten",
+    "familiesLabel": "Modellfamilien"
+  },
+  "falsifier": {
+    "label": "Terrain-Falsifikation",
+    "agent": "Agent 11 · swissALTI3D",
+    "stageIdle": "Bereit",
+    "stageSkyline": "Horizont wird extrahiert",
+    "stageRaycast": "Höhenmodell wird gerastert",
+    "stageMatch": "Kurven werden korreliert",
+    "stageDone": "Hypothese bestätigt",
+    "correlation": "Horizont-Korrelation",
+    "columns": "über {count} Spalten",
+    "pose": "Kameraposition",
+    "bearing": "Blickrichtung",
+    "hfov": "Bildwinkel",
+    "accuracy": "Genauigkeit",
+    "caption": "Kameraposition geometrisch bestimmt, ±{metres} m — nicht geraten.",
+    "refutedTitle": "Konkurrenzhypothese widerlegt",
+    "refutedBody": "hyp_B «Einsiedeln» — der gerenderte Horizont weicht um 31° Azimut ab. Verworfen durch ev_007.",
+    "replay": "Nochmals abspielen",
+    "replayHint": "Ablauf erneut abspielen",
+    "photoLabel": "Belegstück",
+    "geometryNote": "Geometrie halluziniert nicht."
+  },
+  "trust": {
+    "heading": "Verankert in amtlichen Schweizer Daten und internationalen Archivstandards",
+    "items": {
+      "schwyz": "Kanton Schwyz",
+      "stasz": "Staatsarchiv SZ",
+      "swisstopo": "swisstopo swissALTI3D",
+      "isad": "ISAD(G)",
+      "iiif": "IIIF",
+      "dc": "Dublin Core",
+      "bedrock": "AWS Bedrock · Zürich",
+      "oai": "OAI-PMH"
+    }
+  },
+  "problem": {
+    "eyebrow": "Die Ausgangslage",
+    "title": "Das Bild existiert. Die Beschreibung nicht.",
+    "body": "In den Magazinen des Kantons lagern Glasplatten, Abzüge und Ansichtskarten zu Zehntausenden. Digitalisiert ist vieles. Erschlossen ist wenig. Ohne Ort, Datum und Motiv ist ein Digitalisat nicht auffindbar — und damit faktisch nicht vorhanden.",
+    "stats": {
+      "manual": {
+        "value": "3–8 Min",
+        "label": "Erschliessung pro Bild, von Hand"
+      },
+      "unknown": {
+        "value": "«Ort: unbekannt»",
+        "label": "der häufigste Eintrag im Katalog"
+      },
+      "backlog": {
+        "value": "Eine Generation",
+        "label": "bis der Rückstand manuell aufgearbeitet wäre"
+      }
+    },
+    "objectionTitle": "Warum dann nicht einfach ein Bildmodell fragen?",
+    "objectionBody": "Weil ein Modell, das raten darf, ein Archiv unbrauchbar macht. Ein erfundenes Datum wird im Katalog zur zitierfähigen Quelle, wandert in Publikationen und ist nach zehn Jahren nicht mehr zurückzuholen. Ein Archiv übernimmt kein Werkzeug, das nicht weiss, was es nicht weiss.",
+    "principlesTitle": "Drei Grundsätze, in dieser Reihenfolge",
+    "principles": {
+      "p1": {
+        "tag": "P1",
+        "title": "Keine Aussage ohne Beleg",
+        "body": "Jedes ausgegebene Feld ist durch typisierte, adressierbare Belege gedeckt. Eine Aussage mit leerer Belegliste wird nicht ausgegeben."
+      },
+      "p2": {
+        "tag": "P2",
+        "title": "Falsifikation vor Behauptung",
+        "body": "Jede Hypothese muss einen unabhängigen Widerlegungsversuch überstehen — ausgeführt von einer anderen Modellfamilie, mit Werkzeugen, die widerlegen statt bestätigen sollen."
+      },
+      "p3": {
+        "tag": "P3",
+        "title": "Kalibriertes Schweigen ist ein Ergebnis",
+        "body": "«Ort: unbekannt, Konfidenz: n/a» ist eine richtige und wertvolle Ausgabe. Das System wird an der Halluzinationsrate ebenso hart gemessen wie an der Abdeckung."
+      }
+    },
+    "stripLabel": "Unerschlossene Aufnahmen aus dem Bestand"
+  },
+  "ledger": {
+    "eyebrow": "Das Beweisbuch",
+    "title": "Kein Feld ohne Beleg.",
+    "body": "Jedes Feld nennt die Belege, auf denen es beruht — eine Pixelregion, eine Geodaten-Abfrage, eine geometrische Berechnung, eine transkribierte Notiz. Erzwungen durch Schema-Validierung und einen CI-Test, nicht durch Höflichkeit im Prompt.",
+    "invariantLabel": "Invariante, im Schema erzwungen",
+    "invariantCaption": "Ein Feld, das seine Belege nicht benennen kann, erreicht die Datenbank nicht. Halluzination wird strukturell unmöglich, nicht bloss unerwünscht.",
+    "recordTitle": "Katalogeintrag",
+    "recordSubtitle": "ISAD(G) · Bestand Goetz",
+    "beforeLabel": "Vorher",
+    "afterLabel": "Nachher",
+    "beforeValue": "unbekannt",
+    "tabRecord": "Eintrag",
+    "tabEvidence": "Belege",
+    "tabHypotheses": "Hypothesen",
+    "decisions": {
+      "emit": "Übernommen",
+      "emit_with_review": "Prüfung empfohlen",
+      "abstain": "Enthaltung"
+    },
+    "fields": {
+      "title": "Titel",
+      "place": "Ort",
+      "date": "Entstehungszeit",
+      "subject": "Bildinhalt",
+      "process": "Verfahren",
+      "photographer": "Fotograf/in"
+    },
+    "abstainReason": "Kein Signaturstempel, kein beschriftetes Verso, kein Treffer im Bestandsgedächtnis. Das System enthält sich.",
+    "evidenceHint": "Beleg wählen, um die Herleitung zu sehen",
+    "kinds": {
+      "visual": "visuell",
+      "textual": "textlich",
+      "geometric": "geometrisch",
+      "external": "extern",
+      "archival": "archivisch",
+      "human": "menschlich"
+    },
+    "evidence": {
+      "twinPeak": "Zweigipfliges Felsmassiv am Horizont, rechter Gipfel höher, ausgeprägter Sattel dazwischen; davor ein Ort am Seeufer mit Quaianlage.",
+      "horizonMatch": "Horizont aus 2687540 / 1206310 LV95 neu gerendert, Azimut 74.6°, Bildwinkel 38.6° — normierte Korrelation 0.941 über 1280 Spalten.",
+      "axenstrasse": "Uferbebauung und Hotelbauten entsprechen dem Zustand nach dem Ausbau der Quaianlage; auf der Siegfriedkarte erst ab Revision 1893 verzeichnet.",
+      "printCaption": "Im Druck stehende Bildlegende «6319 P.Z. — BRUNNEN MIT MYTHEN»; Verlegerkürzel P.Z. = Photoglob Zürich.",
+      "photochrom": "Farbschichtung und Rasterstruktur entsprechen dem Photochromverfahren; Papier und Randbeschnitt passen zum Verlagsformat.",
+      "quaiObjection": "Einwand: Die Uferpromenade zeigt noch nicht den Ausbau von 1900. Die obere Datumsgrenze wird nach unten korrigiert."
+    },
+    "hypotheses": {
+      "brunnen": "Brunnen SZ, Blick ostwärts auf die Mythen",
+      "einsiedeln": "Einsiedeln SZ, Klosterplatz",
+      "weggis": "Weggis LU, Vierwaldstättersee",
+      "unknown": "Ausserhalb des Kantons"
+    },
+    "prior": "A priori",
+    "posterior": "A posteriori",
+    "refutedBy": "widerlegt durch",
+    "refuted": "widerlegt",
+    "surviving": "überlebt"
+  },
+  "orchestra": {
+    "eyebrow": "Die Architektur",
+    "title": "18 Rollen. 6 Modellfamilien. Ein Router.",
+    "body": "Das teure Modell denkt. Das günstige formatiert. Das Segmentierungsmodell segmentiert. Und die Komponente, die entscheidet, ob wir richtig liegen, ist gar kein Modell — es sind die Alpen.",
+    "hint": "Agent wählen, um die Modellbegründung zu sehen",
+    "modelLabel": "Modell",
+    "whyLabel": "Warum dieses Modell",
+    "tiers": {
+      "intake": "Tier 0 · Aufnahme",
+      "perception": "Tier 1 · Wahrnehmung",
+      "grounding": "Tier 2 · Verankerung",
+      "adversarial": "Tier 3 · Adversarial",
+      "production": "Tier 4 · Produktion"
+    },
+    "deterministicNote": "ohne Sprachmodell",
+    "legendTitle": "Modellfamilien",
+    "agents": {
+      "forensics": {
+        "name": "Forensik",
+        "why": "Bildfakten sind Arithmetik, keine Interpretation. Seitenverhältnis, Randgeometrie, Korn und Prüfsumme dürfen nie halluziniert werden."
+      },
+      "scene": {
+        "name": "Szenenanalyse",
+        "why": "Bestes strukturiertes Bildinventar zu einem Preis, der einen Rückstand von 100'000 Bildern überlebt — striktes JSON statt Prosa."
+      },
+      "heritage": {
+        "name": "Baukultur",
+        "why": "Dachneigung, Klebdach, Ständerbau, Zwiebelturm: feinkörnige Typologie, kombiniert mit Retrieval über einen Schwyzer Denkmalindex."
+      },
+      "materiality": {
+        "name": "Materialität",
+        "why": "Fotografische Verfahren zu datieren ist ein Texturproblem. Ein spezialisierter Klassifikator schlägt ein generisches Bildmodell — zu einem Hundertstel der Kosten."
+      },
+      "verso": {
+        "name": "Verso & Paläografie",
+        "why": "Kurrent und Sütterlin brechen jede Standard-OCR. Zwei unabhängige Leser; ihre Uneinigkeit ist selbst ein Konfidenzsignal."
+      },
+      "text-in-image": {
+        "name": "Text im Bild",
+        "why": "Firmenschilder, Strassentafeln, Schiffsnamen. Textract lokalisiert, Sonnet liest den halb lesbaren schweizerdeutschen Flurnamen."
+      },
+      "skyline": {
+        "name": "Horizont-Extraktion",
+        "why": "Eine pixelgenaue Horizontkurve ist dichte Prädiktion. Ein Sprachmodell kann sie nicht erzeugen; ein Segmentierungsmodell in 200 ms."
+      },
+      "geo": {
+        "name": "Geo-Verankerung",
+        "why": "Mehrstufige Werkzeugnutzung über Bundesgeodaten mit schweizerdeutscher Toponym-Unschärfe. Rerank macht aus 50 Kandidaten drei belegbare."
+      },
+      "memory": {
+        "name": "Bestandsgedächtnis",
+        "why": "«Kennen wir das schon?» ist ein Nachbarschaftsproblem, kein Denkproblem. Findet Serien, Dubletten und Aufnahmen desselben Tages im ganzen Bestand."
+      },
+      "chronology": {
+        "name": "Chronologie",
+        "why": "Datierung ist die schwerste Denkaufgabe im System: ein Dutzend schwacher, widersprüchlicher Signale zu einer Verteilung über Jahre fusionieren."
+      },
+      "synthesiser": {
+        "name": "Hypothesen-Synthese",
+        "why": "Muss das ganze Beweisbuch überblicken und zwei bis vier echt konkurrierende Hypothesen erzeugen — nicht eine Antwort mit Weichmachern."
+      },
+      "falsifier": {
+        "name": "Terrain-Falsifikator",
+        "why": "Das Herz des Systems. Rendert den wahren Horizont aus der behaupteten Kameraposition und misst ihn gegen das Bild. Das Einzige, was ein Sprachmodell widerlegen kann."
+      },
+      "redteam": {
+        "name": "Red-Team-Prüfung",
+        "why": "Bewusst eine andere Modellfamilie. Ein Claude, der Claude prüft, teilt dessen blinde Flecken. Unabhängigkeit ist der ganze Zweck der Zweitmeinung."
+      },
+      "adjudicator": {
+        "name": "Urteilsinstanz",
+        "why": "Wägt überlebende Hypothesen gegen Einwände, vergibt kalibrierte Konfidenz und entscheidet pro Feld: ausgeben oder schweigen."
+      },
+      "cartographer": {
+        "name": "Metadaten-Kartografie",
+        "why": "Mechanische Abbildung des Urteils auf ISAD(G), Dublin Core und RiC-O, danach Schema-validiert. Schnell, günstig, reproduzierbar."
+      },
+      "multilingual": {
+        "name": "Mehrsprachigkeit & A11y",
+        "why": "Deutsch ins Französische, Italienische, Englische plus WCAG-Alternativtexte — mit den archivischen Titelkonventionen, die eine Übersetzungs-API falsch macht."
+      },
+      "sensitivity": {
+        "name": "Schutzprüfung",
+        "why": "Fail-closed: lebende Personen, erkennbare Minderjährige, Personendaten in Transkriptionen. Policy als Konfiguration, auditierbar."
+      },
+      "curator": {
+        "name": "Kurator-Rückkopplung",
+        "why": "Jede Korrektur wird zu einem Gazetteer-Alias, einem Few-Shot-Beispiel und einem Regressionsfall. Lernen ohne Fine-Tuning und ohne stilles Abdriften."
+      }
+    },
+    "spine": {
+      "title": "Deterministisch, wo Nachvollziehbarkeit zählt. Agentisch, wo Urteil zählt.",
+      "body": "Der Makro-Ablauf ist eine dauerhafte, inspizierbare Zustandsmaschine: jeder Lauf wiederholbar, jeder Übergang protokolliert, jede menschliche Freigabe ein eigener Zustand. Innerhalb der Schritte argumentieren die Agenten frei. Kein Sprachmodell entscheidet über die Form der Pipeline — nur darüber, was das Bild zeigt."
+    },
+    "families": {
+      "deterministic": "Deterministisch"
+    }
+  },
+  "capabilities": {
+    "eyebrow": "Drei Fähigkeiten, die es sonst nirgends gibt",
+    "title": "Spezifisch für die Schweiz. In dreissig Sekunden zeigbar.",
+    "items": {
+      "terrain": {
+        "name": "Terrain-Falsifikation",
+        "tagline": "Einen Ort mit den Alpen beweisen",
+        "body": "Behauptet ein Agent eine Aufnahmeposition, rendern wir aus dem amtlichen Höhenmodell, wie die Berge von dort aussehen müssten, und legen die Kurve über das Foto. Suche über einen ganzen Kanton wäre teuer — Widerlegung kostet einen einzigen Strahlgang pro Hypothese.",
+        "metric": "Horizont-Korrelation",
+        "limitTitle": "Grenzen, offen ausgewiesen",
+        "limit": "Braucht einen sichtbaren Terrainhorizont. Innenräume, enge Dorfgassen und flache Uferaufnahmen fallen heraus — dort meldet der Falsifikator «nicht anwendbar» statt eines schlechten Werts."
+      },
+      "chronology": {
+        "name": "Chronologie-Werkzeuge",
+        "tagline": "Datieren über das, was es noch nicht geben konnte",
+        "body": "Kein Erraten der Epoche. Ein Werkzeugkasten Schweizer Zeitmarken liefert harte Ober- und Untergrenzen: historische Kartenwerke mit Zeitdimension, die Aufstauung des Sihlsees 1937, Baujahre der Dampfschiffe, Bahnelektrifizierungen, Postkarten-Rückseitentypologie, fotografische Verfahren.",
+        "metric": "Ergebnisbereich",
+        "limitTitle": "Was herauskommt",
+        "limit": "Kein Jahr, sondern eine Verteilung über Jahre — mit jeder Zeitmarke als sichtbare Schranke. Die Archivarin sieht, warum der Bereich so liegt, und kann eine Schranke wegziehen, wenn sie ihr nicht folgt."
+      },
+      "verso": {
+        "name": "Verso-Intelligenz",
+        "tagline": "Die Rückseite lesen, die niemand mehr liest",
+        "body": "Rund die Hälfte der brauchbaren Metadaten steht hinten drauf — mit Bleistift, in Kurrent oder Sütterlin, von jemandem, der 1950 gestorben ist. Recto und Verso sind im Datenmodell ein Paar, nicht zwei Uploads. Zwei unabhängige Leser; bei Uneinigkeit entscheidet ein Mensch.",
+        "metric": "Schriftarten",
+        "limitTitle": "Und ein ehrlicher Zusatz",
+        "limit": "Eine Notiz «Muotathal 1912» gilt als Hypothese mit menschlicher Quelle — hoch gewichtet, aber trotzdem falsifiziert. Rückseiten sind oft Jahrzehnte später aus dem Gedächtnis beschriftet worden und erstaunlich häufig falsch."
+      }
+    },
+    "versoDemo": {
+      "original": "Original",
+      "transcription": "Transkription",
+      "normalised": "Normalisiert",
+      "handwriting": "Kurrent, Bleistift",
+      "readerA": "Sonnet 5 · Paläografie",
+      "readerB": "Amazon Textract",
+      "agreement": "Übereinstimmung",
+      "conflict": "Abweichung — zur Prüfung markiert"
+    },
+    "timelineDemo": {
+      "post": "frühestens",
+      "ante": "spätestens",
+      "result": "Ergebnisbereich",
+      "constraints": {
+        "photochromPatent": "Photochromverfahren kommerziell verfügbar",
+        "axenstrasseBuilt": "Quaianlage auf der Siegfriedkarte verzeichnet",
+        "quaiRebuild": "Uferausbau von 1900 noch nicht sichtbar"
+      }
+    }
+  },
+  "calibration": {
+    "eyebrow": "Kalibrierung",
+    "title": "Wenn wir 90 % sagen, stimmen 90 %.",
+    "body": "Konfidenzwerte werden gegen ein Gold-Set angepasst, nicht vom Modell erfunden. Das Zuverlässigkeitsdiagramm ist Teil des Produkts und jederzeit im Browser prüfbar. Ein Archiv übernimmt ein Werkzeug, das weiss, was es nicht weiss — nie eines, das es nicht weiss.",
+    "chartTitle": "Zuverlässigkeitsdiagramm",
+    "chartAxisX": "Angegebene Konfidenz",
+    "chartAxisY": "Beobachtete Trefferquote",
+    "perfect": "Perfekte Kalibrierung",
+    "observed": "ZEITZEUGE",
+    "baseline": "Einzelaufruf-Basislinie",
+    "stats": {
+      "precision": {
+        "value": "94 %",
+        "label": "Präzision bei ausgegebenen Feldern"
+      },
+      "hallucination": {
+        "value": "0.0 %",
+        "label": "Halluzinationsrate auf dem Gold-Set"
+      },
+      "abstention": {
+        "value": "11 %",
+        "label": "Anteil bewusster Enthaltung"
+      },
+      "coverage": {
+        "value": "78 %",
+        "label": "Felder ohne menschliche Korrektur"
+      }
+    },
+    "ablationTitle": "Was der adversariale Schritt bringt",
+    "ablationBody": "Dieselben Bilder, einmal ohne und einmal mit Falsifikator und Red-Team. Die Abdeckung sinkt leicht. Die Halluzinationsrate bricht ein. Für ein Archiv ist das der einzige Tausch, der zählt.",
+    "withoutLabel": "ohne Falsifikation",
+    "withLabel": "mit Falsifikation",
+    "ablationMetrics": {
+      "coverage": "Abdeckung",
+      "hallucination": "Halluzinationsrate"
+    },
+    "tableView": "Werte als Tabelle",
+    "binLabel": "Konfidenzband",
+    "ablationChange": "Veränderung",
+    "ablationCost": "Preis dafür",
+    "ablationGain": "Gewinn",
+    "pp": " Prozentpunkte"
+  },
+  "personas": {
+    "eyebrow": "Für wen",
+    "title": "Vier Menschen, vier Erfolgskriterien.",
+    "items": {
+      "andrea": {
+        "name": "Andrea",
+        "role": "Archivarin, Staatsarchiv Schwyz",
+        "job": "Den Rückstand nach ISAD(G) erschliessen",
+        "success": "Minuten pro Bild sinken — und nichts Falsches gelangt in den Katalog."
+      },
+      "marco": {
+        "name": "Marco",
+        "role": "Digitalisierungs-Operator",
+        "job": "500 Scans pro Woche durchschleusen",
+        "success": "Der Stapellauf läuft über Nacht; morgens steht eine saubere Prüfliste bereit."
+      },
+      "keller": {
+        "name": "Dr. Keller",
+        "role": "Regionalhistoriker",
+        "job": "«Alle Fotos vom Quai Brunnen vor 1920» finden",
+        "success": "Durchsuchbare, belegte, zitierfähige Einträge."
+      },
+      "ueli": {
+        "name": "Ueli",
+        "role": "Kantonale Informatik",
+        "job": "Das System freigeben",
+        "success": "Datenhaltung in der Schweiz, lückenloser Audit-Trail, kein Lock-in, exportierbar."
+      }
+    },
+    "jobLabel": "Aufgabe",
+    "successLabel": "Erfolg heisst"
+  },
+  "sovereignty": {
+    "eyebrow": "Governance",
+    "title": "Die Fragen, die die Kantons-IT wirklich stellt.",
+    "body": "Ein Archiv kauft keine Demo. Es kauft etwas, das eine Vorprüfung, eine Ausschreibung und eine Betriebsübergabe übersteht. Diese vier Punkte sind deshalb Architektur, nicht Anhang.",
+    "items": {
+      "residency": {
+        "title": "Datenhaltung in der Schweiz",
+        "body": "Verarbeitung in der AWS-Region Zürich, mit dokumentiertem Ausweichpfad dort, wo ein Dienst regional noch nicht verfügbar ist. Kein stilles Abfliessen von Kulturgut."
+      },
+      "rls": {
+        "title": "Mandantentrennung in der Datenbank",
+        "body": "Row-Level Security auf jeder mandantenbezogenen Tabelle, in der Datenbank erzwungen statt in der Anwendung — und in der CI gegen Querzugriffe getestet."
+      },
+      "audit": {
+        "title": "Versioniert und revisionssicher",
+        "body": "Katalogeinträge sind append-only. Ein Archivsystem darf nie verlieren, was es einmal gesagt hat. Jeder Lauf, jede Korrektur, jede Freigabe ist namentlich protokolliert."
+      },
+      "export": {
+        "title": "Kein Lock-in",
+        "body": "ISAD(G), EAD, Dublin Core, RiC-O, IIIF, XMP und eine OAI-PMH-Schnittstelle. Alles, was hineingeht, kommt in einem Standardformat wieder heraus."
+      }
+    },
+    "quote": "«74 RLS-Policies, in der CI gegen mandantenübergreifende Lecks geprüft.»",
+    "quoteAttribution": "Der Satz, der bei einer kantonalen Informatik ankommt."
+  },
+  "cta": {
+    "eyebrow": "Nächster Schritt",
+    "title": "Geben Sie uns ein Bild, von dem Sie nichts wissen.",
+    "body": "Die Gastansicht startet ohne Konto mit vorbereiteten Aufnahmen aus dem Bestand. Oder laden Sie eigene Scans hoch — Vorder- und Rückseite als Paar — und sehen Sie dem Kreuzverhör in Echtzeit zu.",
+    "primaryCta": "Demo starten",
+    "secondaryCta": "Mit dem Team sprechen",
+    "note": "Pilotprojekt mit dem Staatsarchiv des Kantons Schwyz · Zentral Hack 2026"
+  },
+  "footer": {
+    "tagline": "Agentische Provenienzanalyse für historische Fotoarchive.",
+    "product": "Produkt",
+    "resources": "Ressourcen",
+    "legal": "Rechtliches",
+    "links": {
+      "demo": "Demo",
+      "capabilities": "Fähigkeiten",
+      "architecture": "Architektur",
+      "evaluation": "Evaluation",
+      "docs": "Dokumentation",
+      "api": "API",
+      "standards": "Archivstandards",
+      "status": "Status",
+      "privacy": "Datenschutz",
+      "terms": "Nutzungsbedingungen",
+      "accessibility": "Barrierefreiheit",
+      "imprint": "Impressum",
+      "about": "Über uns",
+      "contact": "Kontakt"
+    },
+    "imageCreditTitle": "Bildnachweis",
+    "builtFor": "Gebaut für Zentral Hack 2026 · Track AI Agentic · Challenge Kanton Schwyz",
+    "rights": "© {year} ZEITZEUGE",
+    "imageCreditIntro": "Jede Aufnahme hier ist ein digitalisiertes Original aus einer öffentlichen Sammlung und steht stellvertretend für Archivgut, das wir nicht besitzen. Die in den Katalogeinträgen gezeigten Signaturen sind Beispieldaten."
+  },
+  "archive": {
+    "photos": {
+      "brunnenMythen": "Brunnen mit Grossem und Kleinem Mythen, Vierwaldstättersee",
+      "goldau": "Goldau mit Blick auf die Mythen",
+      "einsiedeln": "Kloster Einsiedeln",
+      "treib": "Treib mit den Mythen",
+      "axenstein": "Brunnen und der Axenstein",
+      "quai": "Quai von Brunnen am Vierwaldstättersee",
+      "schule": "Einsiedeln, Schulhaus und Kloster",
+      "lauterbrunnen": "Talboden mit einzelnem Hof und Wasserfall",
+      "bahngebiet": "Bahneinschnitt unter einem Gewölbebogen",
+      "mythenLuft": "Berggipfel aus der Luft aufgenommen"
+    }
+  },
+  "common": {
+    "confidence": "Konfidenz",
+    "evidenceCount": "{count, plural, =0 {kein Beleg} one {# Beleg} other {# Belege}}",
+    "signature": "Signatur",
+    "new": "Neu",
+    "learnMore": "Mehr erfahren"
+  },
+  "auth": {
+    "common": {
+      "back": "Zurück zur Startseite",
+      "or": "oder",
+      "emailLabel": "E-Mail",
+      "emailPlaceholder": "name@sz.ch",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "Ihr Passwort",
+      "showPassword": "Passwort anzeigen",
+      "hidePassword": "Passwort verbergen",
+      "submitting": "Einen Moment …",
+      "ssoCta": "Mit kantonalem Konto anmelden",
+      "ssoNote": "SAML · im Pilot noch nicht aktiv",
+      "ssoDisabledHint": "Diese Anmeldeart wird mit der kantonalen Informatik eingerichtet und ist im Pilot noch nicht aktiv.",
+      "residency": "Verarbeitung in der Schweiz · AWS Zürich",
+      "guestTitle": "Sie möchten nur schauen?",
+      "guestBody": "Die Gastsitzung öffnet einen vorbereiteten Bestand — ohne Konto, ohne E-Mail.",
+      "guestCta": "Als Gast ansehen",
+      "legalPrefix": "Mit dem Fortfahren akzeptieren Sie die",
+      "terms": "Nutzungsbedingungen",
+      "legalAnd": "und die",
+      "privacy": "Datenschutzerklärung",
+      "sentTo": "Gesendet an"
+    },
+    "login": {
+      "metaTitle": "Anmelden — ZEITZEUGE",
+      "metaDescription": "Melden Sie sich bei ZEITZEUGE an, um an Ihren Beständen weiterzuarbeiten.",
+      "title": "Willkommen zurück.",
+      "subtitle": "Melden Sie sich an, um an Ihren Beständen weiterzuarbeiten.",
+      "submit": "Anmelden",
+      "remember": "Angemeldet bleiben",
+      "forgot": "Passwort vergessen?",
+      "noAccount": "Noch kein Konto?",
+      "signupLink": "Konto erstellen"
+    },
+    "signup": {
+      "metaTitle": "Konto erstellen — ZEITZEUGE",
+      "metaDescription": "Erstellen Sie ein ZEITZEUGE-Konto. E-Mail und Passwort genügen.",
+      "title": "Konto erstellen.",
+      "subtitle": "E-Mail und Passwort genügen. Archiv und Rolle legen Sie beim ersten Anmelden fest.",
+      "submit": "Konto erstellen",
+      "haveAccount": "Bereits ein Konto?",
+      "loginLink": "Anmelden",
+      "successTitle": "Prüfen Sie Ihren Posteingang.",
+      "successBody": "Wir haben Ihnen einen Bestätigungslink geschickt. Er ist 24 Stunden gültig.",
+      "successHint": "Nichts erhalten? Sehen Sie im Spam-Ordner nach.",
+      "resend": "Erneut senden",
+      "resent": "Erneut gesendet",
+      "backToLogin": "Zur Anmeldung"
+    },
+    "forgot": {
+      "metaTitle": "Passwort zurücksetzen — ZEITZEUGE",
+      "metaDescription": "Setzen Sie Ihr ZEITZEUGE-Passwort zurück.",
+      "title": "Passwort zurücksetzen.",
+      "subtitle": "Geben Sie Ihre E-Mail-Adresse ein. Wir senden Ihnen einen Link zum Zurücksetzen.",
+      "submit": "Link senden",
+      "successTitle": "Link unterwegs.",
+      "successBody": "Falls zu dieser Adresse ein Konto besteht, ist ein Link zum Zurücksetzen unterwegs.",
+      "backToLogin": "Zurück zur Anmeldung"
+    },
+    "password": {
+      "strengthLabel": "Passwortstärke",
+      "weak": "Schwach",
+      "fair": "Ausreichend",
+      "good": "Gut",
+      "strong": "Stark",
+      "rulesLabel": "Erforderlich",
+      "ruleLength": "Mindestens 8 Zeichen",
+      "ruleUpper": "Ein Grossbuchstabe",
+      "ruleLower": "Ein Kleinbuchstabe",
+      "ruleDigit": "Eine Ziffer",
+      "ruleSymbol": "Ein Sonderzeichen"
+    },
+    "errors": {
+      "title": "Anmeldung nicht möglich",
+      "emailRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein.",
+      "emailInvalid": "Diese E-Mail-Adresse sieht nicht gültig aus.",
+      "passwordRequired": "Bitte geben Sie Ihr Passwort ein.",
+      "passwordWeak": "Das Passwort erfüllt die Anforderungen noch nicht.",
+      "invalidCredentials": "E-Mail oder Passwort stimmt nicht.",
+      "emailInUse": "Für diese Adresse besteht bereits ein Konto.",
+      "rateLimited": "Zu viele Versuche. Bitte warten Sie einen Moment.",
+      "network": "Keine Verbindung. Bitte versuchen Sie es erneut.",
+      "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+    },
+    "panel": {
+      "label": "Laufende Erschliessung",
+      "caption": "«Während Sie sich anmelden, arbeitet ZEITZEUGE weiter.»",
+      "processed": "heute erschlossen"
+    }
+  },
+  "app": {
+    "nav": {
+      "overview": "Übersicht",
+      "upload": "Hochladen",
+      "queue": "Prüfliste",
+      "history": "Verlauf",
+      "collections": "Bestände",
+      "evaluation": "Evaluation",
+      "assist": "Mithilfe",
+      "settings": "Einstellungen",
+      "admin": "Administration",
+      "primaryLabel": "Hauptnavigation",
+      "secondaryLabel": "Verwaltung",
+      "collapse": "Seitenleiste einklappen",
+      "expand": "Seitenleiste ausklappen",
+      "openMenu": "Menü öffnen",
+      "closeMenu": "Menü schliessen",
+      "soon": "in Arbeit",
+      "editor": "Katalogeintrag"
+    },
+    "header": {
+      "searchPlaceholder": "Suchen",
+      "searchHint": "Signatur, Bestand oder Bildschirm",
+      "searchOpen": "Suche öffnen",
+      "searchEmpty": "Nichts gefunden",
+      "searchScreens": "Bildschirme",
+      "searchRuns": "Letzte Läufe",
+      "searchClose": "Schliessen",
+      "notifications": "Benachrichtigungen",
+      "notificationsEmpty": "Nichts Neues",
+      "markAllRead": "Alle als gelesen markieren",
+      "archiveLabel": "Archiv",
+      "archiveSwitch": "Archiv wechseln",
+      "archiveRecords": "Einträge",
+      "userMenu": "Benutzermenü",
+      "profile": "Profil",
+      "settings": "Einstellungen",
+      "signOut": "Abmelden",
+      "guestBadge": "Gastsitzung"
+    },
+    "notifications": {
+      "n1": "3 Läufe warten auf Ihre Prüfung",
+      "n1meta": "Prüfliste · vor 4 Minuten",
+      "n2": "Red-Team hat eine Hypothese widerlegt",
+      "n2meta": "StASZ Ansichtskarten/0042 · vor 12 Minuten",
+      "n3": "Stapellauf «Bettschart» abgeschlossen",
+      "n3meta": "128 Bilder · vor 2 Stunden"
+    }
+  },
+  "dashboard": {
+    "metaTitle": "Übersicht — ZEITZEUGE",
+    "metaDescription": "Ihre Erschliessung auf einen Blick.",
+    "greetingMorning": "Guten Morgen",
+    "greetingDay": "Guten Tag",
+    "greetingEvening": "Guten Abend",
+    "subtitle": "Hier steht, was heute Ihre Aufmerksamkeit braucht.",
+    "queueTitle": "{count, plural, =0 {Nichts wartet auf Sie} one {# Eintrag wartet auf Ihre Prüfung} other {# Einträge warten auf Ihre Prüfung}}",
+    "queueMetaAvg": "Ø {seconds} Sek. pro Eintrag",
+    "queueMetaOldest": "ältester seit {days, plural, one {# Tag} other {# Tagen}}",
+    "queueCta": "Prüfung beginnen",
+    "queueEmpty": "Die Prüfliste ist leer. Der Rückstand wartet im Bestand.",
+    "queueThreshold": "Automatisch übernommen ab Konfidenz {value}",
+    "stats": {
+      "catalogued": "Bilder erschlossen",
+      "cataloguedHint": "in diesem Bestand",
+      "precision": "Präzision",
+      "precisionHint": "auf ausgegebenen Feldern",
+      "override": "Korrekturquote",
+      "overrideHint": "wie oft ein Mensch korrigieren musste",
+      "cost": "Kosten bisher",
+      "costHint": "von USD {budget} Guthaben"
+    },
+    "deltaUp": "gegenüber der Vorwoche",
+    "deltaDown": "gegenüber der Vorwoche",
+    "trendTitle": "Genauigkeit über 14 Tage",
+    "trendSubtitle": "Die Korrekturquote ist die Kennzahl, an der sich das System messen lässt — sie soll fallen.",
+    "trendPrecision": "Präzision",
+    "trendOverride": "Korrekturquote",
+    "trendTable": "Werte als Tabelle",
+    "trendDay": "Tag",
+    "costTitle": "Guthaben",
+    "costSpent": "verbraucht",
+    "costRemaining": "verbleibend",
+    "costPerImage": "pro Bild",
+    "costCascadeTitle": "Modellkaskade",
+    "costFast": "Schnelldurchlauf",
+    "costStandard": "Standard",
+    "costDeep": "Vertiefte Prüfung",
+    "costCascadeHint": "Nicht jedes Bild braucht das teuerste Modell. Der Router eskaliert nur bei Unklarheit.",
+    "runsTitle": "Letzte Läufe",
+    "runsAll": "Alle ansehen",
+    "runsSignature": "Signatur",
+    "runsCollection": "Bestand",
+    "runsStatus": "Status",
+    "runsConfidence": "Konfidenz",
+    "runsDuration": "Dauer",
+    "runsCost": "Kosten",
+    "runsWhen": "Zeitpunkt",
+    "status": {
+      "running": "läuft",
+      "review": "Prüfung nötig",
+      "accepted": "übernommen",
+      "abstained": "Enthaltung",
+      "failed": "fehlgeschlagen"
+    },
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {count} Min.",
+    "hoursAgo": "vor {count} Std.",
+    "seconds": "{count} s",
+    "replayRun": "Diesen Lauf abspielen"
+  },
+  "section": {
+    "soonTitle": "{screen} entsteht als Nächstes.",
+    "soonBody": "Dieser Bereich ist noch nicht gebaut. Die Navigation und die Übersicht funktionieren bereits.",
+    "soonBack": "Zur Übersicht",
+    "soonNote": "Platzhalter · keine Produktoberfläche"
+  },
+  "settings": {
+    "metaTitle": "Einstellungen — ZEITZEUGE",
+    "title": "Einstellungen",
+    "subtitle": "Vorgaben für Ihr Konto und für diesen Bestand.",
+    "navLabel": "Einstellungsbereiche",
+    "nav": {
+      "account": "Konto",
+      "appearance": "Erscheinungsbild",
+      "notifications": "Benachrichtigungen",
+      "cataloguing": "Erschliessung",
+      "export": "Export & Standards",
+      "security": "Sicherheit",
+      "api": "API-Zugang",
+      "archive": "Archiv"
+    },
+    "save": "Speichern",
+    "discard": "Verwerfen",
+    "saved": "Gespeichert",
+    "unsaved": "Nicht gespeicherte Änderungen",
+    "demoNote": "Demo-Oberfläche · Änderungen werden noch nicht gespeichert",
+    "account": {
+      "title": "Konto",
+      "desc": "Wie Sie im Archiv erscheinen und wie wir Sie erreichen.",
+      "nameLabel": "Anzeigename",
+      "nameHint": "So erscheinen Sie neben Ihren Korrekturen im Katalog.",
+      "emailLabel": "E-Mail",
+      "emailHint": "Änderungen werden an die neue Adresse bestätigt.",
+      "roleLabel": "Rolle",
+      "roleHint": "Rollen vergibt die Archivleitung.",
+      "profileTitle": "Ihr Beitrag",
+      "profileDesc": "Was Sie dem System beigebracht haben — Aliase, Testfälle, Beispiele.",
+      "profileCta": "Profil ansehen",
+      "dangerTitle": "Konto löschen",
+      "dangerDesc": "Ihr Konto wird entfernt. Ihre bereits übernommenen Katalogeinträge bleiben bestehen — der Katalog ist append-only und darf nie verlieren, was er einmal gesagt hat.",
+      "dangerCta": "Konto löschen",
+      "dangerConfirm": "Zum Bestätigen {word} eingeben",
+      "cancel": "Abbrechen"
+    },
+    "appearance": {
+      "title": "Erscheinungsbild & Sprache",
+      "desc": "Gilt nur für dieses Gerät und diesen Browser.",
+      "themeLabel": "Design",
+      "themeHint": "Hell, dunkel oder der Systemeinstellung folgen.",
+      "langLabel": "Sprache",
+      "langHint": "Die Oberfläche wechselt sofort. Katalogfelder bleiben in der erfassten Sprache.",
+      "densityLabel": "Informationsdichte",
+      "densityHint": "Kompakt zeigt mehr Zeilen pro Bildschirm.",
+      "densityComfortable": "Normal",
+      "densityCompact": "Kompakt",
+      "motionLabel": "Bewegung reduzieren",
+      "motionHint": "Blendet Animationen aus. Folgt sonst Ihrer Systemeinstellung."
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "desc": "Was Sie erreichen soll — und auf welchem Weg.",
+      "colEmail": "E-Mail",
+      "colInApp": "In der App",
+      "events": {
+        "queue": "Einträge warten auf Prüfung",
+        "queueDesc": "Wenn sich die Prüfliste füllt.",
+        "refuted": "Red-Team widerlegt eine Hypothese",
+        "refutedDesc": "Wenn die Falsifikation eine Annahme kippt.",
+        "batch": "Stapellauf abgeschlossen",
+        "batchDesc": "Wenn ein Bestand fertig verarbeitet ist.",
+        "weekly": "Wochenbericht",
+        "weeklyDesc": "Genauigkeit, Korrekturquote und Kosten der Woche."
+      }
+    },
+    "cataloguing": {
+      "title": "Erschliessung",
+      "desc": "Vorgaben für neue Läufe in diesem Bestand.",
+      "thresholdLabel": "Automatisch übernehmen ab",
+      "thresholdHint": "Einträge über dieser Konfidenz gehen ohne Prüfung in den Katalog. Tiefer heisst mehr Durchsatz, höher heisst weniger Risiko.",
+      "modeLabel": "Standard-Modus",
+      "modeHint": "Der Router eskaliert bei Unklarheit ohnehin — dies ist nur der Einstieg.",
+      "modes": {
+        "fast": "Schnelldurchlauf",
+        "fastDesc": "Haiku und Textract. Für beschriftete Ansichtskarten.",
+        "standard": "Standard",
+        "standardDesc": "Volle Wahrnehmung mit Sonnet. Der Normalfall.",
+        "deep": "Vertiefte Prüfung",
+        "deepDesc": "Opus, Falsifikation und Red-Team. Für schwierige Stücke."
+      },
+      "perImage": "pro Bild",
+      "abstentionLabel": "Enthaltung zulassen",
+      "abstentionHint": "Felder ohne ausreichende Belege bleiben leer statt geraten zu werden. Das Abschalten widerspricht dem Grundsatz, auf dem dieses System beruht.",
+      "abstentionWarning": "Ohne Enthaltung gibt das System auch dann einen Wert aus, wenn die Belege nicht reichen.",
+      "collectionLabel": "Standard-Bestand",
+      "collectionHint": "Neue Uploads landen hier, solange nichts anderes gewählt ist."
+    },
+    "export": {
+      "title": "Export & Standards",
+      "desc": "Alles, was hineingeht, kommt in einem Standardformat wieder heraus.",
+      "formatLabel": "Standardformat",
+      "formatHint": "Gilt für den Export-Knopf im Katalogeintrag.",
+      "provenanceLabel": "Provenienzblock mitliefern",
+      "provenanceHint": "Je Feld: Belege, Modell und Zeitpunkt. Ohne ihn ist eine Maschinenaussage später nicht mehr von einer menschlichen zu unterscheiden.",
+      "oaiLabel": "OAI-PMH-Schnittstelle",
+      "oaiHint": "Für die Ernte durch übergeordnete Portale.",
+      "copy": "Kopieren",
+      "copied": "Kopiert"
+    },
+    "security": {
+      "title": "Sicherheit",
+      "desc": "Zugang zu Ihrem Konto.",
+      "passwordLabel": "Passwort",
+      "passwordHint": "Zuletzt vor 3 Monaten geändert.",
+      "passwordCta": "Passwort ändern",
+      "twoFactorLabel": "Zwei-Faktor-Authentifizierung",
+      "twoFactorHint": "Wird mit der kantonalen Informatik eingerichtet und ist im Pilot noch nicht aktiv.",
+      "twoFactorPending": "Im Pilot noch nicht aktiv",
+      "sessionsLabel": "Angemeldete Geräte",
+      "sessionsHint": "Melden Sie ab, was Sie nicht erkennen.",
+      "sessionCurrent": "Dieses Gerät",
+      "revoke": "Abmelden",
+      "revokeAll": "Alle anderen abmelden",
+      "lastActive": "zuletzt aktiv"
+    },
+    "api": {
+      "title": "API-Zugang",
+      "desc": "Token für die OAI-PMH- und REST-Schnittstellen.",
+      "notice": "Diese Oberfläche ist entworfen, aber noch nicht angeschlossen: der Dienst stellt noch keine echten Token aus. Erzeugte Token sind Platzhalter.",
+      "createLabel": "Neues Token",
+      "createHint": "Der Schlüssel wird genau einmal angezeigt.",
+      "nameLabel": "Bezeichnung",
+      "namePlaceholder": "z. B. Import-Skript",
+      "scopeLabel": "Berechtigung",
+      "scopeRead": "Nur lesen",
+      "scopeWrite": "Lesen und schreiben",
+      "createCta": "Token erzeugen",
+      "listLabel": "Bestehende Token",
+      "created": "erstellt vor {days} Tagen",
+      "lastUsed": "zuletzt vor {days} Tagen",
+      "never": "nie verwendet",
+      "today": "heute",
+      "revoke": "Widerrufen",
+      "empty": "Noch keine Token."
+    },
+    "archive": {
+      "title": "Archiv",
+      "desc": "Gilt für alle Mitglieder dieses Bestands.",
+      "nameLabel": "Bezeichnung",
+      "governanceTitle": "Governance",
+      "residencyLabel": "Datenhaltung",
+      "residencyValue": "AWS Zürich (eu-central-2)",
+      "rlsLabel": "Mandantentrennung",
+      "rlsValue": "Row-Level Security, in der CI geprüft",
+      "appendOnlyLabel": "Katalogeinträge",
+      "appendOnlyValue": "Append-only und versioniert",
+      "governanceNote": "Diese drei Punkte sind Architektur, nicht Konfiguration — sie lassen sich hier nicht abschalten.",
+      "membersLabel": "Mitglieder",
+      "membersHint": "Rollen bestimmen, wer übernehmen und wer nur lesen darf.",
+      "roles": {
+        "archivist": "Archivarin",
+        "operator": "Digitalisierung",
+        "admin": "Kantonale Informatik",
+        "reader": "Lesend"
+      },
+      "invite": "Mitglied einladen",
+      "leaveTitle": "Archiv verlassen",
+      "leaveDesc": "Sie verlieren den Zugang zu diesem Bestand. Ihre Korrekturen und die daraus entstandenen Aliase bleiben dem Archiv erhalten.",
+      "leaveCta": "Archiv verlassen"
+    }
+  },
+  "profile": {
+    "metaTitle": "Profil — ZEITZEUGE",
+    "metaDescription": "Ihr Beitrag zur Erschliessung.",
+    "since": "Mitglied seit {date}",
+    "editCta": "Konto bearbeiten",
+    "taughtTitle": "Was Sie dem System beigebracht haben",
+    "taughtSubtitle": "Jede Korrektur wird zu einem Gazetteer-Alias, einem Beispiel im Gedächtnis oder einem Testfall. Lernen ohne Fine-Tuning — und jede Verbesserung trägt einen Namen.",
+    "stats": {
+      "reviewed": "Einträge geprüft",
+      "reviewedHint": "in den letzten 90 Tagen",
+      "aliases": "Gazetteer-Aliase",
+      "aliasesHint": "Namensvarianten, die das System jetzt kennt",
+      "evalCases": "Testfälle",
+      "evalCasesHint": "in der Regressionssuite verankert",
+      "confirmed": "Ihrer Korrekturen bestätigt",
+      "confirmedHint": "später unabhängig belegt"
+    },
+    "correctionsTitle": "Letzte Korrekturen",
+    "correctionsHint": "Was aus jeder Korrektur geworden ist.",
+    "effects": {
+      "alias": "Alias angelegt",
+      "evalCase": "Testfall erzeugt",
+      "exemplar": "Beispiel gespeichert"
+    },
+    "changed": "wurde zu",
+    "today": "heute",
+    "daysAgo": "vor {days} Tagen"
+  },
+  "upload": {
+    "metaTitle": "Hochladen — ZEITZEUGE",
+    "metaDescription": "Scans in den Bestand geben.",
+    "title": "Hochladen",
+    "subtitle": "Vorder- und Rückseite gehören zusammen — das System behandelt sie als ein Stück.",
+    "dropTitle": "Scans hierher ziehen",
+    "dropHint": "JPEG, PNG, TIFF, WebP oder ein ZIP-Archiv. Auch einfügen mit {shortcut} möglich.",
+    "dropBrowse": "Dateien wählen",
+    "dropActive": "Loslassen",
+    "reading": "Archiv wird gelesen …",
+    "pairingTitle": "Paarung nach Dateiname",
+    "pairingHint": "Vorder- und Rückseite werden anhand der Benennung Ihres Scanners erkannt. Jede Zuordnung ist sichtbar und lässt sich korrigieren.",
+    "summary": "{files, plural, one {# Datei} other {# Dateien}} · {assets, plural, one {# Stück} other {# Stück}}",
+    "summaryPaired": "{count, plural, =0 {kein Paar} one {# Paar erkannt} other {# Paare erkannt}}",
+    "summaryUnpaired": "{count, plural, =0 {} one {# ohne Rückseite} other {# ohne Rückseite}}",
+    "clearAll": "Alle entfernen",
+    "collectionAll": "Bestand für alle übernehmen",
+    "rules": {
+      "recto_verso": "_r / _v",
+      "front_back": "vorne / hinten",
+      "a_b": "_a / _b",
+      "numeric": "_1 / _2",
+      "manual": "von Hand"
+    },
+    "paired": "gepaart",
+    "pairedBy": "gepaart über {rule}",
+    "noVerso": "ohne Rückseite",
+    "noRecto": "Vorderseite fehlt",
+    "recto": "Vorderseite",
+    "verso": "Rückseite",
+    "dropVersoHere": "Rückseite hierher ziehen",
+    "unpair": "Paarung lösen",
+    "removeAsset": "Entfernen",
+    "signatureLabel": "Signatur",
+    "signaturePlaceholder": "z. B. StASZ Ansichtskarten/0042",
+    "collectionLabel": "Bestand",
+    "modeLabel": "Modus",
+    "statusQueued": "bereit",
+    "statusUploading": "wird übertragen",
+    "statusUploaded": "übertragen",
+    "statusAnalysing": "wird untersucht",
+    "statusDone": "fertig",
+    "statusError": "Fehler",
+    "startCta": "{count, plural, one {# Stück untersuchen} other {# Stück untersuchen}}",
+    "startBlocked": "Erst die Hinweise beheben",
+    "runningCta": "Läuft …",
+    "doneTitle": "Alles übergeben.",
+    "doneCta": "Zur Prüfliste",
+    "totalSize": "{size} gesamt",
+    "issuesTitle": "{count, plural, one {# Hinweis} other {# Hinweise}}",
+    "issues": {
+      "missing-signature": "Ohne Signatur kann das Stück nicht in den Katalog.",
+      "duplicate-signature": "Signatur {detail} ist doppelt vergeben.",
+      "missing-recto": "Es liegt nur eine Rückseite vor.",
+      "too-large": "{detail} überschreitet 200 MB.",
+      "wrong-type": "{detail} ist kein unterstütztes Bildformat."
+    },
+    "rejectedTitle": "{count, plural, one {# Datei übersprungen} other {# Dateien übersprungen}}",
+    "rejectedHint": "Nicht unterstütztes Format.",
+    "zipTitle": "Im Archiv übersprungen",
+    "zipReasons": {
+      "not-a-zip": "Kein lesbares ZIP-Archiv.",
+      "zip64-unsupported": "ZIP64 wird nicht unterstützt.",
+      "encrypted": "Verschlüsselte Einträge lassen sich nicht lesen.",
+      "unsupported-compression": "Kompressionsverfahren nicht unterstützt.",
+      "empty": "Keine Bilder im Archiv."
+    },
+    "emptyTitle": "Noch nichts in der Warteschlange.",
+    "emptyHint": "Ziehen Sie Scans hierher oder wählen Sie Dateien.",
+    "pairedManually": "von Hand gepaart",
+    "demoTitle": "Beispieldaten",
+    "demoHint": "Diese Scans sind zum Ausprobieren da. Entfernen Sie sie, um eigene hochzuladen.",
+    "demoLoad": "Beispieldaten laden"
+  },
+  "queue": {
+    "metaTitle": "Prüfliste — ZEITZEUGE",
+    "metaDescription": "Was Ihre Aufmerksamkeit braucht, in der Reihenfolge des Nutzens.",
+    "title": "Prüfliste",
+    "subtitle": "Sortiert nach erwartetem Erkenntnisgewinn, nicht nach Datum. Oben steht, wo Ihre Minute am meisten bewirkt.",
+    "waiting": "{count, plural, =0 {Nichts wartet} one {# Eintrag wartet} other {# Einträge warten}}",
+    "estimate": "noch etwa {minutes} Min.",
+    "sortLabel": "Sortierung",
+    "sort": {
+      "gain": "Erkenntnisgewinn",
+      "waiting": "Wartezeit",
+      "confidence": "Konfidenz",
+      "signature": "Signatur"
+    },
+    "gainHigh": "hoher Gewinn",
+    "gainMedium": "mittlerer Gewinn",
+    "gainLow": "geringer Gewinn",
+    "reasons": {
+      "series": "{count} ähnliche Aufnahmen hängen an dieser Entscheidung",
+      "boundary": "Konfidenz liegt auf der Entscheidungsgrenze",
+      "refuted": "Red-Team hat eine Hypothese widerlegt",
+      "verso": "Rückseite konnte nicht sicher gelesen werden",
+      "waiting": "wartet seit {days, plural, one {# Tag} other {# Tagen}}"
+    },
+    "waitingDays": "{days, plural, =0 {heute} one {# Tag} other {# Tage}}",
+    "estimatedItem": "~{seconds} Sek.",
+    "acceptField": "Feld übernehmen",
+    "rejectField": "Feld verwerfen",
+    "fieldAccepted": "übernommen",
+    "fieldRejected": "verworfen",
+    "acceptItem": "Übernehmen",
+    "openItem": "Im Editor öffnen",
+    "evidenceLabel": "Belege",
+    "bulkTitle": "Mehrere übernehmen",
+    "bulkHint": "Einträge, deren schwächstes Feld über dieser Konfidenz liegt, gehen ohne Einzelprüfung in den Katalog.",
+    "bulkThreshold": "Schwelle",
+    "bulkPreview": "{count, plural, =0 {Kein Eintrag erreicht diese Schwelle} one {# Eintrag erreicht die Schwelle} other {# Einträge erreichen die Schwelle}}",
+    "bulkRemaining": "{count, plural, =0 {nichts bleibt zur Prüfung} one {# bleibt zur Prüfung} other {# bleiben zur Prüfung}}",
+    "bulkCta": "{count, plural, one {# Eintrag übernehmen} other {# Einträge übernehmen}}",
+    "bulkConfirmTitle": "{count, plural, one {# Eintrag übernehmen?} other {# Einträge übernehmen?}}",
+    "bulkConfirmBody": "Diese Einträge gehen ohne weitere Prüfung in den Katalog. Der Katalog ist versioniert — rückgängig machen bleibt möglich.",
+    "bulkConfirmCta": "Ja, übernehmen",
+    "cancel": "Abbrechen",
+    "sweptHighlight": "wird übernommen",
+    "acceptedToast": "{count, plural, one {# Eintrag übernommen} other {# Einträge übernommen}}",
+    "undo": "Rückgängig",
+    "emptyTitle": "Die Prüfliste ist leer.",
+    "emptyBody": "Alles Wartende ist entschieden. Neue Läufe landen hier, sobald sie eine Prüfung brauchen.",
+    "emptyCta": "Zur Übersicht",
+    "demoReset": "Beispieldaten zurücksetzen"
+  },
+  "editor": {
+    "metaTitle": "{signature} — ZEITZEUGE",
+    "back": "Zur Prüfliste",
+    "version": "Fassung {n}",
+    "runMeta": "{seconds} s · {cost} · Lauf {run}",
+    "viewerTitle": "Aufnahme",
+    "recto": "Vorderseite",
+    "verso": "Rückseite",
+    "versoNote": "Stellvertretender Scan — die echte Rückseite liegt noch nicht digitalisiert vor.",
+    "zoomIn": "Vergrössern",
+    "zoomOut": "Verkleinern",
+    "zoomReset": "Ansicht zurücksetzen",
+    "showRegions": "Belegstellen zeigen",
+    "showHorizon": "Horizont einblenden",
+    "regionHint": "Auf ein Feld zeigen, um seine Pixel zu sehen.",
+    "recordTitle": "Katalogeintrag",
+    "recordHint": "Jedes Feld nennt seine Belege. Was Sie ändern, wird als menschliche Aussage vermerkt.",
+    "accept": "Übernehmen",
+    "reject": "Verwerfen",
+    "edit": "Bearbeiten",
+    "cancel": "Abbrechen",
+    "apply": "Übernehmen",
+    "accepted": "übernommen",
+    "rejected": "verworfen",
+    "editedBy": "von Ihnen geändert",
+    "provenanceTitle": "Herkunft",
+    "provenanceAgent": "Agent",
+    "provenanceModel": "Modell",
+    "provenanceEvidence": "Belege",
+    "provenanceWhen": "vor {minutes} Min.",
+    "provenanceHuman": "geprüft von {name}",
+    "abstainTitle": "Enthaltung",
+    "abstainReasons": {
+      "photographer": "Kein Signaturstempel, kein beschriftetes Verso, kein Treffer im Bestandsgedächtnis. Das System enthält sich — und das ist ein richtiges Ergebnis.",
+      "generic": "Die Belege tragen dieses Feld nicht. Das System enthält sich, statt zu raten — und das ist ein richtiges Ergebnis."
+    },
+    "abstainFill": "Selbst eintragen",
+    "evidence": {
+      "twinPeak": "Zweigipfliges Felsmassiv am Horizont, rechter Gipfel höher, ausgeprägter Sattel dazwischen.",
+      "horizonMatch": "Horizont aus 2687540 / 1206310 LV95 neu gerendert — normierte Korrelation 0.941 über 1280 Spalten.",
+      "quaiMap": "Uferbebauung entspricht dem Zustand nach dem Quai-Ausbau; auf der Siegfriedkarte ab Revision 1893.",
+      "printCaption": "Im Druck stehende Bildlegende «6319 P.Z. — BRUNNEN MIT MYTHEN».",
+      "photochrom": "Farbschichtung und Rasterstruktur entsprechen dem Photochromverfahren.",
+      "quaiObjection": "Einwand: Die Uferpromenade zeigt noch nicht den Ausbau von 1900."
+    },
+    "tabs": {
+      "map": "Karte",
+      "time": "Zeit",
+      "verso": "Verso",
+      "similar": "Ähnliche"
+    },
+    "map": {
+      "title": "Kameraposition",
+      "hint": "Geometrisch bestimmt, nicht geraten: der Horizont aus dieser Position deckt sich mit dem Bild.",
+      "coords": "Koordinaten",
+      "bearing": "Blickrichtung",
+      "fov": "Bildwinkel",
+      "accuracy": "Genauigkeit",
+      "correlation": "Horizont-Korrelation",
+      "overlayToggle": "Horizont im Bild einblenden",
+      "viewCone": "Sichtfeld",
+      "summit": "Gipfel",
+      "unresolvedTitle": "Standort nicht bestimmt",
+      "unresolvedBody": "Auf diesem Scan hat keine Horizontlinie die Korrelationsschwelle überstanden, darum wird keine Kameraposition behauptet. Der Ort stammt aus Text und Bestand, nicht aus der Geometrie."
+    },
+    "time": {
+      "title": "Datierung",
+      "hint": "Keine Jahreszahl, sondern eine Verteilung — jede Schranke ist ein Beleg.",
+      "result": "Ergebnisbereich",
+      "drop": "Schranke entfernen",
+      "restore": "Wiederherstellen",
+      "removed": "entfernt",
+      "noConstraints": "Für diesen Scan sind keine Datierungsschranken erfasst — die Spanne stützt sich allein auf Verfahren und Bildinhalt.",
+      "noBracket": "Keine Datierung vorgeschlagen."
+    },
+    "versoTab": {
+      "title": "Rückseite",
+      "original": "Original",
+      "reading": "Lesung",
+      "readerA": "Sonnet 5 · Paläografie",
+      "readerB": "Amazon Textract",
+      "agree": "Übereinstimmung",
+      "conflict": "Abweichung — zur Prüfung markiert",
+      "normalised": "normalisiert",
+      "missingTitle": "Rückseite nicht digitalisiert",
+      "missingBody": "Von diesem Abzug ist nur die Vorderseite gescannt. Sobald das Verso vorliegt, laufen die beiden Lese-Agenten darauf."
+    },
+    "similar": {
+      "title": "Aus dem Bestandsgedächtnis",
+      "hint": "Nächste Nachbarn über den ganzen Bestand — Serien, Dubletten, Aufnahmen desselben Tages.",
+      "match": "Ähnlichkeit",
+      "notes": {
+        "sameShoot": "vermutlich gleiche Aufnahmesitzung",
+        "samePlace": "gleicher Ort, anderer Blickwinkel",
+        "sameSeries": "gleiche Serie",
+        "sameMassif": "gleiches Bergmassiv"
+      },
+      "empty": "Noch keine Nachbarn im Bestandsgedächtnis."
+    },
+    "steer": {
+      "title": "Steuern & neu rechnen",
+      "hint": "Sagen Sie dem System, was Sie wissen. Nur die Schritte, die davon abhängen, werden neu gerechnet — alles andere behält seine Belege.",
+      "placeholder": "z. B. Dies ist aus dem Bestand Goetz, vermutlich Stoos",
+      "affected": "Wird neu gerechnet",
+      "kept": "Bleibt erhalten",
+      "chains": {
+        "place": "Ortsannahme geändert",
+        "date": "Datierungsannahme geändert",
+        "collection": "Bestandszuordnung geändert"
+      },
+      "estimate": "~{seconds} Sek. statt {full} Sek.",
+      "start": "Neu rechnen",
+      "running": "Wird gerechnet …",
+      "done": "Neu gerechnet",
+      "empty": "Schreiben Sie einen Hinweis, um zu sehen, was davon abhängt."
+    },
+    "footer": {
+      "save": "Speichern",
+      "saved": "Gespeichert",
+      "export": "Exportieren",
+      "exported": "Als {format} exportiert",
+      "approve": "Freigeben",
+      "approved": "Freigegeben — an das Archiv übergeben",
+      "approveHint": "Nur freigegebene Einträge verlassen das System.",
+      "exporting": "Wird vorbereitet …"
+    },
+    "unsaved": "Nicht gespeicherte Änderungen",
+    "progress": "{done} von {total} Feldern entschieden",
+    "contextTitle": "Kontext",
+    "exportLabel": "Exportformat",
+    "exportFormats": {
+      "isadCsv": "ISAD(G) CSV",
+      "ead": "EAD XML",
+      "dc": "Dublin Core XML",
+      "iiif": "IIIF-Manifest",
+      "ricoXml": "RiC-O / JSON-LD",
+      "xmpJpeg": "JPEG mit XMP"
+    },
+    "noRegionsHint": "Auf diesem Scan wurden keine Belegstellen lokalisiert — es gibt hier nichts, worauf gezeigt werden könnte."
+  },
+  "history": {
+    "metaTitle": "Verlauf — ZEITZEUGE",
+    "metaDescription": "Der Prüfpfad des Archivs: jeder Lauf, jede Korrektur, jede Freigabe und jeder Export, fortlaufend.",
+    "title": "Verlauf",
+    "subtitle": "Jeder Lauf, jede Korrektur, jede Freigabe — fortlaufend, und nie geht verloren, was das System einmal gesagt hat. Maschine und Mensch sind nie zu verwechseln.",
+    "stats": {
+      "events": "Ereignisse",
+      "eventsHint": "in den letzten 14 Tagen",
+      "approved": "Freigaben",
+      "approvedHint": "Einträge unterzeichnet",
+      "overrides": "Korrekturen",
+      "overridesHint": "Maschinenaussagen von Hand geändert",
+      "held": "Sperren",
+      "heldHint": "von der Schutzprüfung gestoppt"
+    },
+    "band": {
+      "title": "Aktivität",
+      "hint": "Vierzehn Tage, aufgeteilt nach Urheberschaft. Einen Tag wählen, um nur diesen zu lesen.",
+      "machine": "Maschine",
+      "human": "Mensch",
+      "events": "{count, plural, =0 {keine Ereignisse} =1 {1 Ereignis} other {# Ereignisse}}",
+      "clearDay": "Alle Tage",
+      "tableToggle": "Als Tabelle zeigen",
+      "tableDay": "Tag",
+      "tableTotal": "Total"
+    },
+    "filter": {
+      "searchLabel": "Prüfpfad durchsuchen",
+      "searchPlaceholder": "Signatur, Person, Bestand …",
+      "actorLabel": "Urheberschaft",
+      "actorAll": "Alle",
+      "actorMachine": "Maschine",
+      "actorHuman": "Mensch",
+      "collectionLabel": "Bestand",
+      "collectionAll": "Alle Bestände",
+      "clear": "Filter zurücksetzen",
+      "showing": "{shown} von {total} Ereignissen"
+    },
+    "presets": {
+      "all": "Alle",
+      "runs": "Läufe",
+      "edits": "Korrekturen",
+      "approvals": "Freigaben",
+      "exports": "Exporte"
+    },
+    "kinds": {
+      "run": "Lauf",
+      "steered": "Gesteuert",
+      "edited": "Geändert",
+      "rejected": "Verworfen",
+      "approved": "Freigegeben",
+      "exported": "Exportiert",
+      "held": "Gesperrt",
+      "uploaded": "Hochgeladen",
+      "reopened": "Wiedereröffnet"
+    },
+    "actors": {
+      "pipeline": "ZEITZEUGE-Pipeline"
+    },
+    "today": "Heute",
+    "detail": {
+      "run": "{seconds} s · {cost} · {agents} Agenten",
+      "abstentions": "{count, plural, =1 {1 Enthaltung} other {# Enthaltungen}}",
+      "steered": "{affected} Agenten neu gerechnet, {kept} behalten · {seconds} s",
+      "approved": "Fassung {version} freigegeben · {fields} Felder",
+      "exported": "{records, plural, =1 {1 Eintrag} other {# Einträge}} als {format}",
+      "uploaded": "{count} Scans übernommen",
+      "held": "Publikationssperre",
+      "reopened": "Fassung {version} wiedereröffnet"
+    },
+    "diff": {
+      "overrode": "überstimmt {value}",
+      "abstained": "hatte sich enthalten",
+      "filled": "von Hand eingetragen"
+    },
+    "holds": {
+      "minor": "Erkennbare minderjährige Person im Bild",
+      "person": "Möglicherweise lebende Person",
+      "pii": "Personendaten in der Verso-Transkription"
+    },
+    "openRecord": "Eintrag öffnen",
+    "exportTrail": {
+      "label": "Prüfpfad exportieren",
+      "csv": "CSV",
+      "json": "JSON",
+      "done": "Als {format} heruntergeladen"
+    },
+    "empty": {
+      "title": "Nichts entspricht diesen Filtern.",
+      "body": "Der Prüfpfad enthält {total} Ereignisse über vierzehn Tage. Filter erweitern, um sie zu sehen.",
+      "action": "Filter zurücksetzen"
+    }
+  },
+  "collections": {
+    "metaTitle": "Bestände — ZEITZEUGE",
+    "metaDescription": "Die Fotobestände des Staatsarchivs Schwyz und wie weit jeder davon beschrieben ist.",
+    "title": "Bestände",
+    "subtitle": "Die fotografischen Bestände im {archive}, Bestand für Bestand — was er enthält und wie viel davon beschrieben ist.",
+    "catalogue": "Findmittel",
+    "stats": {
+      "holdings": "Bestand",
+      "holdingsHint": "digitalisierte Einheiten in vier Beständen",
+      "described": "Beschrieben",
+      "describedHint": "von der Pipeline erzeugte Einträge",
+      "approved": "Freigegeben",
+      "approvedHint": "von einer Archivarin unterzeichnet",
+      "unknown": "Ort unbekannt",
+      "unknownHint": "Einträge, bei denen sich der Ortsagent enthalten hat"
+    },
+    "extent": {
+      "plates": "{count, plural, =1 {1 Glasplattennegativ} other {{formatted} Glasplattennegative}}",
+      "photographs": "{count, plural, =1 {1 Fotografie} other {{formatted} Fotografien}}",
+      "prints": "{count, plural, =1 {1 Albuminabzug} other {{formatted} Albuminabzüge}}",
+      "cards": "{count, plural, =1 {1 Ansichtskarte} other {{formatted} Ansichtskarten}}",
+      "mixed": "Umfang noch nicht erfasst"
+    },
+    "circa": "ca.",
+    "coverage": "{percent} % beschrieben",
+    "card": {
+      "open": "Bestand öffnen",
+      "notDigitised": "Nicht digitalisiert",
+      "notDigitisedHint": "Es sind noch keine Scans im System, also gibt es nichts zu beschreiben."
+    },
+    "fonds": {
+      "bettschart": "Fotografischer Nachlass von Josef Alois Bettschart aus Schwyz — Glasplattennegative des Fleckens, des Klosters Einsiedeln und des Muotatals.",
+      "goetz": "Landschaften, Panoramen, Bergkurorte, Wintersport, Dörfer und Bauten im ganzen Kanton Schwyz.",
+      "braun": "Albuminabzüge von Adolphe Braun und der Nachfolgefirma Ad. Braun & Cie — hochalpine Panoramen und später die Gotthardlinie durch den Kanton.",
+      "ansichtskarten": "Ansichtskarten mit bedruckten Rückseiten, Verlagsimpressen und Poststempeln — die reichhaltigste Verso-Evidenz im Archiv.",
+      "leidbilder": "Leidbilder.",
+      "graphische": "Druckgrafik, Aquarelle und Zeichnungen."
+    },
+    "series": {
+      "klosterFacade": "Klosterwestfassade, eine Aufnahmekampagne",
+      "muotaValley": "Muotatal, ein Tag",
+      "schwyzPortraits": "Schwyzer Atelieraufnahmen",
+      "mythenPanorama": "Mythen-Panorama, ein Aufstieg",
+      "winterSports": "Wintersport auf Stoos und Sattel",
+      "quaiSeries": "Der Quai Brunnen, vor und nach dem Umbau",
+      "publisherWehrli": "Impressum Gebr. Wehrli AG",
+      "alpinePanoramas": "Hochalpine Panoramen, eine Kampagne"
+    },
+    "detail": {
+      "back": "Alle Bestände",
+      "identity": "Identifikation",
+      "reference": "Signatur",
+      "creator": "Provenienz",
+      "extentLabel": "Umfang",
+      "periodLabel": "Laufzeit gemäss Findmittel",
+      "describedLabel": "Beschrieben",
+      "scopeLabel": "Form und Inhalt",
+      "medianSeconds": "Median {seconds} s pro Aufnahme",
+      "coverageTitle": "Abdeckung",
+      "coverageHint": "Der Bestand umfasst {extent}. Die Pipeline hat davon {described} beschrieben, {approved} sind freigegeben.",
+      "remaining": "Noch nicht beschrieben",
+      "timelineTitle": "Entstehungszeit des Bestands",
+      "timelineHint": "Beschriebene Einträge nach Jahrzehnt, gegen die im Findmittel angegebene Laufzeit.",
+      "timelineFindingAid": "Findmittel",
+      "timelineRecords": "{count, plural, =1 {1 Eintrag} other {# Einträge}}",
+      "driftTitle": "Ausserhalb der angegebenen Laufzeit",
+      "driftBody": "{count, plural, =1 {Ein Jahrzehnt mit Einträgen liegt} other {# Jahrzehnte mit Einträgen liegen}} ausserhalb von {from}–{to}. Ein Findmittel wird einmal und grob geschrieben; eine Datierung aus Belegen wird ihm früher oder später widersprechen. Das gehört einer Archivarin vorgelegt, nicht von uns korrigiert.",
+      "placesTitle": "Entstehungsorte des Bestands",
+      "placesHint": "Verortete Einträge nach Gemeinde. Gemeinden des Kantons Schwyz, wie das Gazetteer sie benennt.",
+      "placesUnknown": "Ort unbekannt",
+      "placesNoBasemap": "Die swisstopo-Grundkarte kommt mit der Kachelebene hierher. Bis dahin wird die Verteilung gezählt, nicht gezeichnet — eine Karte ohne Koordinaten wäre ein Bild, kein Beleg.",
+      "seriesTitle": "Erkannte Serien",
+      "seriesHint": "Das Bestandsgedächtnis gruppiert den Bestand in Aufnahmesitzungen — nächste Nachbarn über den ganzen Bestand, keine getippte Ordnerstruktur.",
+      "seriesCount": "{count, plural, =1 {1 Aufnahme} other {# Aufnahmen}}",
+      "seriesCohesion": "Kohäsion"
+    }
+  },
+  "evaluation": {
+    "metaTitle": "Evaluation — ZEITZEUGE",
+    "metaDescription": "Gold-Set-Metriken, Zuverlässigkeitsdiagramm und die Ablation Baseline gegen ZEITZEUGE.",
+    "title": "Evaluation",
+    "subtitle": "Die meisten Teams zeigen eine ausgesuchte Aufnahme. Hier steht eine Zahl, auf einem zurückgehaltenen Set, gegen eine Baseline — und Sie können selbst darin klicken.",
+    "runMeta": "Lauf {id} · {images} Aufnahmen · {blind} % von niemandem im Team je gesehen",
+    "heroLabel": "Halluzinationsrate",
+    "heroNote": "Ausgegebene Aussagen ohne gültigen Beleg. Die Null ist kein Ergebnis von Feinabstimmung: eine Aussage ohne Belegzeile scheitert an der Schemaprüfung, bevor sie geschrieben werden kann.",
+    "filterTitle": "Schicht",
+    "filterAll": "Ganzes Set",
+    "filterHint": "Das Gold-Set ist geschichtet. Grenzen Sie es ein, und jede Zahl auf dieser Seite wird neu gerechnet — auch die, die ihr Ziel dann verfehlen.",
+    "showing": "{shown} von {total} Aufnahmen",
+    "strata": {
+      "terrain": "Gelände sichtbar",
+      "urban": "Siedlung",
+      "interior": "Innenraum",
+      "verso": "Karte mit Verso",
+      "hard": "Unbekannt-schwer"
+    },
+    "goldSet": {
+      "title": "Das Gold-Set",
+      "hint": "Vor dem Bau zusammengestellt, geschichtet nach dem, was eine Aufnahme schwer macht, ein Fünftel davon zurückgehalten und nie angesehen.",
+      "heldOut": "{count} zurückgehalten",
+      "heldOutHint": "Von niemandem im Team gesehen — auf diesen Anteil bezieht sich die Schlusszahl.",
+      "sourcesTitle": "Woher die Referenzdaten stammen",
+      "groundTruth": "Referenzdaten",
+      "sources": {
+        "eth": "ETH-Bibliothek Bildarchiv",
+        "commons": "Wikimedia Commons, Schweizer Historienkategorien",
+        "stasz": "Staatsarchiv Schwyz, erschlossene Einträge"
+      },
+      "truth": {
+        "ethTruth": "Ort, Datierung, Fotograf, oft exakte Koordinaten",
+        "commonsTruth": "Ort, oft Datierung",
+        "staszTruth": "Archivarisch geprüft — die besten verfügbaren Referenzdaten"
+      }
+    },
+    "metrics": {
+      "title": "Metriken gegen Ziel",
+      "hint": "Jedes Ziel wurde vor dem Lauf gesetzt, nicht danach.",
+      "headerMetric": "Metrik",
+      "headerDefinition": "Definition",
+      "headerTarget": "Ziel",
+      "headerMeasured": "Gemessen",
+      "pass": "erreicht",
+      "fail": "verfehlt",
+      "na": "n/v",
+      "naHint": "In dieser Schicht nicht definiert",
+      "municipality": "Gemeindegenauigkeit",
+      "municipalityDef": "Korrekte Gemeinde unter den ausgegebenen",
+      "site": "Objektgenauigkeit",
+      "siteDef": "Korrekter konkreter Ort oder Blickwinkel",
+      "geo": "Verortungsfehler",
+      "geoDef": "Median in Metern, geländegelöste Teilmenge",
+      "datingMae": "Datierungsfehler (Jahre)",
+      "datingMaeDef": "Medianer absoluter Fehler in Jahren, Spannenmitte",
+      "datingHit": "Trefferquote der Datierungsspanne",
+      "datingHitDef": "Wahres Jahr innerhalb der ausgegebenen Spanne",
+      "coverage": "Abdeckung",
+      "coverageDef": "Aufnahmen mit mindestens einem ausgegebenen Feld",
+      "hallucination": "Halluzinationsrate",
+      "hallucinationDef": "Ausgegebene Aussagen ohne gültigen Beleg",
+      "ece": "Kalibrierungsfehler",
+      "eceDef": "Erwarteter Kalibrierungsfehler der angegebenen Konfidenz",
+      "abstentionPrecision": "Enthaltungsgenauigkeit",
+      "abstentionPrecisionDef": "Anteil der Enthaltungen, der tatsächlich unlösbar ist",
+      "minutesSaved": "Zeitersparnis pro Aufnahme",
+      "minutesSavedDef": "Reduktion gegenüber einem gestoppten Archivdurchgang",
+      "cost": "Kosten pro Aufnahme",
+      "costDef": "Aus dem Kostenjournal, Modus Standard",
+      "latency": "p95-Latenz",
+      "latencyDef": "Modus Standard, eine Aufnahme"
+    },
+    "calibrationTitle": "Kalibrierung",
+    "calibrationHint": "Die Konfidenz ist gegen das Gold-Set angepasst, nicht vom Modell behauptet. Die Lesart ist der senkrechte Abstand zur Diagonale.",
+    "eceLabel": "Erwarteter Kalibrierungsfehler",
+    "ablation": {
+      "title": "Die Ablation",
+      "hint": "Dieselben zurückgehaltenen Aufnahmen durch drei Konfigurationen. Das hat die zusätzliche Architektur gebracht — kein Gefühl, eine Zahl.",
+      "headerConfig": "Konfiguration",
+      "configs": {
+        "single": "A · Einzelner VLM-Aufruf",
+        "singleDesc": "«Was ist das für eine Aufnahme?» — ein Bildmodell, keine Werkzeuge, keine Urteilsinstanz.",
+        "noFalsification": "B · Multi-Agent, ohne Falsifikation",
+        "noFalsificationDesc": "Der volle Agentensatz, Geländefalsifikator und Red-Team abgeschaltet.",
+        "full": "C · ZEITZEUGE",
+        "fullDesc": "Vollständige adversarielle Pipeline mit Geländefalsifikation. Es sind dieselben Zahlen wie in der Metriktabelle oben — einmal gemessen, zweimal gedruckt."
+      },
+      "best": "bestes",
+      "delta": "ggü. Baseline"
+    }
+  },
+  "assist": {
+    "metaTitle": "Mithilfe — ZEITZEUGE",
+    "metaDescription": "Der unbekannte Rest, der Öffentlichkeit geöffnet — und jeder Hinweis durch dasselbe Kreuzverhör geschickt.",
+    "title": "Mithilfe",
+    "subtitle": "Was auch die Pipeline nicht löst, geht an den Kanton zurück, aus dem es stammt. Ein Hinweis wird nie geglaubt, weil ihn ein Mensch geschickt hat: er wird zur Hypothese und stellt sich demselben Kreuzverhör, das unsere eigenen widerlegt hat.",
+    "publicPage": "Öffentliche Seite",
+    "stats": {
+      "published": "Offen für Hinweise",
+      "publishedHint": "öffentlich publizierte Aufnahmen",
+      "views": "Aufrufe",
+      "viewsHint": "seit der ersten Publikation",
+      "tips": "Hinweise erhalten",
+      "tipsHint": "alle mit Namen, keiner automatisch übernommen",
+      "corroborated": "Bestätigt",
+      "corroboratedHint": "haben das Kreuzverhör überstanden"
+    },
+    "loop": {
+      "title": "Was mit einem Hinweis geschieht",
+      "published": "Publiziert",
+      "publishedBody": "Ein Eintrag, bei dem sich die Pipeline enthalten hat — mit allem, was sie doch belegen konnte.",
+      "tip": "Hinweis",
+      "tipBody": "Jemand, der den Ort kennt, schreibt. Der Name begleitet die Aussage.",
+      "crossExamined": "Kreuzverhör",
+      "crossExaminedBody": "Der Kuratorik-Agent macht daraus eine Hypothese und rechnet nur die abhängigen Agenten neu.",
+      "settled": "Entschieden",
+      "settledBody": "Bestätigt, widerlegt oder mangels Beleg zurückgehalten — dieselben drei Ausgänge wie für die Maschine."
+    },
+    "openTitle": "Offen für Hinweise",
+    "openHint": "Jede Aufnahme nennt, was wir bereits wissen — niemand soll bei null anfangen müssen.",
+    "knownLabel": "Belegt",
+    "missingLabel": "Fehlt noch",
+    "viewsLabel": "{count} Aufrufe",
+    "publishedAgo": "vor {days} T publiziert",
+    "tipCount": "{count, plural, =0 {noch keine Hinweise} =1 {1 Hinweis} other {# Hinweise}}",
+    "cases": {
+      "farmstead": "Ein Talboden mit einem einzelnen Hof, dahinter ein Kirchturm, rechts ein Wasserfall. Welches Tal — und wessen Hof?",
+      "cutting": "Ein Bahneinschnitt unter einem Gewölbebogen, aufgenommen im Bau. Welche Linie, und wo daran?",
+      "summit": "Ein Gipfel aus der Luft, auf einem Vermessungsflug aufgenommen. Die Silhouette passt zu nichts im Gazetteer.",
+      "schoolhouse": "Der Ort ist gesichert. Jahr und Fotograf nicht — die Karte trägt kein Verlagsimpressum."
+    },
+    "tipsTitle": "Hinweise und was daraus wurde",
+    "tipsHint": "Auch die, die es nicht überstanden haben. Eine Seite, auf der jeder Beitrag angenommen wird, ist ein Briefkasten.",
+    "anonymous": "Anonym",
+    "hoursAgo": "vor {count} Std.",
+    "claimLabel": "Die Aussage",
+    "hypothesisLabel": "Wurde zur Hypothese",
+    "findingLabel": "Was das Kreuzverhör ergab",
+    "agentsLabel": "Neu gerechnet",
+    "rerunSeconds": "{seconds} s Teilneuberechnung",
+    "posteriorLabel": "Posterior",
+    "verdicts": {
+      "corroborated": "Bestätigt",
+      "refuted": "Widerlegt",
+      "checking": "Im Kreuzverhör",
+      "insufficient": "Zurückgehalten — Beleg fehlt"
+    },
+    "tips": {
+      "grandfathersBarn": {
+        "claim": "Das ist das Heimetli meines Grossvaters, an der Strasse ins Hinterthal. Die Scheune ist 1961 abgebrannt und nie wieder aufgebaut worden.",
+        "hypothesis": "Das Gebäude ist ein Ständerbau-Hof im hinteren Muotatal, aufgenommen vor 1961.",
+        "finding": "Dachneigung, Klebdach und der Turm dahinter decken sich mit dem Pfarrurbar; der Horizont aus der vorgeschlagenen Position korreliert mit 0,91. Der Brand von 1961 steht im kantonalen Brandkataster — darum steht dort heute nichts mehr."
+      },
+      "wrongSummit": {
+        "claim": "Das ist der Chaiserstock von Norden. Ich bin hundertmal droben gewesen.",
+        "hypothesis": "Der Gipfel ist der Chaiserstock, aus nördlicher Richtung gesehen.",
+        "finding": "Widerlegt. Aus jeder nördlichen Blickrichtung nachgerechnet, korreliert die Chaiserstock-Silhouette mit 0,31 gegen die Aufnahme. Den Grat links im Bild gibt es an diesem Massiv nicht."
+      },
+      "rigiCutting": {
+        "claim": "Das sieht aus wie der Einschnitt unterhalb der Rigi-Talbahn, vor der Verbreiterung.",
+        "hypothesis": "Der Einschnitt liegt an der Arth-Rigi-Talbahn, aufgenommen vor der Verbreiterung.",
+        "finding": ""
+      },
+      "aroundNineteenFive": {
+        "claim": "Ich glaube, das ist um 1905.",
+        "hypothesis": "Die Karte entstand um 1905.",
+        "finding": "Zurückgehalten. Plausibel, aber es wurde nichts genannt, worauf eine Datierung ruhen könnte — und eine Aussage ohne Beleg wird nicht geschrieben, nach derselben Regel wie die Aussagen der Pipeline. Ein Poststempel oder ein Verlagsimpressum würde es klären."
+      }
+    }
+  },
+  "theater": {
+    "metaTitle": "{run} — ZEITZEUGE",
+    "metaDescription": "Eine Untersuchung, abspielbar: achtzehn Agenten, die Belege, die sie schrieben, und der Einwand, der die Antwort bewegte.",
+    "title": "Agenten-Theater",
+    "subtitle": "Eine Untersuchung, abspielbar. Achtzehn Agenten aus sechs Modellfamilien, die Belege, die jeder schrieb, und die zwei Momente, in denen sich die Antwort wirklich bewegte.",
+    "runMeta": "Lauf {run} · {signature} · Modus {mode}",
+    "openRecord": "Fallakte öffnen",
+    "stats": {
+      "elapsed": "Verstrichen",
+      "agents": "Agenten fertig",
+      "evidence": "Belegzeilen",
+      "cost": "Kosten"
+    },
+    "transport": {
+      "play": "Abspielen",
+      "pause": "Anhalten",
+      "restart": "Von vorn abspielen",
+      "speed": "Tempo",
+      "scrub": "Position im Lauf",
+      "live": "Wird abgespielt",
+      "ended": "Lauf beendet"
+    },
+    "graphTitle": "Die Pipeline",
+    "graphHint": "Agenten innerhalb einer Stufe laufen parallel — darum sind es 94 Sekunden und nicht achtzehnmal zwanzig.",
+    "states": {
+      "pending": "wartet",
+      "running": "läuft",
+      "done": "fertig"
+    },
+    "feedTitle": "Belegjournal",
+    "feedHint": "Geschrieben, während es geschah. Nichts wird nachträglich ergänzt.",
+    "waiting": "Der Lauf hat noch nicht begonnen.",
+    "kinds": {
+      "note": "Notiz",
+      "evidence": "Beleg",
+      "objection": "Einwand",
+      "abstain": "Enthaltung",
+      "verdict": "Urteil"
+    },
+    "hypothesesTitle": "Hypothesen",
+    "hypothesesHint": "Priors aus dem Bestandsgedächtnis, bewegt von jeder Zeile im Journal. Eine Konfidenz, die nur steigt, ist kein Denken.",
+    "prior": "Prior",
+    "refuted": "geometrisch widerlegt",
+    "reducedMotion": "In Ihren Systemeinstellungen ist Bewegung reduziert, darum öffnet der Lauf am Ende. Der Schieberegler spielt ihn trotzdem ab.",
+    "events": {
+      "plateIndexed": "Platte mit 1200 dpi gescannt, Wahrnehmungs-Hash indexiert. Keine Dublette im Bestand.",
+      "horizonSegmented": "Himmel-Gelände-Grenze über 1280 Spalten segmentiert.",
+      "photochrom": "Farbschichtung und Rasterstruktur entsprechen dem Photochromverfahren.",
+      "twinPeak": "Zweigipfliges Felsmassiv am Horizont, rechter Gipfel höher, ausgeprägter Sattel dazwischen.",
+      "printCaption": "Im Bild eingedruckte Legende: «6319 P.Z. — BRUNNEN MIT MYTHEN».",
+      "noBuiltMatch": "Kein Gebäude im Bild lässt sich im Baukultur-Index auflösen. Nichts ausgegeben.",
+      "versoRead": "Verso von zwei unabhängigen Lesern erfasst. Eine Zeile weicht ab und wird markiert statt aufgelöst.",
+      "nearestNeighbours": "Vier nächste Nachbarn im Bestand, der nächste bei 0,91.",
+      "candidatePositions": "Drei Kandidatenpositionen innerhalb von 2 km. Noch keine bevorzugt.",
+      "quaiMap": "Die Uferlinie entspricht dem Zustand nach der Quai-Erweiterung — Siegfriedkarte, Revision 1893.",
+      "fourHypotheses": "Vier Hypothesen gereiht und an die adversarielle Stufe übergeben.",
+      "horizonMatch": "Horizont aus 2687540 / 1206310 LV95 nachgerechnet — Korrelation 0,941 über 1280 Spalten. Einsiedeln und Weggis überstehen die Geometrie nicht.",
+      "quaiObjection": "Einwand: die Promenade zeigt die Erweiterung von 1900 noch nicht. Entweder reicht die Spanne zu weit oder die Position stimmt nicht.",
+      "adjudicated": "Einwand gewürdigt, gegen die Geometrie aber nicht durchgedrungen. Ort mit 0,94 ausgegeben; Datierungsspanne auf 1893–1900 verengt und zur Prüfung markiert.",
+      "photographerAbstain": "Kein Signaturstempel, kein beschriftetes Verso, kein Treffer im Bestandsgedächtnis. Fotograf/in enthalten — ein Ergebnis, keine Lücke.",
+      "isadWritten": "ISAD(G)-Eintrag geschrieben. Sechs Felder, eine Enthaltung.",
+      "translated": "Eintrag nach Französisch und Englisch gespiegelt.",
+      "noFlags": "Keine lebenden Personen, keine erkennbaren Minderjährigen, keine Personendaten. Keine Publikationssperre.",
+      "evalCases": "Drei Regressionsfälle aus diesem Lauf in das Evaluationsset geschrieben."
+    }
+  },
+  "admin": {
+    "metaTitle": "Administration — ZEITZEUGE",
+    "metaDescription": "Modell-Routing, Entscheidungsschwellen, Schutzrichtlinien und Kostengrenzen.",
+    "title": "Administration",
+    "subtitle": "Vier Einstellungen, die bestimmen, was die Pipeline kostet, was sie ungefragt ausgibt und was sie nicht publiziert. Jede zeigt die Zahl, die sie bewegt, bevor Sie sie übernehmen.",
+    "routing": {
+      "title": "Modell-Routing",
+      "desc": "Nicht jede Aufnahme braucht Opus. Der Router eskaliert nur bei Mehrdeutigkeit — die Kaskade unten ist Konfiguration, nicht Code.",
+      "emitAtFast": "Aus dem schnellen Durchgang ausgeben ab",
+      "emitAtFastHint": "Eine signierte, gestempelte Karte löst Haiku mit Textract in vier Sekunden. Höher gesetzt bleiben weniger Aufnahmen hier stehen.",
+      "emitAtStandard": "Aus dem Standarddurchgang ausgeben ab",
+      "emitAtStandardHint": "Volle Wahrnehmung mit Sonnet. Was darüber hinaus eskaliert, erhält die adversarielle Schleife und den Geländefalsifikator.",
+      "projection": "Hochrechnung auf dem Gold-Set",
+      "costPerImage": "Gemischt pro Aufnahme",
+      "flatCompare": "{ratio}× günstiger, als die tiefe Pipeline auf allem zu fahren ({flat} pro Aufnahme)",
+      "bindingsTitle": "Bindungen",
+      "bindingsHint": "Schweizer Scans verlassen die Schweiz nie; das schwerste Denken bleibt in der EU. Der Router macht daraus eine Konfigurationsentscheidung, keine architektonische.",
+      "headerStage": "Stufe",
+      "headerModel": "Modell",
+      "headerRegion": "Region",
+      "headerFallback": "Fällt zurück auf",
+      "stages": {
+        "fast": "Schneller Durchgang",
+        "standard": "Standard",
+        "deep": "Tiefe Prüfung",
+        "adversarial": "Adversariell"
+      }
+    },
+    "thresholds": {
+      "title": "Entscheidungsschwellen",
+      "desc": "Ab wo ein Eintrag keinen Menschen mehr braucht.",
+      "autoAccept": "Ungeprüft in den Katalog ab",
+      "autoAcceptHint": "Darunter wartet ein Eintrag in der Prüfliste. Tiefer bedeutet mehr Durchsatz, höher bedeutet weniger Risiko im Katalog.",
+      "abstention": "Enthaltung zulassen",
+      "abstentionHint": "Ein Feld ohne ausreichenden Beleg wird als Enthaltung ausgegeben statt geraten.",
+      "abstentionWarning": "Abgeschaltet beantwortet die Pipeline jedes Feld, ob die Belege es tragen oder nicht. Sämtliche Zahlen auf der Evaluationsseite wurden mit eingeschalteter Enthaltung gemessen."
+    },
+    "guardrails": {
+      "title": "Schutzrichtlinien",
+      "desc": "Bedrock Guardrails als Richtlinie in Konfigurationsform, mit Haiku für das archivische Urteil, das eine Richtlinie nicht ausdrücken kann.",
+      "failClosed": "Im Zweifel sperren",
+      "failClosedHint": "Kommt die Schutzprüfung zu keinem Urteil, wird der Eintrag zurückgehalten statt publiziert.",
+      "failClosedWarning": "Abgeschaltet wird ein Eintrag, den die Prüfung nicht beurteilen konnte, standardmässig publiziert. Nach dieser Einstellung fragt eine kantonale Datenschutzprüfung als Erstes.",
+      "headerPolicy": "Richtlinie",
+      "headerAction": "Bei Erkennung",
+      "actions": {
+        "hold": "Von Publikation sperren",
+        "flag": "Zur Prüfung markieren",
+        "allow": "Zulassen"
+      },
+      "locked": "gesperrt",
+      "lockedHint": "Diese zu lockern steht uns nicht zu.",
+      "policies": {
+        "minors": "Erkennbare Minderjährige",
+        "minorsDesc": "Ein erkennbares Kind im Bild. Unabhängig vom Alter des Eintrags gesperrt.",
+        "livingPersons": "Möglicherweise lebende Personen",
+        "livingPersonsDesc": "Ein erkennbares Gesicht, bei dem die Datierung eine lebende Person plausibel lässt.",
+        "pii": "Personendaten in der Transkription",
+        "piiDesc": "Namen, Adressen oder Geburtsdaten, von einem Verso gelesen.",
+        "sensitiveContent": "Sensible Inhalte",
+        "sensitiveContentDesc": "Medizinische, anstaltliche oder gewahrsamsbezogene Situationen.",
+        "faceRecognition": "Gesichtserkennung",
+        "faceRecognitionDesc": "Nur Detektion, nie Identifikation. Das System gleicht kein Gesicht gegen einen Index ab."
+      }
+    },
+    "costs": {
+      "title": "Kostengrenzen",
+      "desc": "Im Router durchgesetzt, nicht in einem Dashboard — eine Grenze, die nur warnt, ist keine Grenze.",
+      "budget": "Guthaben",
+      "spent": "Verbraucht",
+      "remaining": "Verbleibend",
+      "alarmAt": "Alarm auslösen bei",
+      "alarmHint": "Ein Abrechnungsalarm feuert bei 25, 50 und 75 % des Guthabens. Dieser hier hält zusätzlich neue Stapel an.",
+      "perRun": "Obergrenze pro Lauf",
+      "perRunHint": "Eine einzelne Untersuchung wird gestoppt und als unvollständig markiert, statt davonzulaufen.",
+      "daily": "Obergrenze pro Tag",
+      "dailyHint": "Über das ganze Archiv. Stapel reihen sich ein, statt zu scheitern, wenn sie erreicht ist."
+    }
+  },
+  "about": {
+    "metaTitle": "Über uns — ZEITZEUGE",
+    "metaDescription": "Was ZEITZEUGE ist, die vier Verpflichtungen, auf denen es steht, und die zwei Menschen, die es gebaut haben.",
+    "eyebrow": "Über uns",
+    "title": "Metadaten, zu denen sich ein Archiv bekennen kann.",
+    "lede": "ZEITZEUGE beschreibt historische Fotografien nach archivischem Standard — und weigert sich zu beschreiben, was es nicht belegen kann. Gebaut für das {partner}, dessen fotografische Bestände Tausende von Glasplatten und Ansichtskarten umfassen, die noch kein Katalog je erreicht hat.",
+    "body": "Eine unbestimmte Aufnahme sauber zu beschreiben kostet eine ausgebildete Archivarin zwischen vier Minuten und einer Dreiviertelstunde — und endet oft bei «Ort: unbekannt». Eine unbeschriebene Aufnahme ist für die Suche unsichtbar, und damit praktisch gar nicht im Archiv. Dieser Rückstand ist das Problem. Ein Modell, das selbstbewusst rät, ist nicht die Lösung — es verschiebt das Problem nur dorthin, wo eine Archivarin es nicht mehr sieht.",
+    "factsTitle": "Auf einen Blick",
+    "facts": {
+      "agents": "Fachagenten",
+      "agentsHint": "über fünf Stufen, ein deterministisches Rückgrat",
+      "families": "Modellfamilien",
+      "familiesHint": "das günstige Modell formatiert, das teure denkt",
+      "hallucination": "Halluzinationsrate",
+      "hallucinationHint": "strukturell erzwungen, nicht abgestimmt",
+      "goldSet": "Aufnahmen im Gold-Set",
+      "goldSetHint": "ein Fünftel davon vom Team nie gesehen"
+    },
+    "principlesTitle": "Worauf es steht",
+    "principlesLede": "Vier Verpflichtungen. Alles andere im Produkt ist die Umsetzung einer davon.",
+    "principles": {
+      "evidence": {
+        "title": "Beleg oder nichts",
+        "body": "Jedes Feld nennt entweder den Beleg, auf dem es ruht, oder es sagt gar nichts. Eine Aussage ohne Belegzeile scheitert an der Schemaprüfung, bevor sie geschrieben werden kann — darum ist die Halluzinationsrate auf dem Gold-Set null und nicht bloss niedrig. Die Enthaltung ist ein Ergebnis, auf das das System stolz ist, keine Lücke, für die es sich entschuldigt."
+      },
+      "falsification": {
+        "title": "Falsifikation statt Generierung",
+        "body": "Was darüber entscheidet, ob ein Ort stimmt, ist kein Sprachmodell. Der wahre Horizont wird aus der angenommenen Kameraposition gegen das Schweizer Höhenmodell nachgerechnet und gegen die Aufnahme bewertet. Zwei von vier Ortshypothesen fallen regelmässig durch Geometrie, nicht durch Argumente. Die Alpen sind der Schiedsrichter."
+      },
+      "calibration": {
+        "title": "Konfidenz, die man prüfen kann",
+        "body": "Sagt das System 0,9, trifft es in etwa neun von zehn Fällen zu — weil die Konfidenzen gegen ein zurückgehaltenes Gold-Set angepasst und nicht vom Modell behauptet werden. Das Zuverlässigkeitsdiagramm ist Teil des Produkts, und die Evaluationsseite lässt sich so weit eingrenzen, bis die Zahlen ihr Ziel verfehlen — denn ein Dashboard, auf dem nichts scheitern kann, beweist nichts."
+      },
+      "provenance": {
+        "title": "Herkunft, die den Lauf überdauert",
+        "body": "Jeder Wert trägt mit sich, welcher Agent ihn erzeugt hat, auf welchem Modell, aus welchen Belegen und wann — und sobald eine Archivarin ihn anfasst, auch das. Maschinelle und menschliche Aussagen bleiben über die Lebensdauer des Eintrags unterscheidbar. Die Glaubwürdigkeit eines Archivs ist sein einziges Kapital, und Metadaten, deren Herkunft sich nicht rekonstruieren lässt, sind keine archivischen Metadaten."
+      }
+    },
+    "teamTitle": "Das Team",
+    "teamLede": "Zwei Werkstudenten, gebaut ausserhalb der Arbeitszeit.",
+    "workingStudent": "Werkstudent",
+    "at": "bei",
+    "bios": {
+      "richard": "Solution Architect im Solution-Integration-Team der Zurich Insurance, neben dem Studium. Seine Arbeitstage bestehen darin, getrennt gebaute Systeme dazu zu bringen, sich zu einigen — und genau darum geht es bei einer Pipeline aus achtzehn Agenten, sechs Modellfamilien und einem deterministischen Orchestrierungsrückgrat zum grössten Teil.",
+      "roger": "Full-Stack- und AI-Engineer im Team Workflow Automation and AI der Zurich Insurance, neben dem Studium. Er baut die Teile, die unter fremden Händen halten müssen — die Oberflächen, die Verträge dazwischen und die Modellarbeit hinter beidem."
+    },
+    "contextTitle": "Woher das kommt",
+    "contextBody": "Gebaut für die Challenge {challenge} im Track {track} am {event}. Das Vokabular auf diesen Bildschirmen — Bettschart, Goetz, Ansichtskarten, die Gemeinden des Kantons — ist das des {partner} selbst, dem publizierten Findmittel entnommen und nicht für eine Demo erfunden.",
+    "contextEvent": "Anlass",
+    "contextTrack": "Track",
+    "contextChallenge": "Challenge",
+    "contextPartner": "Geschrieben für",
+    "ctaTitle": "Sehen Sie es etwas entscheiden.",
+    "ctaBody": "Die Demo öffnet auf einer echten Aufnahme mit einem echten Widerspruch darin — und Sie können achtzehn Agenten dabei zusehen, wie sie darüber streiten.",
+    "ctaPrimary": "Demo starten",
+    "ctaSecondary": "Einen Lauf abspielen"
+  },
+  "docs": {
+    "metaTitle": "Dokumentation — ZEITZEUGE",
+    "metaDescription": "Wie ZEITZEUGE arbeitet, was seine Grundbegriffe bedeuten und was es bewusst nicht tut.",
+    "eyebrow": "Dokumentation",
+    "title": "Wie es arbeitet — und wo es aufhört.",
+    "lede": "Geschrieben für die Archivarin, die verantworten muss, was in den Katalog gelangt, und für die Entwicklerin, die es anbinden muss. Es sagt, was das System tut — und im letzten Abschnitt, was es nicht tut.",
+    "open": "Öffnen",
+    "toc": {
+      "start": "Erste Schritte",
+      "concepts": "Grundbegriffe",
+      "pipeline": "Die Pipeline",
+      "guides": "Anleitungen",
+      "limits": "Grenzen"
+    },
+    "start": {
+      "title": "Erste Schritte",
+      "lede": "Vier Schritte. Eine Aufnahme tritt beim ersten ein und verlässt das System beim vierten — oder sie verlässt es gar nicht."
+    },
+    "steps": {
+      "upload": {
+        "title": "1 · Übernahme",
+        "body": "Scans hineinziehen, Vorder- und Rückseite paaren, Bestand und Signatur zuweisen. ZIP-Stapel und S3-Präfixe nehmen denselben Weg. Beschrieben ist noch nichts."
+      },
+      "investigate": {
+        "title": "2 · Untersuchung",
+        "body": "Achtzehn Agenten über fünf Stufen bearbeiten die Aufnahme parallel und schreiben jeden Befund in ein Belegjournal. Der Lauf ist live zu verfolgen und danach abspielbar."
+      },
+      "review": {
+        "title": "3 · Prüfung",
+        "body": "Die Liste ist nach erwartetem Informationsgewinn geordnet, nicht nach Datum — die menschliche Minute ist die knappe Ressource. Feld für Feld übernehmen, korrigieren oder verwerfen; oberhalb einer selbst gesetzten Konfidenz auch im Block."
+      },
+      "release": {
+        "title": "4 · Freigabe",
+        "body": "Ein freigegebener Eintrag wird versioniert, mit dem Namen der Archivarin gezeichnet und in dem Format exportiert, das das Zielsystem erwartet. Automatisch wird nichts zurückgeschrieben."
+      }
+    },
+    "concepts": {
+      "title": "Grundbegriffe",
+      "lede": "Sechs Ideen tragen das ganze Produkt. Alles auf jedem Bildschirm ist eine davon, sichtbar gemacht.",
+      "ledger": {
+        "title": "Belegjournal",
+        "body": "Jede Aussage zeigt auf eine Zeile: eine Beobachtung, ihre Stärke, den Agenten, der sie gemacht hat, und wo in den Pixeln sie liegt. Ein Feld ohne Journalzeile scheitert an der Schemaprüfung und wird nie geschrieben — das macht die Halluzinationsrate strukturell statt statistisch."
+      },
+      "abstention": {
+        "title": "Enthaltung",
+        "body": "«Beleg nicht ausreichend» ist ein ausgegebenes Ergebnis mit demselben Rang wie eine Antwort, keine ausbleibende Antwort. Hunderttausend Ausgaben lassen sich nach Schwellenwert triagieren, nach Bauchgefühl nicht."
+      },
+      "provenance": {
+        "title": "Herkunft",
+        "body": "Jeder Wert hält Agent, Modell, Beleg und Zeitpunkt fest — und sobald ein Mensch ihn anfasst, auch wen. Maschinelle und menschliche Aussagen bleiben über die Lebensdauer des Eintrags unterscheidbar."
+      },
+      "calibration": {
+        "title": "Kalibrierung",
+        "body": "Konfidenzen werden gegen ein zurückgehaltenes Gold-Set angepasst und nicht vom Modell behauptet: 0,9 heisst, in etwa neun von zehn Fällen richtig. Das Zuverlässigkeitsdiagramm gehört zum Produkt und ist im Browser prüfbar."
+      },
+      "memory": {
+        "title": "Bestandsgedächtnis",
+        "body": "«Haben wir das schon gesehen?» ist ein Nachbarschaftsproblem, kein Denkproblem. Multimodale Einbettungen über den ganzen Bestand finden Serien, Dubletten und Geschwister derselben Aufnahmesitzung, die ein Einzelbilddurchgang nie fände."
+      },
+      "steering": {
+        "title": "Steuerung",
+        "body": "Weiss eine Archivarin etwas, das die Pipeline nicht weiss, invalidiert der Hinweis nur die Agenten unterhalb der geänderten Annahme. Zehn Sekunden statt zwei Minuten — und das Journal zeigt genau, was der Mensch bewegt hat."
+      }
+    },
+    "pipeline": {
+      "title": "Die Pipeline",
+      "lede": "Fünf Stufen auf einem deterministischen Rückgrat. Agenten innerhalb einer Stufe laufen parallel; das Rückgrat dazwischen ist ein Zustandsautomat, kein Prompt.",
+      "intake": "Dublettenabgleich, Wahrnehmungs-Hash und Ableitungen. Hier werden keine Aussagen gemacht.",
+      "perception": "Sechs Agenten sehen die Aufnahme gleichzeitig an — Szene, Baukultur, Materialität, Verso, Text im Bild und Horizont.",
+      "grounding": "Was die Wahrnehmung sah, wird gegen die Welt geprüft: Gazetteer, historische Karten und die Einbettung des ganzen Bestands.",
+      "adversarial": "Hypothesen werden synthetisiert und dann angegriffen — durch Geländegeometrie und durch ein Red-Team auf einer anderen Modellfamilie. Was übersteht, wird beurteilt und mit kalibrierter Konfidenz versehen.",
+      "production": "Der Eintrag wird normgerecht geschrieben, über die Sprachen gespiegelt, von der Schutzprüfung kontrolliert und in Gedächtnis und Evaluationsset zurückgespielt."
+    },
+    "guides": {
+      "title": "Anleitungen",
+      "lede": "Jede öffnet den Bildschirm, der die Sache tatsächlich tut.",
+      "reviewing": {
+        "title": "Einen Eintrag prüfen",
+        "body": "Die Fallakte stellt Aufnahme, Eintrag und Kontext nebeneinander. Auf ein Feld zeigen, und die Pixel, auf denen es ruht, leuchten auf."
+      },
+      "triage": {
+        "title": "Die Prüfliste abarbeiten",
+        "body": "Nach Informationsgewinn geordnet. An Ort entscheiden — oder die öffnen, die wirklich Arbeit brauchen."
+      },
+      "steering": {
+        "title": "Einen Lauf steuern",
+        "body": "Sagen, was Sie wissen, und sehen, welche Agenten das System verwirft, bevor Sie es übernehmen."
+      },
+      "exporting": {
+        "title": "Exportieren",
+        "body": "ISAD(G) CSV, EAD, Dublin Core, IIIF, RiC-O und JPEG mit eingebettetem XMP."
+      },
+      "audit": {
+        "title": "Den Prüfpfad lesen",
+        "body": "Jeder Lauf, jede Korrektur, jede Freigabe und jeder Export — fortlaufend und exportierbar."
+      },
+      "assist": {
+        "title": "Mithilfe",
+        "body": "Den ungelösten Rest publizieren — und was mit einem Hinweis geschieht, der zurückkommt."
+      }
+    },
+    "limits": {
+      "title": "Grenzen",
+      "lede": "Die Liste, die eine Beschaffungsprüfung sonst selbst zusammensuchen müsste.",
+      "writeback": {
+        "title": "Kein automatisches Zurückschreiben",
+        "body": "Einträge verlassen das System nur, wenn eine Archivarin sie freigibt, und der Adapter in ein empfangendes Archivsystem ist entworfen, nicht implementiert — er braucht die Importspezifikation des Herstellers, die zu raten uns nicht zusteht."
+      },
+      "faces": {
+        "title": "Detektion, nie Identifikation",
+        "body": "Gesichter werden erkannt, damit die Schutzprüfung handeln kann. Kein Gesicht wird gegen einen Index abgeglichen, und das ist eine Eigenschaft des Systems, keine Einstellung."
+      },
+      "handwriting": {
+        "title": "Handschrift ist schwer",
+        "body": "Kurrent und alte deutsche Hände werden von einem Ensemble gelesen, Abweichungen eskaliert statt aufgelöst. Erwarten Sie eine markierte Zeile, keine saubere Transkription."
+      },
+      "coverage": {
+        "title": "Innenräume und das Unbekannt-Schwere",
+        "body": "Wo kein Gelände sichtbar ist, fehlt die stärkste Belegquelle. Die Gemeindegenauigkeit bei Innenräumen liegt deutlich unter der Schlagzeile — und die Evaluationsseite zeigt Ihnen genau, wie weit."
+      }
+    }
+  },
+  "api": {
+    "metaTitle": "API — ZEITZEUGE",
+    "metaDescription": "Die HTTP-Schnittstelle: Assets, Läufe, Einträge, Stapel, Evaluationszahlen und OAI-PMH.",
+    "eyebrow": "API",
+    "title": "Eine Schnittstelle — und sie gibt nie eine Aussage ohne ihren Beleg zurück.",
+    "lede": "Eine REST-API über HTTPS, mit einem WebSocket für die Live-Agentenspur. Jede Antwort, die einen Katalogwert trägt, trägt den Herkunftsblock daneben — die API kann keine blosse Zeichenkette liefern, weil das Schema es nicht zulässt.",
+    "facts": {
+      "baseUrl": "Basis-URL",
+      "version": "Version",
+      "format": "Medientyp",
+      "auth": "Authentifizierung"
+    },
+    "authValue": "Bearer · Amazon Cognito",
+    "toc": {
+      "overview": "Überblick",
+      "auth": "Authentifizierung",
+      "endpoints": "Endpunkte",
+      "example": "Ein Beispielaufruf",
+      "errors": "Fehler",
+      "limits": "Grenzen"
+    },
+    "overview": {
+      "title": "Überblick",
+      "lede": "Alles ist JSON über HTTPS. Pfade sind in der URL versioniert; eine brechende Änderung bekommt ein neues Präfix statt eines Headers, den niemand setzt.",
+      "body": "Die Mandantenzuordnung wird aus dem Token aufgelöst, nie aus dem Pfad — ein Archiv kommt nicht durch Bearbeiten einer URL an die Daten eines anderen Kantons, weil die Trennung über Row-Level Security in der Datenbank erzwungen wird und nicht über die Anwendungsschicht davor."
+    },
+    "auth": {
+      "title": "Authentifizierung",
+      "lede": "Amazon Cognito stellt das Token aus; die API prüft es und leitet Mandant und Rolle aus seinen Claims ab.",
+      "body": "Als Bearer-Token bei jeder Anfrage mitsenden. Die Rollen entsprechen dem, was ein Archiv ohnehin kennt — Lesende lesen, Archivarinnen korrigieren und geben frei, Administration ändert Routing, Schwellen und Grenzen. Die Freigabe ist die einzige Handlung, die einen Eintrag herauslässt, und sie steht einer Maschinenidentität nie offen."
+    },
+    "endpoints": {
+      "title": "Endpunkte",
+      "lede": "Dreizehn, gruppiert nach dem, worauf sie wirken.",
+      "groups": {
+        "assets": "Assets",
+        "runs": "Läufe",
+        "records": "Einträge",
+        "batches": "Stapel",
+        "eval": "Evaluation",
+        "harvest": "Harvesting"
+      },
+      "createAsset": "Einen vorsignierten Upload anfordern und eine Asset-ID erhalten.",
+      "attachVerso": "Die Rückseite eines Abzugs an ein bestehendes Asset anhängen.",
+      "startRun": "Eine Untersuchung starten. Nimmt den Modus fast, standard oder deep; der Router eskaliert bei Mehrdeutigkeit darüber hinaus.",
+      "getRun": "Laufzustand und Belegjournal im aktuellen Stand.",
+      "streamRun": "Live-Agentenereignisse über einen WebSocket — der Strom hinter dem Agenten-Theater.",
+      "steerRun": "Einen Hinweis der Archivarin übergeben. Verwirft nur die Agenten unterhalb der geänderten Annahme und rechnet diese neu.",
+      "getRecord": "Der Katalogeintrag mit dem Herkunftsblock an jedem Feld.",
+      "patchField": "Ein Feld korrigieren. Hält die prüfende Person fest und schreibt eine neue unveränderliche Fassung; es überschreibt nie.",
+      "approveRecord": "Freigabe durch die Archivarin. Löst das Orchestrierungs-Token aus und macht den Eintrag exportierbar.",
+      "exportRecord": "Den Eintrag serialisieren. Nimmt isad_csv, ead, dc, iiif, ricoxml oder xmp_jpeg.",
+      "createBatch": "Über ein S3-Präfix laufen lassen. Gibt eine Stapel-ID zum Abfragen zurück.",
+      "evalMetrics": "Gold-Set-Metriken, Zuverlässigkeitskurve und Ablation — die Zahlen hinter der Evaluationsseite.",
+      "oai": "OAI-PMH-Endpunkt für Harvester. Unterstützt ListRecords mit oai_dc und ead."
+    },
+    "example": {
+      "title": "Ein Beispielaufruf",
+      "lede": "Einen Lauf starten und den erzeugten Eintrag lesen. Beachten Sie, was die Antwort mit einem Feld macht, das sie nicht belegen konnte.",
+      "requestLabel": "Anfrage",
+      "responseLabel": "Antwort · 200",
+      "note": "Das Feld Fotograf/in ist vorhanden, hat die Entscheidung «abstain» und trägt keinen Wert. Genau diese Form erzwingt das Schema: ein Feld ist entweder belegt oder ausdrücklich enthalten — einen dritten Zustand, in dem ein Wert ohne Grund zum Glauben erscheint, gibt es nicht."
+    },
+    "errors": {
+      "title": "Fehler",
+      "lede": "Eine Fehlerantwort trägt den HTTP-Status, einen stabilen Maschinencode und einen menschlichen Satz. Integrationen sollen auf den Code verzweigen, nie auf den Satz.",
+      "headerStatus": "Status",
+      "headerCode": "Code",
+      "headerMeaning": "Bedeutung",
+      "codes": {
+        "invalid_request": "Die Nutzlast hat die Prüfung nicht bestanden. Die Antwort nennt das Feld.",
+        "unauthenticated": "Token fehlt oder ist abgelaufen.",
+        "forbidden_tenant": "Das Token ist gültig, verweist aber auf ein anderes Archiv.",
+        "not_found": "Kein solches Asset, kein solcher Lauf oder Eintrag in diesem Mandanten.",
+        "version_conflict": "Der Eintrag hat sich seit dem Lesen verändert. Neu lesen und erneut anwenden.",
+        "evidence_missing": "Es wurde versucht, ein Feld ohne Belegzeile zu schreiben. Das ist die Invariante, die sich weigert — kein Fehler.",
+        "rate_limited": "Zu viele Anfragen. Zurücknehmen und nach dem Intervall im Header erneut versuchen.",
+        "budget_exhausted": "Die Kostengrenze des Mandanten für den Zeitraum ist erreicht. Läufe reihen sich ein, statt zu scheitern."
+      }
+    },
+    "limits": {
+      "title": "Grenzen",
+      "rate": {
+        "title": "Rate",
+        "body": "Sechzig Anfragen pro Minute und Token für Lesezugriffe, zehn pro Minute für alles, was einen Lauf startet. Stapel sind ausgenommen und unterliegen stattdessen den Kostengrenzen."
+      },
+      "idempotency": {
+        "title": "Idempotenz",
+        "body": "Bei jedem kostenpflichtigen POST einen Idempotency-Key mitsenden. Ein wiederholter Schlüssel gibt das ursprüngliche Ergebnis zurück, statt einen zweiten Lauf zu starten."
+      },
+      "versioning": {
+        "title": "Versionierung",
+        "body": "Ein Katalogeintrag ist fortschreibend. PATCH erzeugt eine Fassung, verändert aber nie eine. Eine ältere Fassung liest man per GET mit ihrer Nummer, und die Fassung, aus der ein Export geschnitten wurde, steht im Export."
+      }
+    }
+  },
+  "standards": {
+    "metaTitle": "Archivstandards — ZEITZEUGE",
+    "metaDescription": "ISAD(G)-Feldabbildung, Exportformate, Herkunftsblock, OAI-PMH und was entworfen, aber nicht implementiert ist.",
+    "eyebrow": "Archivstandards",
+    "title": "Geschrieben nach den Standards, die ein Archiv ohnehin führt.",
+    "lede": "Nichts davon ist ein eigenes Schema. Der Eintrag ist ISAD(G), er verlässt das System in Formaten, die ein Zielsystem bereits liest, und die Herkunft, die ihn vertrauenswürdig macht, reist mit — statt in unserer Datenbank zurückzubleiben.",
+    "toc": {
+      "isad": "ISAD(G)-Abbildung",
+      "exports": "Exportformate",
+      "provenance": "Herkunftsblock",
+      "harvest": "Harvesting",
+      "writeback": "Rückschreiben"
+    },
+    "isad": {
+      "title": "ISAD(G)-Abbildung",
+      "lede": "Die Elemente, die das Produkt schreibt, in der Ordnung des Standards. Die nicht geschriebenen stehen ebenfalls da — eine Abbildungstabelle, die nur ihre Treffer zeigt, ist keine.",
+      "headerElement": "Element",
+      "headerName": "Bezeichnung",
+      "headerField": "Unser Feld",
+      "headerEmitted": "Geschrieben",
+      "emitted": "ja",
+      "notEmitted": "nein",
+      "derived": "abgeleitet",
+      "note": "Mehrstufige Verzeichnung wird auf Bestandes- und Stückebene unterstützt. Die Serienebene wird vom Bestandsgedächtnis erschlossen und vorgeschlagen, nie behauptet — eine erkannte Aufnahmesitzung ist eine Hypothese über die Ordnung, und die Ordnung ist das Urteil einer Archivarin."
+    },
+    "isadNames": {
+      "reference": "Signatur",
+      "title": "Titel",
+      "date": "Entstehungszeitraum",
+      "level": "Verzeichnungsstufe",
+      "extent": "Umfang und Medium",
+      "creator": "Provenienz",
+      "adminHistory": "Verwaltungs- / Biografiegeschichte",
+      "scope": "Form und Inhalt",
+      "characteristics": "Physische Beschaffenheit",
+      "language": "Sprache des Materials",
+      "note": "Bemerkung",
+      "archivistNote": "Bearbeitungsvermerk"
+    },
+    "exports": {
+      "title": "Exportformate",
+      "lede": "Alles, was hineingeht, kommt in einem Format zurück, das sein Urheber definiert hat — nicht in einem, das wir erfunden haben.",
+      "headerFormat": "Format",
+      "headerStandard": "Standard",
+      "headerType": "Medientyp",
+      "headerStatus": "Status",
+      "status": {
+        "ships": "ausgeliefert",
+        "planned": "geplant",
+        "designed": "nur entworfen"
+      }
+    },
+    "formats": {
+      "isadCsv": "ISAD(G) CSV",
+      "ead": "EAD XML",
+      "dc": "Dublin Core XML",
+      "iiif": "IIIF-Manifest",
+      "ricoXml": "RiC-O / JSON-LD",
+      "xmpJpeg": "JPEG mit eingebettetem XMP",
+      "oai": "OAI-PMH-Harvesting",
+      "writeback": "Direktes Rückschreiben ins AIS"
+    },
+    "provenance": {
+      "title": "Herkunftsblock",
+      "lede": "Sechs Felder begleiten jeden Katalogwert — in den Export ebenso wie in die Datenbank. Nimmt man sie weg, wird der Wert zu einer Behauptung aus dem Nichts.",
+      "fields": {
+        "agent": "Welcher Agent den Wert erzeugt hat",
+        "model": "Auf welchem Modell er lief, mit Version",
+        "evidence": "Die Journalzeilen, auf denen der Wert ruht",
+        "confidence": "Die kalibrierte Konfidenz — oder eine ausdrückliche Enthaltung",
+        "decidedAt": "Wann entschieden wurde",
+        "reviewedBy": "Die Archivarin, die bestätigt oder korrigiert hat, sobald das geschehen ist"
+      },
+      "note": "Das macht einen maschinell erzeugten und einen menschlich bestätigten Wert dauerhaft unterscheidbar. Ein Archiv kann das gefahrlos übernehmen, weil es immer sagen kann, worauf es sich verlässt — und präzise widerrufen kann, statt einem ganzen Stapel misstrauen zu müssen."
+    },
+    "harvest": {
+      "title": "Harvesting",
+      "lede": "Ein OAI-PMH-2.0-Endpunkt für Aggregatoren.",
+      "body": "ListRecords wird in oai_dc und ead ausgeliefert. Nur freigegebene Einträge werden ausgespielt: ein Eintrag, der noch in der Prüfliste steht, ist keine publizierte Metadate und erscheint keinem Harvester — unabhängig davon, wie sicher sich die Pipeline war. Die Semantik gelöschter Datensätze ist persistent, denn ein fortschreibender Katalog kann immer sagen, was er einmal gesagt hat."
+    },
+    "writeback": {
+      "title": "Rückschreiben",
+      "lede": "Entworfen, bewusst nicht implementiert.",
+      "body": "Die Exportschicht ist gerade deshalb austauschbar, damit ein Adapter in ein empfangendes Archivinformationssystem gegen dessen echte Importspezifikation geschrieben werden kann — scopeArchiv CSV oder XML, CMI STAR oder eine eigene Austauschdatei. Gegen eine Vermutung gebaut, entstünde eine Anbindung, die fertig aussieht und an der ersten echten Datei scheitert. Bis diese Spezifikation vorliegt, verlassen Einträge das System als Dateien, die eine Archivarin freigegeben und bewusst importiert hat."
+    }
+  },
+  "privacy": {
+    "metaTitle": "Datenschutz — ZEITZEUGE",
+    "metaDescription": "Was dieser Prototyp verarbeitet, wo er läuft und was er mit einem Gesicht nicht tut.",
+    "eyebrow": "Datenschutz",
+    "title": "Was verarbeitet wird — und was nicht.",
+    "lede": "Dies ist ein Hackathon-Prototyp, kein Produktivdienst. Lesen Sie den ersten Abschnitt, bevor Sie etwas hochladen.",
+    "toc": {
+      "prototype": "Prototyp-Status",
+      "processed": "Was verarbeitet wird",
+      "residency": "Wo es läuft",
+      "sensitive": "Gesichter und sensible Inhalte",
+      "rights": "Ihre Rechte",
+      "processors": "Auftragsverarbeiter"
+    },
+    "sections": {
+      "prototype": {
+        "title": "Prototyp-Status",
+        "body": "ZEITZEUGE entstand an einem Hackathon-Wochenende und wird mit gemeinfreien und offen lizenzierten Aufnahmen vorgeführt. Es hat keine Datenschutz-Folgenabschätzung durchlaufen, und keine kantonale Stelle hat es geprüft. Laden Sie keine Aufnahmen lebender Personen, keine Personalakten und nichts hoch, das Sie nicht in einer Demo sehen möchten. Alles auf der laufenden Demo sind Beispieldaten."
+      },
+      "processed": {
+        "title": "Was verarbeitet wird",
+        "body": "Vier Arten von Daten, und sonst nichts.",
+        "points": {
+          "images": "Die hochgeladenen Scans und die daraus erzeugten Ableitungen — eine Zoom-Pyramide, ein Wahrnehmungs-Hash und ein Einbettungsvektor.",
+          "derived": "Die von der Pipeline vorgeschlagenen Metadaten: Katalogfelder, die Belegzeilen dahinter, Konfidenzen und Enthaltungen.",
+          "account": "Ihre Anmeldeidentität, gehalten von Amazon Cognito. Name, E-Mail-Adresse und Rolle — ein Passwort erreicht unseren Code nie.",
+          "trail": "Der Prüfpfad: welcher Lauf was erzeugt hat, welche Archivarin korrigiert oder freigegeben hat, und wann. Er ist bewusst fortschreibend und die einzige Kategorie, die sich nachträglich nicht ändern lässt."
+        }
+      },
+      "residency": {
+        "title": "Wo es läuft",
+        "body": "Scans und Datenbank bleiben in der Schweizer AWS-Region. Die schwersten Denkmodelle laufen über ein EU-übergreifendes Inferenzprofil, sodass die Frontier-Inferenz innerhalb der EU bleibt und nicht auf einen anderen Kontinent geht. Welches Modell wo läuft, ist eine Konfigurationsentscheidung im Router und auf dem Administrationsbildschirm sichtbar — nicht im Code vergraben. Nichts, was Sie hochladen, wird zum Training eines Modells verwendet."
+      },
+      "sensitive": {
+        "title": "Gesichter und sensible Inhalte",
+        "body": "Gesichter werden erkannt, damit die Schutzprüfung einen Eintrag von der Publikation zurückhalten kann. Kein Gesicht wird je gegen einen Index abgeglichen, und aus keinem wird eine Identität abgeleitet — das ist eine Eigenschaft des Systems und keine Einstellung, die sich ändern liesse. Die Prüfung hält auch Einträge zurück, deren Verso-Transkription Personendaten enthält und deren Datierung eine lebende Person plausibel lässt. Kommt sie zu keinem Urteil, hält sie den Eintrag zurück, statt ihn zu publizieren."
+      },
+      "rights": {
+        "title": "Ihre Rechte",
+        "body": "Für die Demo-Instanz üben Sie diese über die Adresse im Impressum aus. In einer produktiven Instanz liefen sie über das betreibende Archiv, das dann verantwortlich wäre.",
+        "points": {
+          "access": "Eine Kopie dessen, was über Sie gehalten wird — hier Ihr Konto und Ihre Einträge im Prüfpfad.",
+          "rectify": "Berichtigung von Unrichtigem. Katalogeinträge sind fortschreibend, eine Korrektur fügt also eine Fassung hinzu, statt Gesagtes zu löschen.",
+          "erase": "Löschung Ihres Kontos und Ihrer Uploads. Prüfpfadeinträge werden pseudonymisiert statt entfernt, denn ein archivischer Pfad, der sich stillschweigend ändern lässt, ist keiner.",
+          "export": "Alles in einem offenen Format — genau dafür gibt es die Exportschicht."
+        }
+      },
+      "processors": {
+        "title": "Auftragsverarbeiter",
+        "body": "Amazon Web Services stellt Hosting, Speicher, Identität und Modellinferenz über Amazon Bedrock bereit. Wikimedia Commons, die Library of Congress, SBB Historic und die ETH-Bibliothek liefern die Demonstrationsaufnahmen, im Seitenfuss nachgewiesen. Es gibt keine Analytik, keine Werbe-IDs und keine Tracker Dritter auf dieser Seite."
+      }
+    }
+  },
+  "terms": {
+    "metaTitle": "Nutzungsbedingungen — ZEITZEUGE",
+    "metaDescription": "Was dieser Prototyp verspricht, was nicht, und was seine Ausgaben wert sind.",
+    "eyebrow": "Nutzungsbedingungen",
+    "title": "Ein Prototyp — und als solcher beschrieben.",
+    "lede": "Kurz, weil es noch wenig zu versprechen gibt. Lesenswert ist vor allem der zweite Abschnitt.",
+    "toc": {
+      "nature": "Was das ist",
+      "outputs": "Was die Ausgaben wert sind",
+      "content": "Ihre Inhalte",
+      "acceptable": "Zulässige Nutzung",
+      "availability": "Verfügbarkeit",
+      "law": "Recht und Prüfung"
+    },
+    "sections": {
+      "nature": {
+        "title": "Was das ist",
+        "body": "Eine Demonstration, die zwei Personen an einem Hackathon gebaut haben, angeboten wie besehen und ohne jede Gewährleistung. Es gibt kein Service-Level, keine Supportzusage und keine Zusicherung, dass es nächsten Monat noch existiert. Nichts hier ist ein Angebot eines kommerziellen Dienstes, und auf nichts hier sollte man sich verlassen, wenn etwas davon abhängt."
+      },
+      "outputs": {
+        "title": "Was die Ausgaben wert sind",
+        "body": "Jedes Feld, das die Pipeline erzeugt, ist ein Vorschlag mit seinem Beleg und einer kalibrierten Konfidenz — kein autoritativer Katalogeintrag. Ein Eintrag wird in dem Moment zu archivischen Metadaten, in dem eine namentlich genannte Archivarin ihn freigibt, und keinen Moment früher. Wer einen nicht freigegebenen Eintrag exportiert, exportiert die Meinung einer Maschine, und der mitgeführte Herkunftsblock sagt genau das. Publizieren Sie keinen ungeprüften Eintrag, als hätte ein Archiv ihn beschrieben."
+      },
+      "content": {
+        "title": "Ihre Inhalte",
+        "body": "Hochgeladene Aufnahmen bleiben Ihre. Der Upload erteilt nur jene Erlaubnis, die nötig ist, um die Pipeline darüber laufen zu lassen, die Ableitungen zu speichern und Ihnen das Ergebnis zu zeigen. Kein hochgeladener Inhalt wird zum Training eines Modells verwendet, verkauft oder über die in der Datenschutzerklärung genannten Auftragsverarbeiter hinaus weitergegeben. Löschen Sie einen Upload, gehen die Ableitungen mit; der Prüfpfadeintrag, dass ein Lauf stattfand, bleibt — denn genau das ist ein Prüfpfad."
+      },
+      "acceptable": {
+        "title": "Zulässige Nutzung",
+        "body": "Vier Dinge, die man nicht tun sollte.",
+        "points": {
+          "personal": "Laden Sie in die Demo-Instanz keine Aufnahmen erkennbarer lebender Personen und keine Personendaten hoch.",
+          "scraping": "Nutzen Sie die API nicht, um den Demonstrationsbestand oder das Gazetteer massenhaft abzuziehen.",
+          "circumvent": "Versuchen Sie nicht, die Schutzprüfung, die Beleg-Invariante oder die Mandantentrennung zu umgehen. Wenn Sie einen Weg finden, sagen Sie es uns stattdessen.",
+          "resell": "Geben Sie Ausgaben nicht als eigene Beschreibung eines Archivs aus und verkaufen Sie sie nicht als Erschliessungsdienst weiter."
+        }
+      },
+      "availability": {
+        "title": "Verfügbarkeit",
+        "body": "Die Demonstration läuft auf einem Hackathon-Guthaben mit harten Kostengrenzen. Ist eine Grenze erreicht, reihen sich Läufe ein, statt zu scheitern — sie können sich aber unbegrenzt einreihen. Die Instanz kann ohne Vorankündigung zurückgesetzt, neu befüllt oder abgeschaltet werden, und alles Hochgeladene geht mit. Behalten Sie eine eigene Kopie von allem, woran Ihnen liegt."
+      },
+      "law": {
+        "title": "Recht und Prüfung",
+        "body": "Es soll Schweizer Recht gelten, Gerichtsstand sind die Gerichte des Kantons Schwyz. Diese Bedingungen wurden zusammen mit der Datenschutz- und der Barrierefreiheitserklärung als Teil eines Prototyps entworfen und sind nicht anwaltlich geprüft. Bevor dieses System irgendwo produktiv eingesetzt wird, brauchen alle drei diese Prüfung — diese Seite ist eine Absichtserklärung, kein Rechtsdokument."
+      }
+    }
+  },
+  "accessibility": {
+    "metaTitle": "Barrierefreiheit — ZEITZEUGE",
+    "metaDescription": "Was für die Barrierefreiheit gebaut wurde — und was nicht geprüft ist.",
+    "eyebrow": "Barrierefreiheit",
+    "title": "Was gebaut wurde — und was nicht geprüft ist.",
+    "lede": "Eine Aussage über den tatsächlichen Stand, nicht über eine Absicht. Der dritte Abschnitt ist der entscheidende.",
+    "toc": {
+      "target": "Ziel",
+      "implemented": "Was umgesetzt ist",
+      "known": "Bekannte Lücken",
+      "feedback": "Sagen Sie es uns"
+    },
+    "sections": {
+      "target": {
+        "title": "Ziel",
+        "body": "Das Produkt ist auf WCAG 2.1 Stufe AA hin gebaut, den Standard, den öffentliche Dienste in der Schweiz erfüllen sollen. Es wurde weder gegen eCH-0059 noch gegen ein anderes Konformitätsschema bewertet, und es hat keine externe Prüfung stattgefunden. Alles im nächsten Abschnitt wurde bewusst umgesetzt und ist überprüfbar; alles im übernächsten ist ehrlich offen."
+      },
+      "implemented": {
+        "title": "Was umgesetzt ist",
+        "body": "Jeder dieser Punkte war eine Entwurfsentscheidung, kein Nebeneffekt.",
+        "points": {
+          "semantics": "Landmarken, Überschriften in Reihenfolge, echte Listen und Tabellen sowie ein Sprunglink in den Hauptbereich auf jeder Seite.",
+          "keyboard": "Jedes Bedienelement ist per Tastatur erreichbar und bedienbar — auch der Laufregler, der Schichtfilter und jede Aufklappung. Kein eigenes Widget hält den Fokus fest.",
+          "focus": "Ein sichtbarer Fokusring auf jedem interaktiven Element, global gesetzt statt je Komponente, damit sich nichts stillschweigend davon ausnehmen kann.",
+          "contrast": "Farbtokens wurden gegen beide Oberflächen geprüft; die Diagrammpalette lief in Hell und Dunkel durch einen Kontrast- und Farbsehprüfer, und kein Paar liegt unter der Trennschwelle.",
+          "motion": "prefers-reduced-motion wird beachtet. Das Agenten-Theater öffnet am Ende des Laufs, statt zu animieren, und jeder Übergang im Produkt fällt auf nahezu null Dauer.",
+          "colour": "Kein Zustand wird allein durch Farbe getragen. Urteile verbinden Farbton mit Symbol und Wort, Diagramme führen Legenden und direkte Beschriftungen, und jedes Diagramm hat eine Tabellenansicht.",
+          "language": "Drei Sprachen, die Dokumentsprache je Seite gesetzt, und kein Text in ein Bild eingebrannt.",
+          "text": "Aufnahmen tragen beschreibende Alternativen; dekorative Grafik wird vor assistiver Technik verborgen, statt eine leere Vermutung zu bekommen."
+        }
+      },
+      "known": {
+        "title": "Bekannte Lücken",
+        "body": "Die Liste, die eine Prüfstelle erstellen würde — geschrieben, bevor sie kommt.",
+        "points": {
+          "audit": "Es gab keine unabhängige Barrierefreiheitsprüfung und keine Nutzertests mit assistiver Technik. Alles oben ist unsere eigene Einschätzung.",
+          "viewer": "Der Zoom-Betrachter ist per Tastatur bedienbar, die Belegflächen werden aber nicht einzeln angesagt; wer einen Screenreader nutzt, erhält Feld und Belegkennungen, nicht deren räumliche Beziehung.",
+          "tables": "Einige dichte Tabellen scrollen auf dem Telefon horizontal, statt umzubrechen. Sie liegen in beschrifteten Scrollbereichen, aber ein Umbruch wäre besser.",
+          "captions": "Es gibt heute kein Audio und kein Video im Produkt. Kommt ein Demonstrationsvideo hinzu, erscheint es mit Untertiteln — oder gar nicht."
+        }
+      },
+      "feedback": {
+        "title": "Sagen Sie es uns",
+        "body": "Wenn Sie hier etwas blockiert, ist das ein Mangel, und wir wollen davon hören — auch wenn es oben nicht steht. Schreiben Sie an die Adresse im Impressum und beschreiben Sie, was Sie tun wollten, welche assistive Technik Sie genutzt haben und wo es nicht weiterging. Eine Barriere, von der wir nichts wissen, können wir nicht beheben."
+      }
+    }
+  },
+  "imprint": {
+    "metaTitle": "Impressum — ZEITZEUGE",
+    "metaDescription": "Wer für diesen Prototyp verantwortlich ist — und wer nicht.",
+    "eyebrow": "Impressum",
+    "title": "Wer dafür verantwortlich ist.",
+    "lede": "Zwei Personen, ausserhalb ihres Arbeitsverhältnisses. Rechtlich zählt vor allem der dritte Abschnitt.",
+    "toc": {
+      "responsible": "Verantwortlich",
+      "nature": "Was das ist",
+      "affiliation": "Zugehörigkeit",
+      "credits": "Nachweise"
+    },
+    "sections": {
+      "responsible": {
+        "title": "Verantwortlich",
+        "body": "ZEITZEUGE wird von Richard und Roger Jeasy Bavibidila privat und in eigenem Namen gebaut und betrieben. Dahinter steht keine Firma, keine juristische Person und kein Handelsregistereintrag. Korrespondenz zu diesem Prototyp — auch zu Datenschutz-, Nutzungs- oder Barrierefreiheitserklärung — erreicht uns beide unter der Adresse unten."
+      },
+      "nature": {
+        "title": "Was das ist",
+        "body": "Ein Prototyp für den Zentral Hack 2026 im Track AI Agentic, zur Challenge des Kantons Schwyz. Er demonstriert einen Ansatz zur Beschreibung historischer Fotografien, gezeigt mit gemeinfreiem und offen lizenziertem Material. Er ist kein Produkt, kein Dienst und bei keinem Archiv im Einsatz."
+      },
+      "affiliation": {
+        "title": "Zugehörigkeit",
+        "body": "Wir beide arbeiten bei der Zurich Insurance, und das steht auf der Über-uns-Seite, weil unsere fachliche Erfahrung daher stammt. ZEITZEUGE ist kein Projekt, kein Produkt und keine Position der Zurich Insurance. Es entstand in unserer eigenen Zeit, auf eigenen Geräten, ohne Beteiligung, Förderung oder Billigung durch unseren Arbeitgeber, und nichts auf dieser Seite ist als Äusserung der Zurich Insurance zu lesen. Ebenso wenig ist dies ein offizieller Dienst des Staatsarchivs des Kantons Schwyz: Das Archiv ist Adressat der Challenge und Quelle des hier verwendeten Vokabulars, nicht Betreiber dieser Seite."
+      },
+      "credits": {
+        "title": "Nachweise",
+        "body": "Jede Aufnahme auf dieser Seite ist ein digitalisiertes Original aus einer öffentlichen Sammlung, im Seitenfuss nach Inhaberschaft und Lizenz nachgewiesen, mit dem Einzelnachweis im Repository. Das archivische Vokabular — Bestandsnamen, Gemeinden, ISAD(G)-Elemente — stammt aus dem publizierten Findmittel des Staatsarchivs des Kantons Schwyz und aus dem Standard selbst. Die Bildmarke ist unsere eigene Gestaltung."
+      }
+    },
+    "contactLabel": "Kontakt"
+  },
+  "status": {
+    "metaTitle": "Status — ZEITZEUGE",
+    "metaDescription": "Reifegrad der Komponenten eines Prototyps ohne Produktivbetrieb.",
+    "eyebrow": "Status",
+    "title": "Reifegrad, nicht Verfügbarkeit.",
+    "lede": "Es gibt keinen Produktivbetrieb, also gibt es keine Verfügbarkeit zu melden. Was es gibt, ist eine ehrliche Auskunft darüber, welche Teile tatsächlich funktionieren.",
+    "note": "Eine Statusseite mit erfundenen Verfügbarkeitszahlen wäre genau jene selbstbewusste Fiktion, gegen die dieses Produkt antritt. Sobald es etwas zu messen gibt, misst diese Seite es.",
+    "headerComponent": "Komponente",
+    "headerState": "Stand",
+    "states": {
+      "built": "gebaut",
+      "partial": "teilweise",
+      "designed": "nur entworfen"
+    },
+    "components": {
+      "frontend": "Die Anwendung — jeder Bildschirm dieses Produkts, auf Beispieldaten",
+      "pipeline": "Die Agenten-Pipeline — Besetzung, Stufen und Orchestrierungsvertrag",
+      "falsifier": "Geländefalsifikation — Horizontnachrechnung gegen das Höhenmodell",
+      "ledger": "Das Belegjournal und die Schema-Invariante dahinter",
+      "exports": "Export-Serialisierer — ISAD(G) CSV, EAD, Dublin Core, IIIF, RiC-O, XMP",
+      "harvest": "OAI-PMH-Harvesting-Endpunkt",
+      "writeback": "Rückschreib-Adapter in ein empfangendes Archivsystem",
+      "auth": "Identität, Rollen und Mandantentrennung"
+    }
+  },
+  "contact": {
+    "metaTitle": "Kontakt — ZEITZEUGE",
+    "metaDescription": "Schreiben Sie den zwei Menschen, die das gebaut haben — per Formular, Mail, Telefon oder über eines der Konten.",
+    "eyebrow": "Kontakt",
+    "title": "Schreiben Sie uns.",
+    "lede": "Wir sind zu zweit und haben keinen Support-Desk — eine Nachricht erreicht also die Menschen, die genau das gebaut haben, worüber Sie schreiben.",
+    "channelsTitle": "Direkt",
+    "channels": {
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "location": "Ansässig in"
+    },
+    "responseNote": "Wir antworten, sobald wir können. Dies ist ein Prototyp, ausserhalb der Arbeitszeit gebaut, kein besetzter Dienst — wenn es dringend ist, schreiben Sie eine E-Mail statt über ein soziales Konto.",
+    "socialTitle": "Anderswo",
+    "socialNote": "Projektkonten, keine privaten. Alles, was eine Antwort braucht, ist per E-Mail besser aufgehoben — eine Direktnachricht wird irgendwann gelesen, nicht zeitnah.",
+    "form": {
+      "nameLabel": "Ihr Name",
+      "nameError": "Bitte sagen Sie uns, wer Sie sind.",
+      "emailLabel": "E-Mail",
+      "emailError": "Das sieht nicht nach einer Adresse aus, an die wir antworten könnten.",
+      "topicLabel": "Worum geht es",
+      "messageLabel": "Nachricht",
+      "messageHint": "Je konkreter, desto brauchbarer die Antwort.",
+      "messageError": "Ein paar Worte mehr, bitte — mindestens zwanzig Zeichen.",
+      "topics": {
+        "archive": "Eine Anfrage aus einem Archiv",
+        "technical": "Technik oder Anbindung",
+        "press": "Presse und Vorträge",
+        "accessibility": "Eine Barriere",
+        "other": "Etwas anderes"
+      },
+      "submit": "Nachricht verfassen",
+      "mailSubject": "Nachricht über das ZEITZEUGE-Kontaktformular",
+      "mailtoNote": "Das öffnet Ihr eigenes Mailprogramm mit allem Ausgefüllten. Der Prototyp hat keinen Mailserver, es wird von dieser Seite also nichts versendet — Sie drücken in Ihrem eigenen Programm auf Senden und behalten die Kopie."
+    }
+  }
+}

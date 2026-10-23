@@ -1,0 +1,84 @@
+# PEP 621 metadata, which is what Poetry 2 reads natively. Poetry-specific
+# settings (the src layout, the dev group) stay under [tool.poetry].
+#
+# Caret ranges are deliberately absent from the 0.x packages below: `^0.115`
+# means `>=0.115,<0.116` to Poetry, which would have pinned FastAPI to a line
+# nearly thirty releases behind the one this code is tested against — and the
+# difference is not cosmetic (0.115 rejects a 204 route whose handler returns
+# `None`). Pre-1.0 projects get an explicit upper bound at the next major.
+[project]
+name = "zeitzeuge-api"
+version = "0.1.0"
+description = "ZEITZEUGE API gateway — identity, profiles and the front door to the agent spine."
+authors = [{ name = "Roger Jeasy Bavibidila", email = "rogerjeasybavibidila@gmail.com" }]
+readme = "README.md"
+license = "LicenseRef-Proprietary"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.30,<1.0",
+    "pydantic[email]>=2.9,<3.0",
+    "pydantic-settings>=2.5,<3.0",
+    "sqlalchemy[asyncio]>=2.0.35,<3.0",
+    "asyncpg>=0.30,<1.0",
+    "alembic>=1.13,<2.0",
+    "boto3>=1.35,<2.0",
+    "botocore>=1.35,<2.0",
+    "pyjwt[crypto]>=2.9,<3.0",
+    "httpx>=0.27,<1.0",
+    "structlog>=24.4,<26.0",
+    "anyio>=4.6,<5.0",
+]
+
+[tool.poetry]
+packages = [{ include = "zeitzeuge_api", from = "src" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3"
+pytest-asyncio = ">=0.24,<2.0"
+pytest-cov = ">=5.0,<8.0"
+moto = { extras = ["cognitoidp", "s3", "dynamodb"], version = "^5.0" }
+aiosqlite = ">=0.20,<1.0"
+ruff = ">=0.6,<1.0"
+mypy = "^1.11"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+  # Needs a real Postgres (docker compose up db). RLS cannot be exercised on
+  # SQLite, so the isolation tests live behind this marker.
+  "integration: requires Postgres with the migrations applied",
+]
+filterwarnings = ["ignore::DeprecationWarning:botocore.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "ASYNC", "RUF"]
+ignore = [
+  "B008",   # FastAPI puts Depends(...) in argument defaults by design.
+  "S101",   # `assert` here narrows a type for mypy; it is never a runtime check.
+  "S105",   # Flags `token_use`, `token_type` and audit action names as secrets.
+  "S106",   # Same, for keyword arguments named after token *kinds*.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["zeitzeuge_api"]
+plugins = []
+strict_optional = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+ignore_missing_imports = true

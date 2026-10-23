@@ -1,0 +1,34 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadTheRdsManagedMasterSecret",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:${region}:${account_id}:secret:rds!cluster-*",
+      "Condition": {
+        "StringLike": {
+          "aws:ResourceTag/aws:rds:primaryDBClusterArn": "arn:aws:rds:${region}:${account_id}:cluster:${project}-${env}*"
+        }
+      }
+    },
+    {
+      "Sid": "ReadTheAppCredentialToProvisionTheRole",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:${region}:${account_id}:secret:${project}/${env}/*"
+    },
+    {
+      "Sid": "DecryptWithProjectKeysOnly",
+      "Effect": "Allow",
+      "Action": "kms:Decrypt",
+      "Resource": "arn:aws:kms:${region}:${account_id}:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${project}",
+          "aws:ResourceTag/Env": "${env}"
+        }
+      }
+    }
+  ]
+}

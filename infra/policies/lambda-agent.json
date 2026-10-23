@@ -1,0 +1,149 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeModelsThroughGuardrail",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:ApplyGuardrail"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:eu-*::foundation-model/*",
+        "arn:aws:bedrock:${region}:${account_id}:inference-profile/eu.*",
+        "arn:aws:bedrock:${region}:${account_id}:guardrail/*"
+      ]
+    },
+    {
+      "Sid": "InvokeThroughOwnApplicationProfiles",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:${region}:${account_id}:application-inference-profile/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${project}",
+          "aws:ResourceTag/Env": "${env}"
+        }
+      }
+    },
+    {
+      "Sid": "NeverRouteOutsideTheEU",
+      "Effect": "Deny",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:*:*:inference-profile/global.*"
+    },
+    {
+      "Sid": "ReadAssetsWriteDerivatives",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::${project}-${env}-originals/*"
+    },
+    {
+      "Sid": "WriteDerivativesAndDemCache",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::${project}-${env}-derivatives/*",
+        "arn:aws:s3:::${project}-${env}-dem-cache/*"
+      ]
+    },
+    {
+      "Sid": "MemoryAndToolCache",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": "arn:aws:dynamodb:${region}:${account_id}:table/${project}-${env}-*"
+    },
+    {
+      "Sid": "QueryAuroraViaDataApi",
+      "Effect": "Allow",
+      "Action": [
+        "rds-data:ExecuteStatement",
+        "rds-data:BeginTransaction",
+        "rds-data:CommitTransaction",
+        "rds-data:RollbackTransaction"
+      ],
+      "Resource": "arn:aws:rds:${region}:${account_id}:cluster:${project}-${env}-*"
+    },
+    {
+      "Sid": "ExternalApiKeys",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:${region}:${account_id}:secret:${project}/${env}/external/*",
+        "arn:aws:secretsmanager:${region}:${account_id}:secret:${project}/${env}/db/app-*"
+      ]
+    },
+    {
+      "Sid": "ReportBackToTheSpine",
+      "Effect": "Allow",
+      "Action": [
+        "states:SendTaskSuccess",
+        "states:SendTaskFailure",
+        "states:SendTaskHeartbeat"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "NoDeletes",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion",
+        "dynamodb:DeleteTable"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "OwnLogGroups",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:${region}:${account_id}:log-group:/aws/lambda/${project}-${env}-agent-*:*"
+    },
+    {
+      "Sid": "Tracing",
+      "Effect": "Allow",
+      "Action": [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ProjectKeysOnly",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:${region}:${account_id}:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "${project}",
+          "aws:ResourceTag/Env": "${env}"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "Comment": "ZEITZEUGE — the backlog. Distributed Map over an S3 inventory, bounded concurrency, per-item isolation. This is the business-potential slide, executable.",
+  "StartAt": "BulkInvestigate",
+  "States": {
+    "BulkInvestigate": {
+      "Type": "Map",
+      "ItemReader": {
+        "Resource": "arn:aws:states:::s3:getObject",
+        "ReaderConfig": { "InputType": "MANIFEST" },
+        "Arguments": { "Bucket": "${inventory_bucket}", "Key": "manifest.json" }
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": { "Mode": "DISTRIBUTED", "ExecutionType": "STANDARD" },
+        "StartAt": "RunInvestigation",
+        "States": {
+          "RunInvestigation": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::states:startExecution.sync:2",
+            "Arguments": { "StateMachineArn": "${investigation_state_machine_arn}" },
+            "Retry": [{ "ErrorEquals": ["States.ALL"], "MaxAttempts": 2, "BackoffRate": 2 }],
+            "End": true
+          }
+        }
+      },
+      "MaxConcurrency": 20,
+      "ToleratedFailurePercentage": 5,
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Arguments": { "Bucket": "${inventory_bucket}", "Prefix": "results/" }
+      },
+      "End": true
+    }
+  }
+}

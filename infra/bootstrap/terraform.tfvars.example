@@ -1,0 +1,4 @@
+project           = "zeitzeuge"
+region            = "eu-central-2"
+github_repo       = "rogerjeasy/zeitzeuge"
+state_bucket_name = "zeitzeuge-tfstate-<account_id>-euc2" # globally unique: account id + region

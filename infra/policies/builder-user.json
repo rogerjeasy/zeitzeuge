@@ -1,0 +1,216 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TerraformBuildEverythingInHomeRegions",
+      "Effect": "Allow",
+      "NotAction": [
+        "iam:*",
+        "organizations:*",
+        "account:*",
+        "aws-portal:*",
+        "cloudtrail:DeleteTrail",
+        "cloudtrail:StopLogging",
+        "kms:DisableKey"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEqualsIfExists": {
+          "aws:RequestedRegion": [
+            "eu-central-2",
+            "eu-central-1",
+            "us-east-1"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "CreateAndGrantRolesOnlyUnderTheBoundary",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:PutRolePermissionsBoundary",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::707938860881:role/zeitzeuge-*",
+      "Condition": {
+        "StringEquals": {
+          "iam:PermissionsBoundary": "arn:aws:iam::707938860881:policy/ZeitzeugeBoundary"
+        }
+      }
+    },
+    {
+      "Sid": "ManageOnlyZeitzeugeRoles",
+      "Effect": "Allow",
+      "Action": [
+        "iam:DeleteRole",
+        "iam:UpdateRole",
+        "iam:UpdateRoleDescription",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole"
+      ],
+      "Resource": "arn:aws:iam::707938860881:role/zeitzeuge-*"
+    },
+    {
+      "Sid": "ManageOnlyZeitzeugePolicies",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreatePolicy",
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicy",
+        "iam:DeletePolicyVersion",
+        "iam:SetDefaultPolicyVersion",
+        "iam:TagPolicy",
+        "iam:UntagPolicy"
+      ],
+      "Resource": "arn:aws:iam::707938860881:policy/zeitzeuge-*"
+    },
+    {
+      "Sid": "PassOnlyZeitzeugeRolesToOurServices",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::707938860881:role/zeitzeuge-*",
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": [
+            "ecs-tasks.amazonaws.com",
+            "lambda.amazonaws.com",
+            "states.amazonaws.com",
+            "sagemaker.amazonaws.com",
+            "apigateway.amazonaws.com",
+            "bedrock.amazonaws.com",
+            "monitoring.rds.amazonaws.com",
+            "events.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "CreateOnlyTheServiceLinkedRolesWeUse",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::707938860881:role/aws-service-role/*",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": [
+            "ecs.amazonaws.com",
+            "ecs.application-autoscaling.amazonaws.com",
+            "rds.amazonaws.com",
+            "elasticloadbalancing.amazonaws.com",
+            "observability.aoss.amazonaws.com",
+            "ops.apigateway.amazonaws.com",
+            "wafv2.amazonaws.com",
+            "servicequotas.amazonaws.com",
+            "vpcorigin.cloudfront.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "OwnPasswordAndMfa",
+      "Effect": "Allow",
+      "Action": [
+        "iam:ChangePassword",
+        "iam:CreateVirtualMFADevice",
+        "iam:EnableMFADevice",
+        "iam:ResyncMFADevice"
+      ],
+      "Resource": [
+        "arn:aws:iam::707938860881:user/zeitzeuge-builder",
+        "arn:aws:iam::707938860881:mfa/zeitzeuge-builder*"
+      ]
+    },
+    {
+      "Sid": "BedrockEuCrossRegionInference",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:eu-*::foundation-model/*",
+        "arn:aws:bedrock:eu-*:707938860881:inference-profile/eu.*"
+      ]
+    },
+    {
+      "Sid": "ReadOnlyEverywhereElse",
+      "Effect": "Allow",
+      "Action": [
+        "iam:Get*",
+        "iam:List*",
+        "iam:SimulatePrincipalPolicy",
+        "sts:GetCallerIdentity",
+        "ce:GetCostAndUsage",
+        "budgets:ViewBudget",
+        "bedrock:ListFoundationModels",
+        "bedrock:GetFoundationModelAvailability",
+        "account:GetAccountInformation",
+        "account:ListRegions",
+        "account:GetRegionOptStatus"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "NeverRouteOutsideTheEU",
+      "Effect": "Deny",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:*:*:inference-profile/global.*"
+    },
+    {
+      "Sid": "AssumeOnlyZeitzeugeRoles",
+      "Effect": "Deny",
+      "Action": [
+        "sts:AssumeRole",
+        "sts:AssumeRoleWithWebIdentity",
+        "sts:TagSession",
+        "sts:SetSourceIdentity"
+      ],
+      "NotResource": "arn:aws:iam::707938860881:role/zeitzeuge-*"
+    },
+    {
+      "Sid": "TheBoundaryNeverComesOff",
+      "Effect": "Deny",
+      "Action": "iam:DeleteRolePermissionsBoundary",
+      "Resource": "*"
+    },
+    {
+      "Sid": "NoSelfEscalation",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreatePolicyVersion",
+        "iam:SetDefaultPolicyVersion",
+        "iam:DeletePolicyVersion",
+        "iam:DeletePolicy",
+        "iam:AttachUserPolicy",
+        "iam:DetachUserPolicy",
+        "iam:PutUserPolicy",
+        "iam:DeleteUserPolicy",
+        "iam:PutUserPermissionsBoundary",
+        "iam:DeleteUserPermissionsBoundary",
+        "iam:AttachGroupPolicy",
+        "iam:DetachGroupPolicy",
+        "iam:PutGroupPolicy",
+        "iam:DeleteGroupPolicy",
+        "iam:AddUserToGroup",
+        "iam:RemoveUserFromGroup",
+        "iam:DeleteGroup",
+        "iam:DeactivateMFADevice",
+        "iam:DeleteVirtualMFADevice"
+      ],
+      "Resource": [
+        "arn:aws:iam::707938860881:policy/ZeitzeugeBuilder",
+        "arn:aws:iam::707938860881:policy/ZeitzeugeBoundary",
+        "arn:aws:iam::707938860881:user/zeitzeuge-builder",
+        "arn:aws:iam::707938860881:group/zeitzeuge-builders",
+        "arn:aws:iam::707938860881:mfa/*"
+      ]
+    }
+  ]
+}
