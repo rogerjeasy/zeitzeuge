@@ -74,6 +74,9 @@ class Settings(BaseSettings):
     # Terraform hands the task definition.
     database_dsn: str = ""
     database_secret_ref: str = ""
+    # Migrate task only: the application role's credential, so the migration
+    # can create (or re-sync) `zeitzeuge_app` before granting it anything.
+    app_db_secret_ref: str = ""
     database_host: str = ""
     database_port: int = 5432
     database_name: str = "zeitzeuge"

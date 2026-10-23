@@ -49,6 +49,9 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# The suite imports shared helpers as `tests._policies`; without the project
+# root on the path that only resolves when pytest happens to be started from it.
+pythonpath = ["."]
 addopts = "-q --strict-markers"
 markers = [
   # Needs a real Postgres (docker compose up db). RLS cannot be exercised on

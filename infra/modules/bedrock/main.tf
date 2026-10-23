@@ -136,8 +136,10 @@ resource "aws_bedrock_model_invocation_logging_configuration" "this" {
 resource "aws_bedrock_inference_profile" "this" {
   for_each = var.model_tiers
 
-  name        = "${local.name}-${each.key}"
-  description = "ZEITZEUGE ${each.key} tier over ${each.value} (EU-only routing)."
+  name = "${local.name}-${each.key}"
+  # Bedrock allows only [0-9a-zA-Z:.] with single " ", "_" or "-" between —
+  # no parentheses, no trailing punctuation after a space.
+  description = "ZEITZEUGE ${each.key} tier over ${each.value} EU-only routing"
 
   model_source {
     copy_from = "arn:aws:bedrock:${local.region}:${local.account_id}:inference-profile/${each.value}"

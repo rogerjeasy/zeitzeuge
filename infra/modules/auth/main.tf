@@ -222,11 +222,13 @@ resource "aws_cognito_user_pool_client" "web" {
     refresh_token = "days"
   }
 
-  read_attributes = ["email", "email_verified", "name", "custom:tenant_id", "custom:role"]
+  read_attributes = ["email", "email_verified", "name", "locale", "custom:tenant_id", "custom:role"]
 
   # Deliberately excludes custom:tenant_id and custom:role. If a user could
-  # write their own tenant, RLS would isolate nothing.
-  write_attributes = ["email", "name"]
+  # write their own tenant, RLS would isolate nothing. The API sets both with
+  # AdminUpdateUserAttributes straight after SignUp. Must equal
+  # SELF_SERVICE_ATTRIBUTES in apps/api/…/integrations/aws/cognito.py.
+  write_attributes = ["email", "name", "locale"]
 }
 
 # Machine-to-machine: the OAI-PMH harvester and other archive systems.

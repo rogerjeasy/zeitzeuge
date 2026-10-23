@@ -223,7 +223,16 @@ data "aws_cloudfront_cache_policy" "optimized" {
   name = "Managed-CachingOptimized"
 }
 
+# SSR pages get the viewer's own Host. Next.js rejects any Server Action whose
+# Origin does not match the Host it receives; with the ALB's hostname in its
+# place, every sign-in and sign-up — both Server Actions — fails with a 500.
+# `.github/scripts/smoke.sh web` checks exactly this after every deploy.
 data "aws_cloudfront_origin_request_policy" "all_viewer" {
+  name = "Managed-AllViewer"
+}
+
+# The API does not care which Host it is addressed by (`ZZ_TRUSTED_HOSTS`).
+data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
   name = "Managed-AllViewerExceptHostHeader"
 }
 
@@ -293,7 +302,7 @@ resource "aws_cloudfront_distribution" "this" {
     cached_methods             = ["GET", "HEAD"]
     compress                   = true
     cache_policy_id            = data.aws_cloudfront_cache_policy.disabled.id
-    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer.id
+    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
   }
 

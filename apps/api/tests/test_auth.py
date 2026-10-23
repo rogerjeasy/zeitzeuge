@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from sqlalchemy import select
 
 from zeitzeuge_api.db.models import AuditLog, Organization, User, UserRole, UserSession, UserStatus
@@ -300,3 +301,90 @@ async def test_api_responses_keep_the_strict_policy(client) -> None:
     expected = "default-src 'none'; frame-ancestors 'none'"
     assert response.headers["Content-Security-Policy"] == expected
 
+
+# --- the app client's write permissions ------------------------------------
+#
+# moto does not enforce `write_attributes`; real Cognito does. The deployed web
+# client may write only `email`, `name` and `locale` (infra/modules/auth), so a
+# SignUp that carried `custom:tenant_id` would be refused for every registrant.
+# These tests pin what SignUp is allowed to send, and that the tenant arrives
+# by the admin API instead.
+
+
+async def test_sign_up_never_writes_the_tenant_or_role(
+    client, app, cognito_client, settings, unique_email, monkeypatch
+) -> None:
+    boto = app.state.cognito._clients.cognito
+    sent: list[str] = []
+    original = boto.sign_up
+
+    def spy(**kwargs):  # type: ignore[no-untyped-def]
+        sent.extend(attribute["Name"] for attribute in kwargs["UserAttributes"])
+        return original(**kwargs)
+
+    monkeypatch.setattr(boto, "sign_up", spy)
+
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": PASSWORD,
+            "password_confirmation": PASSWORD,
+            "full_name": "Andrea Betschart",
+            "accept_terms": True,
+        },
+    )
+    assert response.status_code == 201, response.text
+    assert set(sent) <= {"email", "name", "locale"}
+
+    users = await _rows(app, select(User).where(User.email == unique_email))
+    stored = cognito_client.admin_get_user(
+        UserPoolId=settings.cognito_user_pool_id, Username=unique_email
+    )
+    attributes = {a["Name"]: a["Value"] for a in stored["UserAttributes"]}
+    # Set by the admin API, which the client's write list does not govern.
+    assert attributes["custom:tenant_id"] == str(users[0].org_id)
+    assert attributes["custom:role"] == "admin"
+
+
+async def test_a_half_created_account_is_removed(
+    client, app, cognito_client, settings, unique_email, monkeypatch
+) -> None:
+    """An identity without its tenant could authenticate into nowhere."""
+    from botocore.exceptions import ClientError
+
+    boto = app.state.cognito._clients.cognito
+
+    def refuse(**_kwargs):  # type: ignore[no-untyped-def]
+        raise ClientError(
+            {"Error": {"Code": "InternalErrorException", "Message": "boom"}},
+            "AdminUpdateUserAttributes",
+        )
+
+    monkeypatch.setattr(boto, "admin_update_user_attributes", refuse)
+
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": PASSWORD,
+            "password_confirmation": PASSWORD,
+            "accept_terms": True,
+        },
+    )
+    assert response.status_code == 502
+    assert await _rows(app, select(User).where(User.email == unique_email)) == []
+    with pytest.raises(cognito_client.exceptions.UserNotFoundException):
+        cognito_client.admin_get_user(
+            UserPoolId=settings.cognito_user_pool_id, Username=unique_email
+        )
+
+
+async def test_health_is_reachable_under_the_api_prefix(client) -> None:
+    """CloudFront routes only `/api/*` to the API; a smoke test needs a path there."""
+    live = await client.get("/api/v1/healthz")
+    assert live.status_code == 200
+    assert live.json()["status"] == "ok"
+    ready = await client.get("/api/v1/readyz")
+    assert ready.status_code == 200
+    assert ready.json()["checks"] == {"database": True, "identity": True}

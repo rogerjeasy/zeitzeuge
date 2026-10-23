@@ -38,6 +38,11 @@ from zeitzeuge_api.integrations.aws.clients import AwsClients, call
 
 log = get_logger(__name__)
 
+# What the app client may write on a user's behalf — must equal
+# `write_attributes` on the web client in infra/modules/auth (plus `email`,
+# which SignUp always carries). Everything else goes through the admin API.
+SELF_SERVICE_ATTRIBUTES = frozenset({"name", "locale"})
+
 # Cognito error code → the error this API reports. Anything unmapped is an
 # upstream failure, which is the correct default: we do not invent a meaning
 # for a code we have not thought about.
@@ -219,7 +224,17 @@ class CognitoIdentityProvider:
         password: str,
         attributes: dict[str, str],
     ) -> str:
-        """Create the account. Returns the Cognito `sub`."""
+        """Create the account. Returns the Cognito `sub`.
+
+        `SignUp` is a client call, bound by the app client's `write_attributes`
+        — which deliberately exclude `custom:tenant_id` and `custom:role`, so a
+        user can never choose their own archive. Those are set straight after
+        with the admin API. If that second step fails, the account is deleted
+        again: an identity without a tenant authenticates into nowhere.
+        """
+        own = {k: v for k, v in attributes.items() if v and k in SELF_SERVICE_ATTRIBUTES}
+        protected = {k: v for k, v in attributes.items() if v and k not in SELF_SERVICE_ATTRIBUTES}
+
         params = self._with_secret(
             email,
             {
@@ -228,13 +243,22 @@ class CognitoIdentityProvider:
                 "Password": password,
                 "UserAttributes": [
                     {"Name": name, "Value": value}
-                    for name, value in {"email": email, **attributes}.items()
-                    if value
+                    for name, value in {"email": email, **own}.items()
                 ],
             },
         )
         with _translate("sign_up"):
             response = await call(self._clients.cognito.sign_up, **params)
+
+        if protected:
+            try:
+                await self.update_attributes(username=email, attributes=protected)
+            except errors.AppError:
+                try:
+                    await self.delete_user(username=email)
+                except errors.AppError:
+                    log.error("cognito.sign_up_orphaned", reason="compensation failed")
+                raise
         return str(response["UserSub"])
 
     async def resend_confirmation_code(self, *, email: str) -> None:

@@ -1,5 +1,6 @@
 {
   "Comment": "ZEITZEUGE — the backlog. Distributed Map over an S3 inventory, bounded concurrency, per-item isolation. This is the business-potential slide, executable.",
+  "QueryLanguage": "JSONata",
   "StartAt": "BulkInvestigate",
   "States": {
     "BulkInvestigate": {
@@ -16,7 +17,10 @@
           "RunInvestigation": {
             "Type": "Task",
             "Resource": "arn:aws:states:::states:startExecution.sync:2",
-            "Arguments": { "StateMachineArn": "${investigation_state_machine_arn}" },
+            "Arguments": {
+              "StateMachineArn": "${investigation_state_machine_arn}",
+              "Input": "{% $states.input %}"
+            },
             "Retry": [{ "ErrorEquals": ["States.ALL"], "MaxAttempts": 2, "BackoffRate": 2 }],
             "End": true
           }

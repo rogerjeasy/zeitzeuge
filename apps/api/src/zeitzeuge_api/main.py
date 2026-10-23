@@ -228,6 +228,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(app)
 
     app.include_router(health.router)
+    # Again under the prefix: behind CloudFront only `/api/*` reaches this
+    # service, and a post-deploy smoke test has to prove it from outside.
+    app.include_router(health.router, prefix=settings.api_prefix, include_in_schema=False)
     app.include_router(api_router, prefix=settings.api_prefix)
     return app
 
