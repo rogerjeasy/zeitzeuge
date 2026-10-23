@@ -73,7 +73,10 @@ resource "aws_wafv2_web_acl" "this" {
   }
 
   # Sign-in, sign-up and reset: tight, because that is where credential
-  # stuffing aims. Cognito's own lockout sits behind it.
+  # stuffing aims. Cognito's own lockout sits behind it. Counts every POST
+  # whose path contains /auth/ — the API's /api/v1/auth/* *and* the web app's
+  # /<locale>/auth/* pages, whose Server Actions sign people in. Page loads
+  # (GET) are not counted, so a room sharing one venue IP can still open them.
   rule {
     name     = "rate-limit-auth"
     priority = 0
@@ -89,15 +92,32 @@ resource "aws_wafv2_web_acl" "this" {
         aggregate_key_type    = "IP"
 
         scope_down_statement {
-          byte_match_statement {
-            search_string         = "/api/v1/auth/"
-            positional_constraint = "STARTS_WITH"
-            field_to_match {
-              uri_path {}
+          and_statement {
+            statement {
+              byte_match_statement {
+                search_string         = "post"
+                positional_constraint = "EXACTLY"
+                field_to_match {
+                  method {}
+                }
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
             }
-            text_transformation {
-              priority = 0
-              type     = "LOWERCASE"
+            statement {
+              byte_match_statement {
+                search_string         = "/auth/"
+                positional_constraint = "CONTAINS"
+                field_to_match {
+                  uri_path {}
+                }
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
             }
           }
         }
@@ -223,17 +243,18 @@ data "aws_cloudfront_cache_policy" "optimized" {
   name = "Managed-CachingOptimized"
 }
 
-# SSR pages get the viewer's own Host. Next.js rejects any Server Action whose
-# Origin does not match the Host it receives; with the ALB's hostname in its
-# place, every sign-in and sign-up — both Server Actions — fails with a 500.
-# `.github/scripts/smoke.sh web` checks exactly this after every deploy.
+# Every viewer header including Host, plus CloudFront's own headers.
+#
+# Host: Next.js rejects any Server Action whose Origin does not match the Host
+# it receives; with the ALB's hostname in its place, every sign-in and sign-up
+# fails with a 500. `.github/scripts/smoke.sh web` checks this after deploys.
+#
+# CloudFront-Viewer-Address: the client's address as CloudFront saw the TCP
+# connection — the only one a client cannot forge (X-Forwarded-For can be
+# prepended to). The API's rate limits and audit trail key on it, and the
+# CloudFront-Viewer-City/Country pair labels sessions in /settings/security.
 data "aws_cloudfront_origin_request_policy" "all_viewer" {
-  name = "Managed-AllViewer"
-}
-
-# The API does not care which Host it is addressed by (`ZZ_TRUSTED_HOSTS`).
-data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
-  name = "Managed-AllViewerExceptHostHeader"
+  name = "Managed-AllViewerAndCloudFrontHeaders-2022-06"
 }
 
 resource "aws_cloudfront_response_headers_policy" "security" {
@@ -302,7 +323,7 @@ resource "aws_cloudfront_distribution" "this" {
     cached_methods             = ["GET", "HEAD"]
     compress                   = true
     cache_policy_id            = data.aws_cloudfront_cache_policy.disabled.id
-    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
   }
 

@@ -8,6 +8,7 @@ in Zurich meet at the same string.
 
 from __future__ import annotations
 
+import ipaddress
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -29,19 +30,40 @@ SESSION_HEADER = "X-ZZ-Session"
 _QUIET_PATHS = frozenset({"/healthz", "/readyz", "/metrics"})
 
 
-def client_ip(request: Request) -> str | None:
-    """The viewer's address, read at the position the proxy chain puts it.
+def client_ip(request: Request, *, trust_forwarded_for: bool) -> str | None:
+    """The viewer's address, from the one source a client cannot write.
 
-    Behind CloudFront and an ALB, `X-Forwarded-For` is a list that the client
-    can prepend to. The left-most entry is therefore attacker-controlled; the
-    right-most entries are added by infrastructure we trust. We take the first
-    entry only because the ALB is configured to rewrite the header — and if
-    that assumption ever changes, this is the one function to fix.
+    `CloudFront-Viewer-Address` is set by CloudFront from the TCP connection
+    (forwarded by the origin request policy; a viewer-sent copy is replaced).
+    Every path into this service carries it: through CloudFront directly, or
+    from the web tier, which forwards CloudFront's value on its server-side
+    calls over the internal ALB.
+
+    `X-Forwarded-For` is *not* trusted outside local development: the client
+    may prepend to it and the ALB appends rather than rewrites, so its first
+    entry is whatever the caller typed — rotate it and every per-IP rate limit
+    is gone. Without the CloudFront header the honest answer is the hop that
+    connected.
     """
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()[:64]
+    viewer = _address(request.headers.get("cloudfront-viewer-address"))
+    if viewer:
+        return viewer
+    if trust_forwarded_for:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()[:64]
     return request.client.host if request.client else None
+
+
+def _address(value: str | None) -> str | None:
+    """`198.51.100.10:46532`, `2001:db8::1:46532` or `[2001:db8::1]:46532` → the IP."""
+    if not value:
+        return None
+    host = value.strip().rsplit(":", 1)[0].strip("[]")
+    try:
+        return str(ipaddress.ip_address(host))
+    except ValueError:
+        return None
 
 
 def viewer_location(request: Request) -> str | None:
@@ -52,6 +74,11 @@ def viewer_location(request: Request) -> str | None:
     return ", ".join(parts)[:120] if parts else None
 
 
+def _is_local(request: Request) -> bool:
+    settings = getattr(request.app.state, "settings", None)
+    return bool(settings is not None and settings.is_local)
+
+
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
@@ -59,7 +86,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex
         context = RequestContext(
             request_id=request_id,
-            ip_address=client_ip(request),
+            ip_address=client_ip(request, trust_forwarded_for=_is_local(request)),
             user_agent=request.headers.get("user-agent"),
             location=viewer_location(request),
             session_id=request.headers.get(SESSION_HEADER),

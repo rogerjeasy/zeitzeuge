@@ -109,10 +109,14 @@
       }
     },
     {
-      "Sid": "PassOnlyProjectRoles",
+      "Sid": "PassOnlyTheRolesItsFamiliesUse",
       "Effect": "Allow",
       "Action": "iam:PassRole",
-      "Resource": "arn:aws:iam::${account_id}:role/${project}-${env}-*",
+      "Resource": [
+        "arn:aws:iam::${account_id}:role/${project}-${env}-ecs-task-execution",
+        "arn:aws:iam::${account_id}:role/${project}-${env}-ecs-task-api",
+        "arn:aws:iam::${account_id}:role/${project}-${env}-ecs-task-migrate"
+      ],
       "Condition": {
         "StringEquals": {
           "iam:PassedToService": "ecs-tasks.amazonaws.com"

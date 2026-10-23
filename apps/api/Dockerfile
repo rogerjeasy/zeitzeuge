@@ -73,7 +73,10 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 
 # One worker per task: scaling is ECS's job, and a single-process container is
 # the one whose CPU and memory metrics mean what the autoscaler thinks.
+# `--no-proxy-headers`: uvicorn would otherwise rewrite the client address from
+# X-Forwarded-For, which the caller controls. The viewer's address comes from
+# CloudFront-Viewer-Address instead (middleware/request_context.client_ip).
 CMD ["uvicorn", "zeitzeuge_api.main:app", \
      "--host", "0.0.0.0", "--port", "8000", \
-     "--proxy-headers", "--forwarded-allow-ips", "*", \
+     "--no-proxy-headers", \
      "--no-server-header", "--timeout-keep-alive", "65"]

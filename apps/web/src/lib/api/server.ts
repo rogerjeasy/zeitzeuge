@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { CallerHeaders } from "./caller";
+
 /**
  * The one way the web tier talks to the FastAPI gateway.
  *
@@ -29,16 +31,7 @@ export type ApiProblem = {
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; problem: ApiProblem };
 
-/** Who is really asking. Without it, every rate limit and audit row in the API
- *  would name the web tier's address instead of the archivist's browser. */
-export type CallerHeaders = { forwardedFor?: string; userAgent?: string };
-
-export function callerFrom(headers: Headers): CallerHeaders {
-  return {
-    forwardedFor: headers.get("x-forwarded-for") ?? undefined,
-    userAgent: headers.get("user-agent") ?? undefined,
-  };
-}
+export { callerFrom, type CallerHeaders } from "./caller";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -56,8 +49,7 @@ export async function apiRequest<T>(
   if (body !== undefined) headers.set("Content-Type", "application/json");
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
   if (sessionId) headers.set("X-ZZ-Session", sessionId);
-  if (caller?.forwardedFor) headers.set("X-Forwarded-For", caller.forwardedFor);
-  if (caller?.userAgent) headers.set("User-Agent", caller.userAgent);
+  for (const [name, value] of Object.entries(caller ?? {})) headers.set(name, value);
 
   let response: Response;
   try {

@@ -47,7 +47,7 @@ variable "price_class" {
 }
 
 variable "auth_rate_limit" {
-  description = "Requests per IP per 5 min to /api/v1/auth/*."
+  description = "POSTs per IP per 5 min to any path containing /auth/ (API and Server Actions)."
   type        = number
   default     = 300
 }

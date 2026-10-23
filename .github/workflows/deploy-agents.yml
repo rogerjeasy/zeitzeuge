@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths: ["services/agents/**", "services/falsifier/**", "services/mcp-geo/**", "packages/schemas/**"]
 
+defaults:
+  run:
+    # Explicit, so GitHub runs `bash -eo pipefail`: the implicit default has no
+    # pipefail, and `cmd | tee` would then pass even when `cmd` fails.
+    shell: bash
+
 permissions:
   id-token: write
   contents: read

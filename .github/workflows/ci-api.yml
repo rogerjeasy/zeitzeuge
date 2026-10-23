@@ -13,6 +13,9 @@ permissions:
 
 defaults:
   run:
+    # Explicit, so GitHub runs `bash -eo pipefail`: the implicit default has no
+    # pipefail, and `cmd | tee` would then pass even when `cmd` fails.
+    shell: bash
     working-directory: apps/api
 
 jobs:
