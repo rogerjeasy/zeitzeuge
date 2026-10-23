@@ -1,12 +1,12 @@
-# ZEITZEUGE — Review against the official brief (`description.md`)
+# ZEITZEUGE — Review against the challenge brief
 
 | | |
 |---|---|
 | **Date** | 2026-10-23, hackathon day 1, ≈ 1.5 h into the build window |
-| **Reviewed** | `PROPOSED_SOLUTION.md`, `docs/architecture.md` and `docs/data-model.md` as they stood before alignment (2026-10-23) |
-| **Against** | `description.md` — the Kanton Schwyz challenge brief as published for the event (Ralph Ruch, Staatsarchiv) |
+| **Reviewed** | [`PROPOSED_SOLUTION.md`](./PROPOSED_SOLUTION.md), [`architecture.md`](./architecture.md) and [`data-model.md`](./data-model.md) |
+| **Against** | The Kanton Schwyz challenge brief as published for the event (Ralph Ruch, Staatsarchiv) |
 | **Ids** | `BR-n` = brief gap. Existing ids stay valid: `G1–G17` (architecture), `R1–R19` (data model) |
-| **Status** | The three documents have since been aligned to this review (same day). The "today" columns below describe the state **before** alignment and are kept as the record of what changed. |
+| **Status** | Every BR item below is addressed in `PROPOSED_SOLUTION.md`, `architecture.md` and `data-model.md`. |
 
 ---
 

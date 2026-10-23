@@ -13,7 +13,7 @@
 | **Prize** | CHF 1'000 (the brief lists no 2nd or 3rd prize) |
 | **Team size** | 3–4 (per the brief) |
 | **Author** | Roger Jeasy Bavibidila |
-| **Document status** | **Design of record, aligned with the official challenge brief** (`description.md`). Decisions marked ⚠️ need verification on the day. Implementation is tracked in [`architecture.md`](./architecture.md) and [`data-model.md`](./data-model.md). |
+| **Document status** | Decisions marked ⚠️ need verification on the day. Technical detail in [`architecture.md`](./architecture.md) and [`data-model.md`](./data-model.md). |
 | **Last updated** | 2026-10-23 |
 
 ---
@@ -58,7 +58,7 @@
 
 ## 1. The brief, and what it actually asks for
 
-### 1.1 The official brief (`description.md`)
+### 1.1 The official brief
 
 **Background.** The Staatsarchiv des Kantons Schwyz manages digital and digitised photographs. For their description (*Erschliessung*) meaningful geographic metadata is often missing: buildings, villages and landscape features are visible, but determining exactly which ones takes a lot of manual research or stays incomplete. A comparable approach was tried **two years ago with unconvincing results**; since AI image analysis has advanced strongly, the archive wants to see what is possible today with **publicly available AI tools and reference sources**.
 
@@ -995,7 +995,7 @@ Order-of-magnitude, to be replaced with measured `cost_ledger` numbers during th
 | Agents, falsifier, exporters, eval harness | Not started |
 | The Prio-1 images | Not yet downloaded |
 
-The architecture of record and the data model are in this `docs/` folder: [`architecture.md`](./architecture.md) and [`data-model.md`](./data-model.md). The rules of the event allow prepared infrastructure and templates; the agents, the orchestration, the falsifier and the exports are built during the window.
+The architecture and the data model are in this `docs/` folder: [`architecture.md`](./architecture.md) and [`data-model.md`](./data-model.md). The rules of the event allow prepared infrastructure and templates; the agents, the orchestration, the falsifier and the exports are built during the window.
 
 ### 13.1 Team shape
 
@@ -1151,7 +1151,7 @@ Standards-based output (Excel keyed to the AIS, ISAD(G), DC, IIIF) means the Can
 - 3–4 person team, the 21.5 h window, HSLU Rotkreuz, on-site.
 - USD 2'000 AWS credit usable in `eu-central-2`.
 - Ralph Ruch reachable during the event.
-- The rubric and brief in `description.md` are final.
+- The rubric and the brief as published for the challenge are final.
 - Commons imagery is usable for evaluation and reference under its CC licences with attribution.
 
 ---
@@ -1251,7 +1251,7 @@ zeitzeuge/
 ├── README.md                     # judge-facing: live URL first, then why-this-architecture
 ├── docs/
 │   ├── PROPOSED_SOLUTION.md      # this document
-│   ├── architecture.md           # architecture of record
+│   ├── architecture.md           # architecture
 │   ├── data-model.md             # every table, contract, invariant, RLS policy
 │   ├── brief-review.md           # the brief compliance review (BR ids)
 │   ├── evaluation.md             # gold set, metrics, QC pass, ablation results
@@ -1286,7 +1286,7 @@ zeitzeuge/
 
 # Appendix D — Source list
 
-- `description.md` — the official challenge brief (background, problem, MUST/SHOULD, constraints, reference sources, rubric)
+- The Kanton Schwyz challenge brief — background, problem, MUST/SHOULD, constraints, reference sources, rubric
 - [Zentral Hack 2026 — official site](https://www.zentralhack.ch/) — venue, format, categories
 - [Staatsarchiv des Kantons Schwyz — online catalogue](https://archives-quickaccess.ch/stasz) and scopeArchiv Query (`query.staatsarchiv.sz.ch`) — SG.CIV fonds (Bettschart, Braun, Goetz), Ansichtskarten, Graphische Sammlung
 - E-Pics Bildarchiv der ETH-Bibliothek (`ba.e-pics.ethz.ch`) — reference photographs of the Schwyz municipalities
@@ -1331,4 +1331,4 @@ Keep these definitions to one line each; a mixed jury will not all know them.
 
 ---
 
-*This document is the design of record for the build; implementation is tracked in [`architecture.md`](./architecture.md) and [`data-model.md`](./data-model.md).*
+*Technical detail: [`architecture.md`](./architecture.md) and [`data-model.md`](./data-model.md).*

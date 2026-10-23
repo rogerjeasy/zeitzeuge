@@ -1,19 +1,19 @@
 # ZEITZEUGE — Data Model
 
-> **Status:** design of record for every persisted and exchanged shape in ZEITZEUGE, aligned with the official challenge brief.
+> **Scope:** every persisted and exchanged shape in ZEITZEUGE.
 > **Last updated:** 2026-10-23 (hackathon day 1).
 > **Companion:** [`architecture.md`](./architecture.md) — where each store sits and which component writes to it. [`brief-review.md`](./brief-review.md) — the gap ids `BR-n` this model closes.
 
-This document is built from four sources and reconciles them:
+The model draws on four inputs:
 
 | Source | What it contributes | Status |
 |---|---|---|
-| `description.md` — the official brief (Kanton Schwyz, Staatsarchiv, Ralph Ruch) | The five ranked fields (Ortschaft → politische Gemeinde → Gebäude → See/Fluss/Berg → Strasse), the Excel row contract (one row per photo, unique link to the file, confidence per row, explained scoring rule), the Prio-1 set of 50 within ≈ 600 photos of the 21st century, the reference sources (SG.CIV catalogue, E-Pics, public geodata, public research tools) | **Binding** |
+| The Kanton Schwyz challenge brief (Staatsarchiv, Ralph Ruch) | The five ranked fields (Ortschaft → politische Gemeinde → Gebäude → See/Fluss/Berg → Strasse), the Excel row contract (one row per photo, unique link to the file, confidence per row, explained scoring rule), the Prio-1 set of 50 within ≈ 600 photos of the 21st century, the reference sources (SG.CIV catalogue, E-Pics, public geodata, public research tools) | **Binding** |
 | `PROPOSED_SOLUTION.md` §5.3, §8, §9.4, Appendix B | The Evidence Ledger, the per-field provenance block, the abridged ER sketch, the core JSON schemas | Design |
 | `apps/web/src/lib/data/*.ts`, `apps/web/src/lib/upload/*.ts` | The shapes every screen already renders against dummy data: case file, queue, theater, history, fonds, evaluation, assist, admin, settings | Built (simulated) |
 | `apps/api/migrations/versions/0001_identity_foundation.py`, `apps/api/src/zeitzeuge_api/db/models/*` | Tenancy, users, preferences, sessions, API keys, audit log; RLS policies and grants | **Built and tested** (65 unit tests, cross-tenant RLS suite) |
 
-Where the sources disagree, §15 says which one wins and why. Two rules: **the brief wins on what must be delivered** (fields, Excel, confidence rule, the 50), and **the built artefact is the source of truth for counts and claims; the proposal is reconciled to it.**
+Where they disagree, §15 says which one wins and why: **the brief decides what must be delivered** (fields, Excel, confidence rule, the 50), and this document decides counts, names and contracts.
 
 ---
 
@@ -1501,7 +1501,7 @@ Found while building this model. Each one is a place where two artefacts would c
 | R9 | Dates as strings | Mock values `"1893–1900"`, parsed back by `parseBracket()` | Stored as `{from, to, circa}`; string is display only | None |
 | R10 | Relative times | `minutesAgo`, `waitingDays`, `hoursAgo`, `daysAgo` | Timestamps; relative rendering is client-side | None |
 | R11 | Cost figures | Settings `RUN_MODES` fast/standard/deep = 0.02/0.17/0.64 USD; dashboard `perImageUsd 0.167`; eval cost metric ≈ 0.05; proposal §12 standard 0.05–0.09, blended 0.012–0.020; theater run 0.21 | One price table in `cost_ledger.unit_prices`; all screens read measured `cost_per_image` | Pick one story before the pitch; the Business-Potenzial slide quotes these |
-| R12 | Agent count | Proposal prose once said 17 and the UI 18; the roster aligned with the brief is **20** (#0–#19: Open Research and Street-Level Verifier added) | `agent_id` enum has 20 values; `agents_total = 20` | `agents.ts` gains the two ids (R24); the pitch says twenty |
+| R12 | Agent count | The roster is **20** (#0–#19, including Open Research and Street-Level Verifier); any copy that says 17 or 18 is wrong | `agent_id` enum has 20 values; `agents_total = 20` | `agents.ts` has the 20 ids (R24); the pitch says twenty |
 | R13 | Haggenspitz | Proposal §6.1 labels three summits | `terrain_tests.summits` only holds summits with a distinct local maximum | Two labels on stage |
 | R14 | Curator tier | Proposal topology puts Curator-Feedback in tier 5; UI `Tier` is 0–4 with curator in tier 4 | `agent_invocations.tier` stores the roster's tier (4) | None |
 | R15 | Evidence ids in queue rows | `QUEUE_ITEMS[*].evidence` (`ev_021…`) look global | Evidence ids are run-local; API addresses `{run_id}/{ev}` | None |

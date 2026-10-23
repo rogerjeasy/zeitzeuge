@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| **Status** | Architecture of record, hackathon day 1. Aligned with the official challenge brief (`description.md`). Supersedes the architecture sections of `PROPOSED_SOLUTION.md` (§5, §7, §9, §10) where they differ. |
+| **Status** | Hackathon day 1. The technical counterpart of [`PROPOSED_SOLUTION.md`](./PROPOSED_SOLUTION.md), covering its §5, §7, §9 and §10 in depth. |
 | **Scope** | Every technical aspect of the solution: system context, containers, the 20-agent pipeline, orchestration, the terrain falsifier, the five ranked geographic fields, evidence and decision layer, the confidence rule, the Excel export, the research tier, API, frontend, AWS infrastructure, security, observability, cost, evaluation, CI/CD, delivery plan. |
 | **Companion** | [`data-model.md`](./data-model.md) — every table, contract, invariant and RLS policy referenced here. [`brief-review.md`](./brief-review.md) — the brief gaps BR-1…BR-19 this document closes. |
-| **Sources reconciled** | `description.md` (the official brief), `PROPOSED_SOLUTION.md` (design), `apps/web` (built UI on simulated data), `apps/api` (built identity slice, 65 tests + RLS suite), `infra/` (17 Terraform modules, ~250 resources, planned not applied), `orchestration/statemachines` (ASL skeletons), `.github/workflows` (5 workflows). |
+| **Inputs** | The Kanton Schwyz challenge brief, [`PROPOSED_SOLUTION.md`](./PROPOSED_SOLUTION.md) (design), `apps/web` (built UI on simulated data), `apps/api` (built identity slice, 65 tests + RLS suite), `infra/` (17 Terraform modules, ~250 resources, planned not applied), `orchestration/statemachines` (ASL skeletons), `.github/workflows` (5 workflows). |
 | **Legend** | ✅ built · 🟡 written, not deployed/wired · 🔲 designed here, to build · ⚠️ verify before relying on it |
 
 ---
@@ -45,7 +45,7 @@
 
 ### 1.1 The brief
 
-The official brief (`description.md`, Kanton Schwyz / Staatsarchiv, contact **Ralph Ruch**) states the problem in one sentence:
+The official brief (Kanton Schwyz / Staatsarchiv, contact **Ralph Ruch**) states the problem in one sentence:
 
 > *Wie können Ortschaften, politische Gemeinden, konkrete Gebäude, Seen, Berge, Flüsse oder Strassen auf Archivfotos möglichst automatisiert erkannt werden, damit die Bilder mit zuverlässigen geografischen Metadaten erschlossen werden können?*
 
@@ -968,7 +968,7 @@ The brief's SHOULD S6 asks for geographic visualisation, and on a 21st-century m
 
 ### 11.6 UI data contract (to implement)
 
-The documents are the source of truth; the prep-phase mock modules in `src/lib/data/*` are aligned to this contract when implementation starts (data-model R21, R24). Counts shown anywhere in the UI derive from these lists, never from copy.
+The data modules in `src/lib/data/*` implement this contract (data-model R21, R24). Counts shown anywhere in the UI derive from these lists, never from copy.
 
 **`agents.ts` — the roster (20 entries, six families).** `ModelFamily = deterministic · claude-opus · claude-sonnet · claude-haiku · openai · aws-ml`; `TIERS` stays 0–4 (`intake · perception · grounding · adversarial · production`). Model labels are display defaults; the live labels come from the `models.yaml` manifest (ADR-07).
 
