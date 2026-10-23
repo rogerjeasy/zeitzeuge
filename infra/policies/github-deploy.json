@@ -31,10 +31,18 @@
       "Resource": "arn:aws:ecs:${region}:${account_id}:service/${project}-${env}/*"
     },
     {
-      "Sid": "RunMigrations",
+      "Sid": "RunMigrationsAndSeed",
       "Effect": "Allow",
       "Action": "ecs:RunTask",
-      "Resource": "arn:aws:ecs:${region}:${account_id}:task-definition/${project}-${env}-api-migrate:*"
+      "Resource": [
+        "arn:aws:ecs:${region}:${account_id}:task-definition/${project}-${env}-api-migrate:*",
+        "arn:aws:ecs:${region}:${account_id}:task-definition/${project}-${env}-api-seed:*"
+      ],
+      "Condition": {
+        "ArnEquals": {
+          "ecs:cluster": "arn:aws:ecs:${region}:${account_id}:cluster/${project}-${env}"
+        }
+      }
     },
     {
       "Sid": "WatchTasks",
@@ -51,6 +59,26 @@
         "ecs:DescribeTaskDefinition"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "RegisterPinnedRevisions",
+      "Effect": "Allow",
+      "Action": "ecs:RegisterTaskDefinition",
+      "Resource": "*"
+    },
+    {
+      "Sid": "TagWhatItCreates",
+      "Effect": "Allow",
+      "Action": "ecs:TagResource",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ecs:CreateAction": [
+            "RegisterTaskDefinition",
+            "RunTask"
+          ]
+        }
+      }
     },
     {
       "Sid": "UpdateAgents",

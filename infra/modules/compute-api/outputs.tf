@@ -37,6 +37,10 @@ output "migrate_task_definition_family" {
   value = aws_ecs_task_definition.migrate.family
 }
 
+output "seed_task_definition_family" {
+  value = aws_ecs_task_definition.seed.family
+}
+
 output "migrate_network_configuration" {
   description = "Paste into the GitHub variable ECS_MIGRATE_NETWORK_CONFIG."
   value = jsonencode({

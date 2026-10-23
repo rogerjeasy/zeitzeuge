@@ -1,0 +1,40 @@
+name: ci-web
+
+# The web app's checks: on every pull request that touches it, and as the gate
+# in front of every deploy (deploy-web.yml calls this workflow).
+on:
+  pull_request:
+    paths: ["apps/web/**", ".github/workflows/ci-web.yml"]
+  workflow_call:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps/web
+
+jobs:
+  quality:
+    name: lint · types · unit tests · production build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: next-${{ hashFiles('apps/web/package-lock.json') }}-${{ github.sha }}
+          restore-keys: next-${{ hashFiles('apps/web/package-lock.json') }}-
+      # The build is a check in its own right: it type-checks routes, renders
+      # every static page and fails on a broken import the linters miss.
+      - run: npm run build

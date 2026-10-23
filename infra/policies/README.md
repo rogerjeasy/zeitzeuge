@@ -12,7 +12,7 @@ substituted.
 |---|---|---|
 | `builder-user.json` | `ZeitzeugeBuilder`, the human builder (root-managed) | builds everything in home regions; IAM writes only on `zeitzeuge-*` under the boundary; cannot raise its own permissions |
 | `boundary.json` | `ZeitzeugeBoundary`, on **every** `zeitzeuge-*` role (root-managed) | the ceiling no role can exceed, whatever is attached later |
-| `github-deploy.json` | `zeitzeuge-prod-github-deploy`, via OIDC | push images, run the migrate task, roll services, update agent code — no IAM, no deletes |
+| `github-deploy.json` | `zeitzeuge-prod-github-deploy`, via OIDC | push images, register `:<sha>`-pinned task revisions, run the migrate and seed tasks, roll services, update agent code — no IAM, no deletes |
 | `ecs-task-execution.json` | ECS agent for every task | pull `zeitzeuge/*` images, write own logs, inject `zeitzeuge/prod/*` secrets |
 | `ecs-task-api.json` | FastAPI tasks | Cognito admin calls on its one pool, presign assets, avatars, start investigations, session state |
 | `ecs-task-migrate.json` | one-off migrate/seed task | read the RDS-managed master secret — the only role that can |

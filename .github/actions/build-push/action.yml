@@ -1,0 +1,50 @@
+name: Build and push an image to ECR
+description: >
+  Builds one service image, tags it with the commit SHA (immutable in ECR) and
+  `latest` (the one tag ECR lets move), and pushes both. Expects AWS
+  credentials to be configured already.
+
+inputs:
+  context:
+    description: Build context, e.g. apps/api
+    required: true
+  repository:
+    description: ECR repository name, e.g. zeitzeuge/api
+    required: true
+  platform:
+    description: linux/amd64 or linux/arm64 — must match the task definition's runtimePlatform
+    required: true
+
+outputs:
+  image:
+    description: The pushed image, pinned to the commit (`<registry>/<repo>:<sha>`)
+    value: ${{ steps.ref.outputs.image }}
+
+runs:
+  using: composite
+  steps:
+    - id: ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - uses: docker/setup-buildx-action@v3
+
+    - id: ref
+      shell: bash
+      env:
+        REGISTRY: ${{ steps.ecr.outputs.registry }}
+        REPOSITORY: ${{ inputs.repository }}
+      run: echo "image=$REGISTRY/$REPOSITORY:$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
+    - uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        platforms: ${{ inputs.platform }}
+        push: true
+        tags: |
+          ${{ steps.ref.outputs.image }}
+          ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}:latest
+        # A single-platform manifest: what ECS and Lambda both pull without
+        # surprises. Attestations would turn it into an index.
+        provenance: false
+        cache-from: type=gha,scope=${{ inputs.repository }}
+        cache-to: type=gha,mode=max,scope=${{ inputs.repository }}

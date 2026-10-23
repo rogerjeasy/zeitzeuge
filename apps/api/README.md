@@ -175,29 +175,27 @@ tests/                   unit (moto + SQLite) · integration (`-m integration`, 
 
 ## Deploying
 
-`.github/workflows/deploy-api.yml` lints, type-checks and tests, then builds for
-`linux/amd64`, pushes to ECR and rolls the ECS service. Migrations run as a
-**one-off ECS task inside the VPC** (`<service>-migrate`, the same image with
-`alembic upgrade head` as its command) — Aurora lives in private subnets and a
-GitHub runner cannot reach it. `checks.yml` runs the cross-tenant isolation
-suite against a real PostgreSQL on the same commit.
+`.github/workflows/deploy-api.yml`, gated by `ci-api.yml` (lint, types, unit
+tests, and the RLS + role-provisioning suites on a real Postgres). It builds
+`linux/amd64`, pushes `:<sha>` to ECR, registers `:<sha>`-pinned revisions of
+the `api`, `api-migrate` and `api-seed` task definitions, then — inside the
+VPC, as one-off ECS tasks — migrates Aurora and seeds the demo identity, rolls
+the service, refuses a circuit-breaker rollback, and smoke-tests
+`/api/v1/readyz` through CloudFront. `infra/docs/RUNBOOK.md` §E–F is the
+procedure; `make github` in `infra/` wires the repository to the account.
 
-Not yet wired, and deliberately visible rather than hidden:
-
-- `infra/modules/auth` and the rest of `infra/` are still stubs — this service
-  codes against the contract in the table above, and `infra/modules/auth/main.tf`
-  now carries that contract as a comment.
-- `poetry.lock` is created by the first `poetry install`. Commit it.
-- The migrate task definition comes from `infra/modules/compute-api`; until it
-  exists, run `alembic upgrade head` from a bastion or a local tunnel.
+The migration provisions `zeitzeuge_app` itself (`db/roles.py`, from
+`ZZ_APP_DB_SECRET_REF`): a login role with neither SUPERUSER nor BYPASSRLS,
+created before the schema grants it anything.
 
 ## Testing
 
 ```bash
-make test                       # 65 unit tests, no Docker, moto for AWS
-make up
-ZZ_TEST_POSTGRES_DSN=postgresql+asyncpg://zeitzeuge_app:zeitzeuge_app@localhost:5432/zeitzeuge \
-  poetry run pytest -m integration     # the cross-tenant isolation suite
+make test                       # the unit suite, no Docker, moto for AWS
+make up                         # then, against a fresh database:
+ZZ_TEST_POSTGRES_DSN=postgresql+asyncpg://zeitzeuge_app:zeitzeuge_app@localhost:5432/<db> \
+ZZ_TEST_POSTGRES_ADMIN_DSN=postgresql+asyncpg://zeitzeuge:zeitzeuge@localhost:5432/<db> \
+  poetry run pytest -m integration     # RLS isolation + role provisioning
 make check                      # lint + types + tests, as CI runs them
 ```
 

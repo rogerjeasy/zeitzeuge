@@ -1,12 +1,35 @@
 name: deploy-api
 
+# tests → image → migrate → seed → roll → smoke, against the real account.
+#
+# Nothing here is simulated: the image runs on ECS Fargate in eu-central-2,
+# migrations run inside the VPC against Aurora, the seed writes the demo
+# tenant to Aurora and the guest identity to Cognito, and the smoke test goes
+# through CloudFront like a browser. Infrastructure itself is never changed
+# from CI — the deploy role cannot (infra/modules/cicd).
+#
+# Until `make github` has run (after `make apply`), DEPLOY_ENABLED is unset:
+# the tests still gate every push, and the deploy jobs show as skipped rather
+# than failing on credentials that do not exist yet.
+
 on:
   push:
     branches: [main]
-    paths: ["apps/api/**", "packages/schemas/**", ".github/workflows/deploy-api.yml"]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/deploy-api.yml"
+      - ".github/workflows/ci-api.yml"
+      - ".github/actions/build-push/**"
+      - ".github/scripts/**"
+  workflow_dispatch: # also: roll out a Terraform change to a task definition
+
+# One production rollout at a time, and never cancel one halfway through a
+# migration.
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
 
 permissions:
-  id-token: write
   contents: read
 
 env:
@@ -14,77 +37,121 @@ env:
   ECR_REPO: zeitzeuge/api
   ECS_CLUSTER: zeitzeuge-prod
   ECS_SERVICE: zeitzeuge-prod-api
-  # Set by infra/modules/compute-api once it is applied; see its README.
-  MIGRATE_NETWORK: ${{ vars.ECS_MIGRATE_NETWORK_CONFIG }}
+  FAMILY_API: zeitzeuge-prod-api
+  FAMILY_MIGRATE: zeitzeuge-prod-api-migrate
+  FAMILY_SEED: zeitzeuge-prod-api-seed
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  ci:
+    uses: ./.github/workflows/ci-api.yml
+
+  build:
+    needs: ci
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04 # Fargate runs the API on X86_64
+    timeout-minutes: 20
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image: ${{ steps.push.outputs.image }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - name: Deploy configuration is present
+        env:
+          ROLE: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "::error::DEPLOY_ENABLED is set but AWS_DEPLOY_ROLE_ARN is not. Run 'make github' in infra/."
+            exit 1
+          fi
+      - uses: aws-actions/configure-aws-credentials@v5
         with:
-          python-version: "3.12"
-      - run: pipx install poetry==2.5.1
-      - run: poetry install --no-interaction
-        working-directory: apps/api
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: push
+        uses: ./.github/actions/build-push
+        with:
+          context: apps/api
+          repository: ${{ env.ECR_REPO }}
+          platform: linux/amd64
 
-      - run: poetry run ruff check src tests
-        working-directory: apps/api
-      - run: poetry run mypy src
-        working-directory: apps/api
-      # The unit suite runs against moto and SQLite: no services, a few
-      # seconds. Cross-tenant isolation needs Postgres and is gated in
-      # `checks.yml`, which runs on the same commit.
-      - run: poetry run pytest -q
-        working-directory: apps/api
-
-  deploy:
-    needs: test        # tests gate the deploy; never the other way round
-    runs-on: ubuntu-latest
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      IMAGE: ${{ needs.build.outputs.image }}
+      NETWORK: ${{ vars.ECS_MIGRATE_NETWORK_CONFIG }}
+      APP_URL: ${{ vars.APP_URL }}
     steps:
       - uses: actions/checkout@v5
-
+      - name: Deploy configuration is present
+        run: |
+          for name in NETWORK APP_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::repository variable for $name is missing. Run 'make github' in infra/."
+              exit 1
+            fi
+          done
       - uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - uses: aws-actions/amazon-ecr-login@v2
-        id: ecr
+      - name: Pin a revision of each family to this commit's image
+        id: pin
+        run: |
+          {
+            echo "api=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_API" "$IMAGE")"
+            echo "migrate=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_MIGRATE" "$IMAGE")"
+            echo "seed=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_SEED" "$IMAGE")"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Build and push
+      # Before the roll, so the new code never meets the old schema. Migrations
+      # must therefore be additive (expand, then contract in a later release):
+      # the old tasks keep serving on the new schema until the roll completes.
+      - name: Migrate Aurora — the service is not rolled unless this exits 0
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
-        run: |
-          # Fargate is x86. An arm64 image from an Apple-silicon dev machine
-          # fails at task start with exec-format error, so pin the platform.
-          docker buildx build \
-            --platform linux/amd64 \
-            -t "$REGISTRY/$ECR_REPO:${{ github.sha }}" \
-            -t "$REGISTRY/$ECR_REPO:latest" \
-            --push apps/api
+          TASK_DEFINITION: ${{ steps.pin.outputs.migrate }}
+        run: .github/scripts/ecs-run-task.sh "$ECS_CLUSTER" "$TASK_DEFINITION" "$NETWORK"
 
-      - name: Migrate — and wait for it — before rolling the service
+      # Idempotent. On every deploy, so "Als Gast demo starten" can never
+      # silently stop working: the demo tenant in Aurora, the guest user in
+      # Cognito with the password held in Secrets Manager.
+      - name: Seed the demo tenant and guest identity
+        env:
+          TASK_DEFINITION: ${{ steps.pin.outputs.seed }}
+        run: .github/scripts/ecs-run-task.sh "$ECS_CLUSTER" "$TASK_DEFINITION" "$NETWORK"
+
+      - name: Roll the service — and fail on a circuit-breaker rollback
+        id: roll
+        env:
+          TASK_DEFINITION: ${{ steps.pin.outputs.api }}
+        run: .github/scripts/ecs-deploy-service.sh "$ECS_CLUSTER" "$ECS_SERVICE" "$TASK_DEFINITION" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Smoke test through CloudFront
+        if: steps.roll.outputs.running != '0'
+        run: .github/scripts/smoke.sh api "$APP_URL"
+      - name: Nothing to smoke-test yet
+        if: steps.roll.outputs.running == '0'
+        run: echo "::warning::$ECS_SERVICE has 0 tasks — set api_image_ready = true in infra/envs/prod/terraform.tfvars and 'make apply'. The image and migrations are in place."
+
+      - name: Summary
+        if: always()
+        env:
+          REVISION: ${{ steps.pin.outputs.api }}
+          RUNNING: ${{ steps.roll.outputs.running }}
         run: |
-          TASK=$(aws ecs run-task \
-            --cluster "$ECS_CLUSTER" \
-            --task-definition "$ECS_SERVICE-migrate" \
-            --launch-type FARGATE \
-            --network-configuration "$MIGRATE_NETWORK" \
-            --query 'tasks[0].taskArn' --output text)
-          echo "migrate task: $TASK"
-          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK"
-          CODE=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK" \
-            --query 'tasks[0].containers[0].exitCode' --output text)
-          if [ "$CODE" != "0" ]; then
-            echo "::error::migration exited with $CODE — the service was NOT rolled"
-            exit 1
-          fi
-      - name: Roll the service
-        run: |
-          aws ecs update-service \
-            --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
-            --force-new-deployment >/dev/null
-          aws ecs wait services-stable \
-            --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+          {
+            echo "### deploy-api"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| image | \`$IMAGE\` |"
+            echo "| revision | \`${REVISION:-not registered}\` |"
+            echo "| tasks | ${RUNNING:-n/a} |"
+            echo "| app | $APP_URL |"
+          } >> "$GITHUB_STEP_SUMMARY"

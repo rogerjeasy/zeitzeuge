@@ -1,12 +1,31 @@
 name: deploy-web
 
+# tests → image → roll → smoke, against the real account.
+#
+# The web tier holds no AWS credentials and no secrets at runtime: it reaches
+# the API over the internal ALB (`API_INTERNAL_URL`, set by
+# infra/modules/compute-api). The smoke test proves the whole sign-in path
+# from outside — including that CloudFront forwards the Host header, without
+# which every Server Action (sign-in, sign-up) fails.
+#
+# Gated on DEPLOY_ENABLED exactly like deploy-api.yml.
+
 on:
   push:
     branches: [main]
-    paths: ["apps/web/**", "packages/schemas/**"]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/deploy-web.yml"
+      - ".github/workflows/ci-web.yml"
+      - ".github/actions/build-push/**"
+      - ".github/scripts/**"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
 
 permissions:
-  id-token: write
   contents: read
 
 env:
@@ -14,44 +33,97 @@ env:
   ECR_REPO: zeitzeuge/web
   ECS_CLUSTER: zeitzeuge-prod
   ECS_SERVICE: zeitzeuge-prod-web
+  FAMILY_WEB: zeitzeuge-prod-web
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  ci:
+    uses: ./.github/workflows/ci-web.yml
+
+  build:
+    needs: ci
+    if: vars.DEPLOY_ENABLED == 'true'
+    # Fargate runs the web tier on ARM64; building natively takes minutes
+    # where QEMU emulation of `next build` takes the better part of an hour.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image: ${{ steps.push.outputs.image }}
     steps:
       - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
-
-      - run: npm ci
-        working-directory: apps/web
-
-      - run: npm run lint && npx tsc --noEmit
-        working-directory: apps/web
-
+      - name: Deploy configuration is present
+        env:
+          ROLE: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "::error::DEPLOY_ENABLED is set but AWS_DEPLOY_ROLE_ARN is not. Run 'make github' in infra/."
+            exit 1
+          fi
       - uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - uses: aws-actions/amazon-ecr-login@v2
-        id: ecr
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      # Next.js standalone server (proxy.ts and per-request i18n need one).
-      # Same-origin API paths are baked in by the Dockerfile's defaults.
-      - name: Build and push
+      - id: push
+        uses: ./.github/actions/build-push
+        with:
+          context: apps/web
+          repository: ${{ env.ECR_REPO }}
+          platform: linux/arm64
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      IMAGE: ${{ needs.build.outputs.image }}
+      APP_URL: ${{ vars.APP_URL }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Deploy configuration is present
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "::error::repository variable APP_URL is missing. Run 'make github' in infra/."
+            exit 1
+          fi
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Pin a revision to this commit's image
+        id: pin
+        run: echo "web=$(.github/scripts/ecs-pin-revision.sh "$FAMILY_WEB" "$IMAGE")" >> "$GITHUB_OUTPUT"
+
+      - name: Roll the service — and fail on a circuit-breaker rollback
+        id: roll
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TASK_DEFINITION: ${{ steps.pin.outputs.web }}
+        run: .github/scripts/ecs-deploy-service.sh "$ECS_CLUSTER" "$ECS_SERVICE" "$TASK_DEFINITION" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Smoke test through CloudFront
+        if: steps.roll.outputs.running != '0'
+        run: .github/scripts/smoke.sh web "$APP_URL"
+      - name: Nothing to smoke-test yet
+        if: steps.roll.outputs.running == '0'
+        run: echo "::warning::$ECS_SERVICE has 0 tasks — set web_image_ready = true in infra/envs/prod/terraform.tfvars and 'make apply'."
+
+      - name: Summary
+        if: always()
+        env:
+          REVISION: ${{ steps.pin.outputs.web }}
+          RUNNING: ${{ steps.roll.outputs.running }}
         run: |
-          docker buildx build --platform linux/arm64 \
-            -t "$REGISTRY/$ECR_REPO:${{ github.sha }}" \
-            -t "$REGISTRY/$ECR_REPO:latest" \
-            --push apps/web
-      - name: Roll the service
-        run: |
-          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force-new-deployment >/dev/null
-          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+          {
+            echo "### deploy-web"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| image | \`$IMAGE\` |"
+            echo "| revision | \`${REVISION:-not registered}\` |"
+            echo "| tasks | ${RUNNING:-n/a} |"
+            echo "| app | $APP_URL |"
+          } >> "$GITHUB_STEP_SUMMARY"

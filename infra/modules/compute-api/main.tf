@@ -10,10 +10,16 @@
 # directly, so a gateway in front would add a hop, a bill and a second place
 # for auth to drift. The ALB has no public address; only CloudFront reaches it.
 #
-# Images: services track `:latest`, which CI moves after tests pass and
-# then forces a new deployment. Until the first image is pushed, desired
-# counts are 0 (`api_image_ready` / `web_image_ready`), so the stack applies
-# cleanly on day one without crash-looping tasks.
+# Images: Terraform owns each task definition's *shape* (roles, env, sizes)
+# and registers it on `:latest`. CI deploys by registering a new revision of
+# that family pinned to the commit's immutable `:<sha>` tag and pointing the
+# service at it — so the circuit breaker's rollback returns to the previous
+# image, not to whatever `:latest` happens to be. The services therefore
+# ignore `task_definition` drift. After a Terraform change to a task
+# definition, run the deploy workflow (workflow_dispatch) to roll it out.
+#
+# Until the first image is pushed, desired counts are 0 (`api_image_ready` /
+# `web_image_ready`), so the stack applies cleanly without crash-looping.
 
 data "aws_region" "current" {}
 
@@ -69,7 +75,7 @@ resource "aws_ecs_cluster_capacity_providers" "this" {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  for_each = toset(["api", "web", "api-migrate"])
+  for_each = toset(["api", "web", "api-migrate", "api-seed"])
 
   name              = "/ecs/${local.name}-${each.key}"
   retention_in_days = var.log_retention_days
@@ -274,6 +280,52 @@ resource "aws_ecs_task_definition" "migrate" {
   tags = var.tags
 }
 
+# The demo tenant and the guest identity behind "Als Gast demo starten"
+# (scripts/seed_demo.py). Idempotent; CI runs it after every migration so the
+# guest path can never silently stop working. It runs as the *API* — RLS-bound
+# database role, the API's Cognito permissions — because that is all it needs.
+resource "aws_ecs_task_definition" "seed" {
+  family                   = "${local.name}-api-seed"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.api_task_role_arn
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
+  volume {
+    name = local.tmp_volume
+  }
+
+  container_definitions = jsonencode([{
+    name                   = "api"
+    image                  = "${var.api_repository_url}:latest"
+    essential              = true
+    readonlyRootFilesystem = true
+    user                   = "10001"
+    command                = ["python", "-m", "zeitzeuge_api.scripts.seed_demo"]
+    environment = [for k, v in merge(local.api_env, {
+      ZZ_SERVICE_NAME = "seed"
+    }) : { name = k, value = v }]
+    mountPoints = [{ sourceVolume = local.tmp_volume, containerPath = "/tmp" }]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.this["api-seed"].name
+        awslogs-region        = local.region
+        awslogs-stream-prefix = "seed"
+      }
+    }
+  }])
+
+  tags = var.tags
+}
+
 resource "aws_ecs_task_definition" "web" {
   family                   = "${local.name}-web"
   requires_compatibilities = ["FARGATE"]
@@ -384,8 +436,9 @@ resource "aws_ecs_service" "this" {
   tags = merge(var.tags, { Service = each.key })
 
   lifecycle {
-    # Autoscaling owns the count once running.
-    ignore_changes = [desired_count]
+    # Autoscaling owns the count once running; CI owns the revision (see the
+    # header): it deploys `:<sha>` revisions of the family Terraform defines.
+    ignore_changes = [desired_count, task_definition]
   }
 
   depends_on = [aws_lb_listener.http, aws_lb_listener_rule.api]

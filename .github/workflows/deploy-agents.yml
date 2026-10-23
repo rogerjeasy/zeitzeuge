@@ -15,6 +15,9 @@ env:
 
 jobs:
   deploy:
+    # Same gate as deploy-api/deploy-web. `services/agents` does not exist in
+    # this repository yet, so this workflow has nothing to build until it does.
+    if: vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

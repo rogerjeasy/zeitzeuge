@@ -1,0 +1,80 @@
+name: ci-api
+
+# The API's tests: on every pull request that touches it, and as the gate in
+# front of every deploy (deploy-api.yml calls this workflow), so what blocks a
+# merge and what blocks production are the same checks.
+on:
+  pull_request:
+    paths: ["apps/api/**", ".github/workflows/ci-api.yml"]
+  workflow_call:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps/api
+
+jobs:
+  quality:
+    name: lint · types · unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - run: pipx install poetry==2.5.1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: poetry
+          cache-dependency-path: apps/api/poetry.lock
+      - run: poetry install --no-interaction
+      - run: poetry run ruff check src tests
+      - run: poetry run mypy src
+      # moto (the real Cognito, S3 and DynamoDB APIs, in process) and SQLite:
+      # no services, a few seconds.
+      - run: poetry run pytest -q
+
+  rls:
+    name: RLS isolation · role provisioning (Postgres)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - run: pipx install poetry==2.5.1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: poetry
+          cache-dependency-path: apps/api/poetry.lock
+      - run: poetry install --no-interaction
+
+      - name: Create the application role
+        # NOSUPERUSER and NOBYPASSRLS on purpose. A superuser ignores every
+        # policy, so this suite would pass while production leaked — and the
+        # suite refuses to run as one.
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f docker/initdb/01-app-role.sql
+
+      - name: Attack another archive's rows · provision the app role as the migration does
+        env:
+          ZZ_TEST_POSTGRES_DSN: postgresql+asyncpg://zeitzeuge_app:zeitzeuge_app@localhost:5432/postgres
+          # A superuser, like Aurora's master user in the migrate task.
+          ZZ_TEST_POSTGRES_ADMIN_DSN: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+        run: |
+          poetry run pytest -m integration -q -rs | tee pytest.log
+          # A skipped isolation suite proves nothing; treat it as a failure.
+          if grep -q "SKIPPED" pytest.log; then
+            echo "::error::the RLS suite was skipped — it did not run against Postgres"
+            exit 1
+          fi

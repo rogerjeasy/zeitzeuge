@@ -1,7 +1,7 @@
 ENV ?= prod
 TF  := terraform -chdir=envs/$(ENV)
 
-.PHONY: help preflight verify-iam db-role bootstrap init fmt validate lint plan apply output destroy graph cost
+.PHONY: help preflight verify-iam db-role github bootstrap init fmt validate lint plan apply output destroy graph cost
 
 help:
 	@grep -E '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t24
@@ -14,6 +14,9 @@ verify-iam:  ## Prove the builder guardrails with the IAM policy simulator
 
 db-role:    ## Create/re-sync the RLS-bound zeitzeuge_app role (before the first migration)
 	@./scripts/05-create-app-db-role.sh
+
+github:     ## Wire GitHub Actions to the applied ENV (deploy role, network, app URL) and enable deploys
+	@./scripts/06-github-config.sh
 
 bootstrap:  ## One-off: create the state backend and GitHub OIDC provider
 	@./scripts/01-bootstrap.sh

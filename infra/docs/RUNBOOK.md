@@ -12,7 +12,7 @@ Account `707938860881` · home region `eu-central-2` (Zurich) · one environment
 | [B. State backend](#b-state-backend) | 24 Sep | ✅ done |
 | [C. Every session: sign in](#c-every-session-sign-in) | each time | — |
 | [D. First apply](#d-first-apply) | when you decide | ⬜ |
-| [E. GitHub](#e-github-on-23-oct) | 23 Oct, repo creation | ⬜ |
+| [E. GitHub](#e-github) | after D | ⬜ |
 | [F. First deploys, and the switches](#f-first-deploys-and-the-switches) | after E | ⬜ |
 | [G. Event mode](#g-event-mode) | T-7 days and T-1 day | ⬜ |
 | [H. Pitch checklist](#h-pitch-checklist) | 24 Oct | ⬜ |
@@ -119,7 +119,7 @@ WAF 10, KMS 5, CloudWatch 5, secrets 2, Aurora paused ~1).
 | D3 | `make apply` — shows the plan again, asks `y/N` | "Apply complete!" (Aurora and CloudFront take 10–15 min) |
 | D4 | `make output` | `app_url` is `https://….cloudfront.net` |
 | D5 | Two emails from AWS Notifications → **Confirm subscription** in both (alerts topic in Zurich, billing topic in us-east-1) | *SNS → Subscriptions*: both "Confirmed" |
-| D6 | `make db-role` — creates the RLS-bound `zeitzeuge_app` role in Aurora | prints `superuser=False, bypassrls=False` |
+| D6 | *(optional)* `make db-role` — the first CI migration now creates the RLS-bound `zeitzeuge_app` role itself (from `ZZ_APP_DB_SECRET_REF`); this target remains for re-syncing by hand | prints `superuser=False, bypassrls=False` |
 | D7 | `make verify-iam` | *All guardrails hold.* |
 
 At this point the app URL answers **503** — correct: no image is running yet.
@@ -134,55 +134,64 @@ aws secretsmanager put-secret-value --region eu-central-2 \
 
 ---
 
-## E. GitHub (on 23 Oct)
+## E. GitHub
 
-| # | Step |
-|---|---|
-| E1 | Create the repository **`rogerjeasy/zeitzeuge`** — exactly this name; the deploy role trusts only `repo:rogerjeasy/zeitzeuge:ref:refs/heads/main` |
-| E2 | Push `main` |
-| E3 | Secret and variable from `make output`: |
+The repository is **`rogerjeasy/zeitzeuge`** (public) — the deploy role trusts
+only `repo:rogerjeasy/zeitzeuge:ref:refs/heads/main`, so deploy jobs must not
+use a GitHub *environment* (that changes the OIDC subject and the role refuses it).
 
-```bash
-cd infra/envs/prod
-gh secret   set AWS_DEPLOY_ROLE_ARN        --repo rogerjeasy/zeitzeuge --body "$(terraform output -raw deploy_role_arn)"
-gh variable set ECS_MIGRATE_NETWORK_CONFIG --repo rogerjeasy/zeitzeuge --body "$(terraform output -raw migrate_network_configuration)"
-```
+| # | Step | Check |
+|---|---|---|
+| E1 | `gh auth login` (once) | `gh auth status` |
+| E2 | `make github` — writes the secret `AWS_DEPLOY_ROLE_ARN` and the variables `ECS_MIGRATE_NETWORK_CONFIG`, `APP_URL`, `DEPLOY_ENABLED=true`, all from `terraform output` | prints the role ARN and the app URL |
 
-That is all CI needs. It can push images and roll services; it **cannot** change
-infrastructure, IAM, or delete anything. Infrastructure changes are always
-`make plan` → read → `make apply`, by you, with MFA.
+Before E2, every push still runs the tests (`ci-api`, `ci-web`, `infra-check`);
+the deploy jobs show as **skipped**, not failed. To pause deploys:
+`gh variable set DEPLOY_ENABLED --body false --repo rogerjeasy/zeitzeuge`.
+
+That is all CI needs. It can push images, register `:<sha>`-pinned task
+revisions, run the migrate and seed tasks, roll services and update agents; it
+**cannot** change infrastructure or IAM, or delete anything. Infrastructure
+changes are always `make plan` → read → `make apply`, by you, with MFA.
 
 ---
 
 ## F. First deploys, and the switches
 
-Each service is created or scaled only once its image exists. For each one:
-**push → flip the switch in `envs/prod/terraform.tfvars` → `make apply`.**
+**What a deploy does** (`.github/workflows/deploy-*.yml`, all against the real account):
 
-| Order | Push | Switch | Check |
-|---|---|---|---|
-| F1 | `apps/api` → workflow **deploy-api** (tests → image → migrate → roll) | `api_image_ready = true` | `aws elbv2 describe-target-health --region eu-central-2 --target-group-arn $(aws elbv2 describe-target-groups --region eu-central-2 --names zeitzeuge-prod-api --query 'TargetGroups[0].TargetGroupArn' --output text) --query 'TargetHealthDescriptions[].TargetHealth.State'` → all `healthy` |
-| F2 | `apps/web` → workflow **deploy-web** | `web_image_ready = true` | the app URL loads the homepage |
-| F3 | `services/agents` → workflow **deploy-agents** | `agents_image_ready = true` | 17 functions `zeitzeuge-prod-agent-*` exist |
-| F4 | falsifier image to `zeitzeuge/falsifier` | `falsifier_image_ready = true` | endpoint `zeitzeuge-prod-falsifier` *InService* |
-
-The first push of each image lands before its switch is on. That is fine: the
-services already exist at 0 tasks (so "roll the service" rolls nothing), the
-migrate task runs normally, and deploy-agents finds no functions to update yet.
-Flip the switch, `make apply`, and the service starts on the image just pushed.
-
-Seed the demo tenant and guest identity (after F1), using the API task — it holds
-the Cognito permissions the seed needs:
-
-```bash
-cd infra/envs/prod
-aws ecs run-task --region eu-central-2 --cluster zeitzeuge-prod \
-  --task-definition zeitzeuge-prod-api --launch-type FARGATE \
-  --network-configuration "$(terraform output -raw migrate_network_configuration)" \
-  --overrides '{"containerOverrides":[{"name":"api","command":["python","-m","zeitzeuge_api.scripts.seed_demo"]}]}'
+```
+deploy-api   ci-api (lint · mypy · unit · RLS + role tests on Postgres)
+             → image :<sha> → pin revisions of api / api-migrate / api-seed
+             → migrate Aurora (creates zeitzeuge_app on first run) — stops here if it fails
+             → seed the demo tenant + guest identity (idempotent, every deploy)
+             → roll the service — fails if the circuit breaker rolled it back
+             → smoke: GET {APP_URL}/api/v1/readyz → database + identity OK
+deploy-web   ci-web (lint · types · unit · next build)
+             → image :<sha> (native arm64 runner) → pin revision → roll
+             → smoke: sign-in page renders, /de/dashboard → sign-in, and Server
+               Actions accept the public origin (CloudFront forwards Host)
 ```
 
-Then "Als Gast demo starten" works.
+Each service is created or scaled only once its image exists:
+**run the workflow → flip the switch in `envs/prod/terraform.tfvars` → `make apply` → run it again.**
+
+| Order | Run | Switch | Check |
+|---|---|---|---|
+| F1 | `gh workflow run deploy-api.yml` — image pushed, Aurora migrated, guest seeded; warns "0 tasks" | `api_image_ready = true` → `make apply` | run deploy-api again: the smoke step passes |
+| F2 | `gh workflow run deploy-web.yml` | `web_image_ready = true` → `make apply` | run deploy-web again: the smoke step passes; `app_url` opens on a phone |
+| F3 | `services/agents` does not exist yet — **deploy-agents has nothing to build** | `agents_image_ready` stays `false` | — |
+| F4 | no falsifier image yet | `falsifier_image_ready` stays `false` | — |
+
+**After any Terraform change to a task definition** (environment, roles, sizes),
+run the service's deploy workflow (`gh workflow run deploy-api.yml`): services
+deploy `:<sha>`-pinned revisions that CI registers from the newest Terraform
+revision, so Terraform alone no longer restarts them. This is what makes the
+circuit breaker's rollback return to the previous *image*.
+
+**Known limit before real onboarding:** Cognito sends mail from its default
+sender — about 50 messages a day. Fine for a demo (the guest path sends none);
+move `email_configuration` to SES before inviting an archive's staff.
 
 **Cost while building:** ~USD 180/month (1 API task, 1 web task, Aurora a few
 hours a day). Bedrock is usage-based on top, with its own USD 600 budget.
@@ -304,4 +313,4 @@ and secrets (`zeitzeuge/prod/<path>`).
 | the whole graph on one screen | `envs/prod/main.tf` |
 
 **Make targets:** `preflight` · `verify-iam` · `init` · `plan` · `apply` ·
-`output` · `db-role` · `destroy` · `fmt` · `validate`.
+`output` · `github` · `db-role` · `destroy` · `fmt` · `validate`.
