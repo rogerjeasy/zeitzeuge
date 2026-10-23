@@ -3,7 +3,13 @@
 .DEFAULT_GOAL := help
 POETRY ?= poetry
 
-.PHONY: help install up down migrate revision run test lint format typecheck check seed clean
+# pydantic-settings reads `.env` for the `ZZ_*` fields only; boto3 reads its
+# credentials from the process environment. Exporting the file here gives the
+# server and the scripts the same view of it (locally: moto's dummy keys).
+-include .env
+export
+
+.PHONY: help install up down bootstrap migrate revision run test lint format typecheck check seed dev clean
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -14,6 +20,11 @@ install:  ## Install dependencies (creates the lock file if missing)
 up:  ## Start Postgres and the AWS emulator
 	docker compose up -d
 	@echo "postgres :5432 · moto :5001"
+
+bootstrap:  ## Create the user pool, bucket and table in the emulator; write the ids to .env
+	$(POETRY) run python -m zeitzeuge_api.scripts.bootstrap_local
+
+dev: up bootstrap migrate seed  ## Everything a fresh laptop needs before `make run`
 
 down:  ## Stop them
 	docker compose down

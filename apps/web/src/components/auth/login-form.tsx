@@ -1,61 +1,68 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { Field } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox";
-import { auth, AUTH_LANDING, type AuthErrorCode } from "@/lib/auth/client";
+import { auth, type AuthErrorCode } from "@/lib/auth/client";
 import { AUTH_ERROR_KEY } from "@/lib/auth/errors";
-import { isPlausibleEmail } from "@/lib/auth/password";
+import { hasErrors, validateSignIn, type FieldErrors } from "@/lib/auth/validation";
 import { PasswordField } from "./password-field";
 import { SubmitButton } from "./submit-button";
 import { FormAlert } from "./form-alert";
+import { VerifyEmailStep } from "./verify-email-step";
+import { useEnterApp } from "./use-enter-app";
 
-type FieldErrors = { email?: string; password?: string };
+type SignInField = "email" | "password";
 
 export function LoginForm() {
   const t = useTranslations("auth.login");
   const tc = useTranslations("auth.common");
   const te = useTranslations("auth.errors");
-  const router = useRouter();
+  const { entering, enterApp } = useEnterApp();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [errors, setErrors] = useState<FieldErrors<SignInField>>({});
   const [formError, setFormError] = useState<AuthErrorCode | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [navigating, startTransition] = useTransition();
-
-  function validate(): FieldErrors {
-    const next: FieldErrors = {};
-    if (!email.trim()) next.email = te("emailRequired");
-    else if (!isPlausibleEmail(email)) next.email = te("emailInvalid");
-    if (!password) next.password = te("passwordRequired");
-    return next;
-  }
+  const [unverified, setUnverified] = useState(false);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setFormError(null);
 
-    const found = validate();
+    const found = validateSignIn({ email, password });
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (hasErrors(found)) return;
 
     setSubmitting(true);
     const result = await auth.signIn({ email, password, remember });
     setSubmitting(false);
 
-    if (!result.ok) {
-      setFormError(result.code);
-      return;
-    }
-    startTransition(() => router.push(AUTH_LANDING));
+    if (result.ok) return enterApp();
+    // Right password, unconfirmed address: offer the code step in place,
+    // rather than an error the archivist cannot act on from here.
+    if (result.code === "email_not_verified") return setUnverified(true);
+    setFormError(result.code);
   }
 
-  const busy = submitting || navigating;
+  if (unverified) {
+    return (
+      <VerifyEmailStep
+        email={email.trim()}
+        password={password}
+        remember={remember}
+        reason="unverified"
+        onBack={() => setUnverified(false)}
+      />
+    );
+  }
+
+  const busy = submitting || entering;
+  const fieldError = (field: SignInField) => (errors[field] ? te(errors[field]) : undefined);
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
@@ -73,7 +80,7 @@ export function LoginForm() {
         spellCheck={false}
         placeholder={tc("emailPlaceholder")}
         value={email}
-        error={errors.email}
+        error={fieldError("email")}
         disabled={busy}
         onChange={(e) => {
           setEmail(e.target.value);
@@ -87,7 +94,7 @@ export function LoginForm() {
         autoComplete="current-password"
         placeholder={tc("passwordPlaceholder")}
         value={password}
-        error={errors.password}
+        error={fieldError("password")}
         disabled={busy}
         onChange={(e) => {
           setPassword(e.target.value);

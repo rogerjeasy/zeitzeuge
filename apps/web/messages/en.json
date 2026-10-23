@@ -497,7 +497,10 @@
       "terms": "Terms of Use",
       "legalAnd": "and the",
       "privacy": "Privacy Policy",
-      "sentTo": "Sent to"
+      "sentTo": "Sent to",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Type the password again",
+      "passwordsMatch": "The passwords match."
     },
     "login": {
       "metaTitle": "Sign in — ZEITZEUGE",
@@ -517,12 +520,19 @@
       "subtitle": "An email and a password are all it takes. You will set your archive and role when you first sign in.",
       "submit": "Create account",
       "haveAccount": "Already have an account?",
-      "loginLink": "Sign in",
-      "successTitle": "Check your inbox.",
-      "successBody": "We have sent you a confirmation link. It is valid for 24 hours.",
-      "successHint": "Nothing there? Check your spam folder.",
-      "resend": "Send again",
-      "resent": "Sent again",
+      "loginLink": "Sign in"
+    },
+    "verify": {
+      "title": "Check your inbox.",
+      "titleUnverified": "Confirm your address first.",
+      "body": "We have sent a confirmation code to your address. Enter it here to activate your account.",
+      "bodyUnverified": "This account is not confirmed yet. Enter the code we sent to your address, or request a new one.",
+      "codeLabel": "Confirmation code",
+      "codePlaceholder": "123456",
+      "submit": "Confirm and sign in",
+      "hint": "Nothing there? Check your spam folder.",
+      "resend": "Send a new code",
+      "resent": "New code sent",
       "backToLogin": "Go to sign in"
     },
     "forgot": {
@@ -558,7 +568,19 @@
       "emailInUse": "An account already exists for this address.",
       "rateLimited": "Too many attempts. Please wait a moment.",
       "network": "No connection. Please try again.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "signupTitle": "Could not create the account",
+      "confirmRequired": "Please type the password a second time.",
+      "passwordMismatch": "The two passwords do not match.",
+      "codeRequired": "Please enter the code from the email.",
+      "codeInvalid": "The code is the six digits from the email.",
+      "codeMismatch": "That code is not right. Check it, or request a new one.",
+      "codeExpired": "That code has expired. Request a new one.",
+      "emailNotVerified": "This address is not confirmed yet.",
+      "accountDisabled": "This account has been disabled. Please contact your archive administrator.",
+      "unsupportedStep": "This account needs a sign-in step this screen does not offer yet. Please contact your administrator.",
+      "unavailable": "The service is not reachable right now. Please try again shortly.",
+      "verifiedSignInFailed": "Your address is confirmed. Please sign in."
     },
     "panel": {
       "label": "Cataloguing in progress",

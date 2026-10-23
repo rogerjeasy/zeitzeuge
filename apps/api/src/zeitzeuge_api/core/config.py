@@ -133,7 +133,21 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def cognito_jwks_url(self) -> str:
+        # Against the emulator the token is signed with *its* key, published at
+        # the same path under its own host. The issuer stays AWS's form either
+        # way, because that is what both write into `iss`.
+        if self.aws_endpoint_url:
+            base = self.aws_endpoint_url.rstrip("/")
+            return f"{base}/{self.cognito_user_pool_id}/.well-known/jwks.json"
         return f"{self.cognito_issuer}/.well-known/jwks.json"
+
+    @property
+    def cognito_jwks_headers(self) -> dict[str, str]:
+        """moto routes by service, and an unsigned GET names none. This header
+        names it; AWS ignores it, but it is only ever sent to the emulator."""
+        if self.aws_endpoint_url:
+            return {"X-Amz-Target": "AWSCognitoIdentityProviderService.GetJwks"}
+        return {}
 
     @property
     def is_local(self) -> bool:

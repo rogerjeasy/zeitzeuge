@@ -115,7 +115,11 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
         client_id=settings.cognito_client_id,
         client_secret=client_secret,
     )
-    jwks = JWKSCache(settings.cognito_jwks_url, ttl_seconds=settings.jwks_cache_seconds)
+    jwks = JWKSCache(
+        settings.cognito_jwks_url,
+        ttl_seconds=settings.jwks_cache_seconds,
+        headers=settings.cognito_jwks_headers,
+    )
     verifier = TokenVerifier(
         jwks=jwks,
         issuer=settings.cognito_issuer,

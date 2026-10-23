@@ -1,67 +1,81 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
-import { MailCheck } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Field } from "@/components/ui/field";
 import { auth, type AuthErrorCode } from "@/lib/auth/client";
 import { AUTH_ERROR_KEY } from "@/lib/auth/errors";
-import { evaluatePassword, isPlausibleEmail } from "@/lib/auth/password";
+import { LOGIN_PATH } from "@/lib/auth/routes";
+import { hasErrors, validateSignUp, type FieldErrors } from "@/lib/auth/validation";
 import { PasswordField } from "./password-field";
 import { PasswordRequirements } from "./password-requirements";
 import { SubmitButton } from "./submit-button";
 import { FormAlert } from "./form-alert";
 import { LegalNote } from "./legal-note";
 import { AuthHeading } from "./auth-heading";
-import { SentTo } from "./sent-to";
+import { VerifyEmailStep } from "./verify-email-step";
 
-type FieldErrors = { email?: string; password?: string };
+type SignUpField = "email" | "password" | "passwordConfirmation";
+
+/** Server-side refusals that belong to a field rather than to the whole form. */
+const FIELD_FOR_ERROR: Partial<Record<AuthErrorCode, [SignUpField, string]>> = {
+  weak_password: ["password", "passwordWeak"],
+  password_mismatch: ["passwordConfirmation", "passwordMismatch"],
+};
 
 export function SignupForm() {
   const t = useTranslations("auth.signup");
   const tc = useTranslations("auth.common");
   const te = useTranslations("auth.errors");
+  const locale = useLocale();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [confirmation, setConfirmation] = useState("");
+  const [errors, setErrors] = useState<FieldErrors<SignUpField>>({});
   const [formError, setFormError] = useState<AuthErrorCode | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [registered, setRegistered] = useState(false);
+
+  const values = { email, password, passwordConfirmation: confirmation };
+  const confirmed = Boolean(confirmation) && confirmation === password;
+
+  function clearError(field: SignUpField) {
+    if (errors[field]) setErrors((s) => ({ ...s, [field]: undefined }));
+  }
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setFormError(null);
 
-    const next: FieldErrors = {};
-    if (!email.trim()) next.email = te("emailRequired");
-    else if (!isPlausibleEmail(email)) next.email = te("emailInvalid");
-    if (!password) next.password = te("passwordRequired");
-    else if (!evaluatePassword(password).satisfied) next.password = te("passwordWeak");
-
-    setErrors(next);
-    if (Object.keys(next).length > 0) return;
+    const found = validateSignUp(values);
+    setErrors(found);
+    if (hasErrors(found)) return;
 
     setSubmitting(true);
-    const result = await auth.signUp({ email, password });
+    const result = await auth.signUp({ ...values, locale });
     setSubmitting(false);
 
-    if (!result.ok) {
-      setFormError(result.code);
-      return;
-    }
-    setSent(true);
+    if (result.ok) return setRegistered(true);
+
+    const field = FIELD_FOR_ERROR[result.code];
+    if (field) setErrors({ [field[0]]: field[1] });
+    else setFormError(result.code);
   }
 
-  if (sent) return <VerifyNotice email={email} />;
+  if (registered) {
+    return <VerifyEmailStep email={email.trim()} password={password} reason="signup" />;
+  }
+
+  const fieldError = (field: SignUpField) => (errors[field] ? te(errors[field]) : undefined);
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       <AuthHeading title={t("title")} subtitle={t("subtitle")} />
 
       {formError && (
-        <FormAlert title={te("title")} message={te(AUTH_ERROR_KEY[formError])} />
+        <FormAlert title={te("signupTitle")} message={te(AUTH_ERROR_KEY[formError])} />
       )}
 
       <Field
@@ -74,11 +88,11 @@ export function SignupForm() {
         spellCheck={false}
         placeholder={tc("emailPlaceholder")}
         value={email}
-        error={errors.email}
+        error={fieldError("email")}
         disabled={submitting}
         onChange={(e) => {
           setEmail(e.target.value);
-          if (errors.email) setErrors((s) => ({ ...s, email: undefined }));
+          clearError("email");
         }}
       />
 
@@ -89,15 +103,36 @@ export function SignupForm() {
           autoComplete="new-password"
           placeholder={tc("passwordPlaceholder")}
           value={password}
-          error={errors.password}
+          error={fieldError("password")}
           disabled={submitting}
           onChange={(e) => {
             setPassword(e.target.value);
-            if (errors.password) setErrors((s) => ({ ...s, password: undefined }));
+            clearError("password");
           }}
         />
         <PasswordRequirements value={password} />
       </div>
+
+      <PasswordField
+        label={tc("confirmPasswordLabel")}
+        name="password-confirmation"
+        autoComplete="new-password"
+        placeholder={tc("confirmPasswordPlaceholder")}
+        value={confirmation}
+        error={fieldError("passwordConfirmation")}
+        hint={confirmed ? tc("passwordsMatch") : undefined}
+        disabled={submitting}
+        onChange={(e) => {
+          setConfirmation(e.target.value);
+          clearError("passwordConfirmation");
+        }}
+        onBlur={() => {
+          // Flag a mismatch as soon as the field is left, not only on submit —
+          // but never while the archivist is still typing the second copy.
+          const mismatch = validateSignUp(values).passwordConfirmation;
+          if (confirmation && mismatch) setErrors((s) => ({ ...s, passwordConfirmation: mismatch }));
+        }}
+      />
 
       <SubmitButton label={t("submit")} loading={submitting} />
 
@@ -106,65 +141,12 @@ export function SignupForm() {
       <p className="text-center text-[0.8125rem] text-muted">
         {t("haveAccount")}{" "}
         <Link
-          href="/auth/login"
+          href={LOGIN_PATH}
           className="font-medium text-foreground underline decoration-line-strong underline-offset-2 transition-colors hover:text-evidence hover:decoration-evidence"
         >
           {t("loginLink")}
         </Link>
       </p>
     </form>
-  );
-}
-
-/** Post-signup state. Kept in place rather than on its own route so the address
- *  just typed is still on screen and `resend` needs no round trip to recover it. */
-function VerifyNotice({ email }: { email: string }) {
-  const t = useTranslations("auth.signup");
-  const [resent, setResent] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  async function resend() {
-    setBusy(true);
-    await auth.resendVerification({ email });
-    setBusy(false);
-    setResent(true);
-  }
-
-  return (
-    <div className="flex flex-col gap-5">
-      <span className="grid size-11 place-items-center rounded-xl bg-corroborated-soft text-corroborated">
-        <MailCheck aria-hidden className="size-5" strokeWidth={1.9} />
-      </span>
-
-      <div className="flex flex-col gap-2.5">
-        <h1 className="font-display text-[clamp(1.5rem,1.2rem+1.2vw,2rem)] font-semibold leading-tight tracking-[-0.025em] text-foreground-strong">
-          {t("successTitle")}
-        </h1>
-        <p className="text-[0.875rem] leading-[1.7] text-muted">
-          {t("successBody")}
-        </p>
-      </div>
-
-      <SentTo email={email} />
-
-      <p className="text-[0.75rem] leading-snug text-muted-2">{t("successHint")}</p>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={resend}
-          disabled={busy || resent}
-          className="h-10 rounded-lg border border-line-strong bg-surface px-4 text-[0.8125rem] font-medium text-foreground transition-colors duration-200 hover:border-evidence hover:text-evidence disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {resent ? t("resent") : t("resend")}
-        </button>
-        <Link
-          href="/auth/login"
-          className="text-[0.8125rem] text-muted underline decoration-line-strong underline-offset-2 transition-colors hover:text-foreground"
-        >
-          {t("backToLogin")}
-        </Link>
-      </div>
-    </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { ShieldCheck } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 
 export function LegalNote() {
   const t = useTranslations("auth.common");
@@ -7,13 +8,13 @@ export function LegalNote() {
   return (
     <p className="text-[0.6875rem] leading-relaxed text-muted-2">
       {t("legalPrefix")}{" "}
-      <a href="#" className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-foreground">
+      <Link href="/terms" className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-foreground">
         {t("terms")}
-      </a>{" "}
+      </Link>{" "}
       {t("legalAnd")}{" "}
-      <a href="#" className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-foreground">
+      <Link href="/privacy" className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-foreground">
         {t("privacy")}
-      </a>
+      </Link>
       .
     </p>
   );

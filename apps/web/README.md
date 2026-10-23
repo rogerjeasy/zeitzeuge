@@ -6,7 +6,7 @@ Next.js 16 (App Router) front end for ZEITZEUGE. Implemented so far:
 |---|---|
 | `/[locale]` | Landing (§9.2 #1) |
 | `/[locale]/auth/login` | Sign in |
-| `/[locale]/auth/signup` | Create account, with an in-place verify state |
+| `/[locale]/auth/signup` | Create account (password + confirmation), then the emailed code |
 | `/[locale]/auth/forgot-password` | Password reset request |
 | `/[locale]/dashboard` | Dashboard overview (§9.2 #3) |
 | `/[locale]/settings{,/appearance,/notifications,/cataloguing,/export,/security,/api,/archive}` | Settings, one route per section |
@@ -212,26 +212,56 @@ npx eslint src
 
 ## Auth
 
-- **`src/lib/auth/client.ts` is the only boundary the screens talk to.** Swapping
-  the demo provider for Cognito is a one-file change. The demo provider does no
-  network I/O and **stores no credential anywhere**; reserved addresses
-  (`taken@`, `locked@`, `offline@`, `wrong@zeitzeuge.ch`) make each failure state
-  reachable, and everything else succeeds so a judge typing their own address
-  gets in.
+Real, end to end: the screens → server actions → the FastAPI gateway
+(`apps/api`) → Amazon Cognito. Run the API first (`apps/api`: `make dev`, then
+`make run`), copy `.env.example` to `.env.local`, then `npm run dev`.
+
+```
+browser ──form──▶ server action (lib/auth/actions.ts) ──▶ POST /api/v1/auth/* ──▶ Cognito
+   ▲                     │ tokens → HttpOnly cookies (lib/auth/session.ts)
+   └── proxy.ts: no cookie on a protected path → /auth/login?next=… ; expired access
+       token + refresh cookie → renewed here, before anything renders
+       (app)/layout.tsx: requireUser() → GET /users/me — the authoritative check
+```
+
+- **`src/lib/auth/client.ts` is the only boundary the screens talk to.** It is a
+  thin object over the server actions; no component knows about HTTP, tokens or
+  Cognito.
+- **Tokens never reach browser JavaScript.** `zz_at` (the access token, lives
+  exactly as long as the token) and `zz_session` (refresh token + session id +
+  "keep me signed in") are `HttpOnly`, `SameSite=Lax`, `Secure` in production.
+  The id token is not kept; the profile comes from `/users/me`.
+- **Protection is the default.** `lib/auth/routes.ts` lists the *public*
+  sections; every other path — including any screen added to `(app)` later —
+  needs a session. The proxy check is optimistic (cookies only); the `(app)`
+  layout asks the API, so a forged or revoked token goes back to sign-in.
+- **`?next=` is never an open redirect.** `safeNextPath` accepts same-site paths
+  only and re-checks after normalisation (`/..//evil.ch` → `//evil.ch` is refused).
+- **One validation definition, run twice** (`lib/auth/validation.ts`): in the
+  form for instant feedback, and again in the server action, because an action
+  is a public endpoint. The API validates a third time and is the authority —
+  including that `password_confirmation` equals `password`.
+- **Sign-up is email + password + confirmation.** Cognito mails a code; the
+  code step (`VerifyEmailStep`) is shared with sign-in, which offers it in place
+  when an unconfirmed account tries to sign in. After confirming, the account is
+  signed in with the password still in memory — it is never stored.
+- API problem codes become the UI's closed `AuthErrorCode` set in one place
+  (`lib/auth/problem.ts`); field-level types (`password_mismatch`,
+  `weak_password`) win over the generic `validation_failed`.
 - §9.2 specifies Cognito's *hosted* UI, which would mean no designed screen at
   all. These are branded forms instead; the hosted UI is not used.
 - **`PASSWORD_RULES` drives both** the live checklist and the validation that
-  gates submission, so the two cannot drift.
+  gates submission, and matches `apps/api/.../schemas/password.py` and the pool.
 - Password reset always reports success — confirming whether an address exists
   would turn the form into an account-enumeration oracle.
-- The cantonal SAML button is rendered `disabled` and says so on its face. It is
-  there because federated sign-in is cantonal IT's first question; it must never
-  look live while doing nothing.
-- **`AUTH_LANDING` is where every entry point lands** — sign in, sign up and the
-  guest path. `/[locale]/dashboard` currently holds a labelled placeholder so
-  that flow does not dead-end in a 404; replace it with the real dashboard.
-- The guest path is a peer of signing in, not a link under the form: §9.2 is
-  explicit that a judge must never hit a signup wall.
+- The cantonal SAML button is rendered `disabled` and says so on its face.
+- **`AUTH_LANDING` is where every entry point lands** unless `?next=` names a
+  safe page — sign in, sign up and the guest path (`useEnterApp`).
+- The guest path is a real Cognito sign-in as the seeded, read-only demo user
+  (`apps/api`: `make seed`) — a peer of signing in, never a bypass.
+
+`npm test` runs the pure auth modules' unit tests (validation, routes,
+problem mapping).
 
 ## Brand assets
 

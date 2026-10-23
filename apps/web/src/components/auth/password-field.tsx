@@ -10,11 +10,13 @@ import { Field } from "@/components/ui/field";
 export function PasswordField({
   label,
   error,
+  hint,
   action,
   ...input
 }: {
   label: string;
   error?: string;
+  hint?: string;
   action?: React.ReactNode;
 } & Omit<React.ComponentPropsWithoutRef<"input">, "type" | "className">) {
   const t = useTranslations("auth.common");
@@ -24,6 +26,7 @@ export function PasswordField({
     <Field
       label={label}
       error={error}
+      hint={hint}
       action={action}
       type={visible ? "text" : "password"}
       {...input}

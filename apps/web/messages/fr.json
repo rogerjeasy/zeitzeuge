@@ -497,7 +497,10 @@
       "terms": "conditions d’utilisation",
       "legalAnd": "et la",
       "privacy": "politique de confidentialité",
-      "sentTo": "Envoyé à"
+      "sentTo": "Envoyé à",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Saisissez à nouveau le mot de passe",
+      "passwordsMatch": "Les mots de passe correspondent."
     },
     "login": {
       "metaTitle": "Se connecter — ZEITZEUGE",
@@ -517,12 +520,19 @@
       "subtitle": "Un e-mail et un mot de passe suffisent. Vous définirez votre fonds et votre rôle à la première connexion.",
       "submit": "Créer le compte",
       "haveAccount": "Vous avez déjà un compte ?",
-      "loginLink": "Se connecter",
-      "successTitle": "Consultez votre boîte de réception.",
-      "successBody": "Nous vous avons envoyé un lien de confirmation. Il est valable 24 heures.",
-      "successHint": "Rien reçu ? Vérifiez vos indésirables.",
-      "resend": "Renvoyer",
-      "resent": "Renvoyé",
+      "loginLink": "Se connecter"
+    },
+    "verify": {
+      "title": "Consultez votre boîte de réception.",
+      "titleUnverified": "Confirmez d’abord votre adresse.",
+      "body": "Nous vous avons envoyé un code de confirmation. Saisissez-le ici pour activer votre compte.",
+      "bodyUnverified": "Ce compte n’est pas encore confirmé. Saisissez le code reçu par e-mail ou demandez-en un nouveau.",
+      "codeLabel": "Code de confirmation",
+      "codePlaceholder": "123456",
+      "submit": "Confirmer et se connecter",
+      "hint": "Rien reçu ? Vérifiez vos indésirables.",
+      "resend": "Envoyer un nouveau code",
+      "resent": "Nouveau code envoyé",
       "backToLogin": "Aller à la connexion"
     },
     "forgot": {
@@ -558,7 +568,19 @@
       "emailInUse": "Un compte existe déjà pour cette adresse.",
       "rateLimited": "Trop de tentatives. Veuillez patienter un instant.",
       "network": "Pas de connexion. Veuillez réessayer.",
-      "generic": "Une erreur est survenue. Veuillez réessayer."
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "signupTitle": "Impossible de créer le compte",
+      "confirmRequired": "Veuillez saisir le mot de passe une seconde fois.",
+      "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
+      "codeRequired": "Veuillez saisir le code reçu par e-mail.",
+      "codeInvalid": "Le code correspond aux six chiffres de l’e-mail.",
+      "codeMismatch": "Ce code est incorrect. Vérifiez-le ou demandez-en un nouveau.",
+      "codeExpired": "Ce code a expiré. Demandez-en un nouveau.",
+      "emailNotVerified": "Cette adresse n’est pas encore confirmée.",
+      "accountDisabled": "Ce compte a été désactivé. Veuillez contacter l’administration de votre fonds.",
+      "unsupportedStep": "Ce compte demande une étape de connexion que cette page ne propose pas encore. Veuillez contacter votre administration.",
+      "unavailable": "Le service est momentanément injoignable. Veuillez réessayer sous peu.",
+      "verifiedSignInFailed": "Votre adresse est confirmée. Veuillez vous connecter."
     },
     "panel": {
       "label": "Traitement en cours",

@@ -51,6 +51,29 @@ async def test_valid_access_token(verifier, rsa_keys) -> None:
     assert principal.has_any_role("archivist", "admin")
 
 
+async def test_a_token_without_iat_is_accepted(verifier, rsa_keys) -> None:
+    """The claims aws-jwt-verify checks, no more: the local emulator omits `iat`."""
+    token = make_token(rsa_keys)
+    claims = jwt.decode(token, options={"verify_signature": False})
+    claims.pop("iat")
+    token = jwt.encode(
+        claims, rsa_keys["private"], algorithm="RS256", headers={"kid": rsa_keys["kid"]}
+    )
+    principal = await verifier.verify(token, expected_use="access")
+    assert principal.role == "archivist"
+
+
+@pytest.mark.parametrize("claim", ["exp", "sub", "token_use"])
+async def test_a_token_missing_a_required_claim_is_refused(verifier, rsa_keys, claim) -> None:
+    claims = jwt.decode(make_token(rsa_keys), options={"verify_signature": False})
+    claims.pop(claim)
+    token = jwt.encode(
+        claims, rsa_keys["private"], algorithm="RS256", headers={"kid": rsa_keys["kid"]}
+    )
+    with pytest.raises(UnauthenticatedError):
+        await verifier.verify(token, expected_use="access")
+
+
 async def test_id_token_is_not_an_authorisation(verifier, rsa_keys) -> None:
     """The single most common hole in a Cognito integration."""
     token = make_token(rsa_keys, token_use="id", aud=CLIENT_ID)
@@ -117,3 +140,17 @@ async def test_the_openapi_document_declares_the_scheme(client) -> None:
     assert schemes["bearerAuth"]["type"] == "http"
     assert schemes["bearerAuth"]["scheme"] == "bearer"
     assert "security" in document["paths"]["/api/v1/users/me"]["get"]
+
+
+async def test_an_unreachable_key_set_is_an_upstream_failure(monkeypatch) -> None:
+    """The caller can retry a 502; an unhandled 500 tells them nothing."""
+    import httpx
+
+    from zeitzeuge_api.core.errors import UpstreamError
+
+    async def _unreachable(self) -> None:  # type: ignore[no-untyped-def]
+        raise httpx.ConnectError("refused")
+
+    monkeypatch.setattr(JWKSCache, "_fetch", _unreachable)
+    with pytest.raises(UpstreamError):
+        await JWKSCache("https://example.invalid/jwks.json").get_key("any")

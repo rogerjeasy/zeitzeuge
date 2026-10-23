@@ -9,27 +9,60 @@ which already ships `de`, `fr` and `en`.
 
 from __future__ import annotations
 
-from typing import Literal
+import hmac
+from typing import Annotated, Literal
 
-from pydantic import EmailStr, Field, field_validator
+from pydantic import EmailStr, Field, StringConstraints, ValidationInfo, field_validator
+from pydantic_core import PydanticCustomError
 
 from zeitzeuge_api.schemas.common import ConfirmationCode, NonEmptyStr, Schema
 from zeitzeuge_api.schemas.password import evaluate_password
 
 ChallengeName = Literal["SOFTWARE_TOKEN_MFA", "SMS_MFA", "NEW_PASSWORD_REQUIRED"]
 
+OptionalName = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None
+
 
 def _validate_password(value: str) -> str:
     verdict = evaluate_password(value)
     if not verdict.satisfied:
-        raise ValueError(verdict.message)
+        # A custom error type, so the client can branch on `errors[].type`
+        # rather than parsing an English sentence.
+        raise PydanticCustomError("weak_password", verdict.message)
+    return value
+
+
+def _confirm_password(value: str, info: ValidationInfo, *, against: str = "password") -> str:
+    """The second copy of a new password must equal the first.
+
+    Restated here although the form checks it too: the API must not depend on
+    the UI. If the first copy already failed its own validation it is absent
+    from `info.data`, and that error is the one worth reporting. The comparison
+    is constant-time, because it is a comparison of secrets.
+    """
+    original = info.data.get(against)
+    if original is not None and not hmac.compare_digest(
+        value.encode("utf-8"), original.encode("utf-8")
+    ):
+        raise PydanticCustomError("password_mismatch", "The passwords do not match.")
     return value
 
 
 class RegisterRequest(Schema):
     email: EmailStr
     password: str = Field(min_length=8, max_length=256)
-    full_name: NonEmptyStr = Field(max_length=200)
+    # Declared after `password`: field validators run in declaration order, and
+    # the confirmation is checked against the already-validated first copy.
+    password_confirmation: str = Field(
+        max_length=256, description="Must equal `password`. Never stored."
+    )
+    full_name: OptionalName = Field(
+        default=None,
+        description=(
+            "Optional. The sign-up screen asks only for an address and a password; "
+            "the name is set on the profile at first sign-in."
+        ),
+    )
     organization_name: str | None = Field(
         default=None,
         max_length=200,
@@ -54,6 +87,16 @@ class RegisterRequest(Schema):
     @classmethod
     def _policy(cls, value: str) -> str:
         return _validate_password(value)
+
+    @field_validator("password_confirmation")
+    @classmethod
+    def _confirmation(cls, value: str, info: ValidationInfo) -> str:
+        return _confirm_password(value, info)
+
+    @field_validator("full_name")
+    @classmethod
+    def _blank_name_is_no_name(cls, value: str | None) -> str | None:
+        return value or None
 
     @field_validator("accept_terms")
     @classmethod

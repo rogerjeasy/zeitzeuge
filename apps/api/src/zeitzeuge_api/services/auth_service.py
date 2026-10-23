@@ -130,15 +130,16 @@ class AuthService:
         )
 
         # Cognito is authoritative. If this raises, no row is written.
+        attributes = {
+            "locale": data.locale,
+            "custom:tenant_id": str(organization.id),
+            "custom:role": str(role),
+        }
+        if data.full_name:
+            # Optional at sign-up; an empty `name` is not a value worth storing.
+            attributes["name"] = data.full_name
         sub = await self._cognito.sign_up(
-            email=data.email,
-            password=data.password,
-            attributes={
-                "name": data.full_name,
-                "locale": data.locale,
-                "custom:tenant_id": str(organization.id),
-                "custom:role": str(role),
-            },
+            email=data.email, password=data.password, attributes=attributes
         )
 
         user = User(
@@ -147,7 +148,7 @@ class AuthService:
             cognito_username=data.email,
             email=data.email,
             email_verified=False,
-            full_name=data.full_name,
+            full_name=data.full_name or "",
             job_title=data.job_title,
             locale=data.locale,
             role=role,

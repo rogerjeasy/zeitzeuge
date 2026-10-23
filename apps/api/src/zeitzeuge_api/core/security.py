@@ -28,7 +28,7 @@ import httpx
 import jwt
 from jwt import PyJWKSet
 
-from zeitzeuge_api.core.errors import TokenExpiredError, UnauthenticatedError
+from zeitzeuge_api.core.errors import TokenExpiredError, UnauthenticatedError, UpstreamError
 from zeitzeuge_api.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -67,8 +67,16 @@ class Principal:
 class JWKSCache:
     """Signing keys for one user pool, cached with a TTL and a refresh cooldown."""
 
-    def __init__(self, jwks_url: str, *, ttl_seconds: int = 3600, cooldown_seconds: int = 30):
+    def __init__(
+        self,
+        jwks_url: str,
+        *,
+        ttl_seconds: int = 3600,
+        cooldown_seconds: int = 30,
+        headers: dict[str, str] | None = None,
+    ):
         self._url = jwks_url
+        self._headers = headers or {}
         self._ttl = ttl_seconds
         self._cooldown = cooldown_seconds
         self._keys: PyJWKSet | None = None
@@ -96,13 +104,19 @@ class JWKSCache:
         if fresh and not force:
             assert self._keys is not None
             return self._keys
-        self._keys = await self._fetch()
+        try:
+            self._keys = await self._fetch()
+        except (httpx.HTTPError, ValueError) as exc:
+            # Unreachable, a non-2xx, or a body that is not a key set. The
+            # token may be perfectly good; what failed is a dependency.
+            log.warning("jwks.fetch_failed", error=type(exc).__name__, url=self._url)
+            raise UpstreamError("The identity provider's signing keys are unavailable.") from exc
         self._fetched_at = time.monotonic()
         return self._keys
 
     async def _fetch(self) -> PyJWKSet:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(self._url)
+            response = await client.get(self._url, headers=self._headers)
             response.raise_for_status()
             return PyJWKSet.from_dict(response.json())
 
@@ -156,7 +170,10 @@ class TokenVerifier:
                 algorithms=["RS256"],
                 issuer=self._issuer,
                 leeway=self._leeway,
-                options={"require": ["exp", "iat", "sub", "token_use"], "verify_aud": False},
+                # The claims AWS's own verifier (aws-jwt-verify) insists on.
+                # `iat` is validated when present but not required: it adds
+                # nothing `exp` does not, and the local emulator omits it.
+                options={"require": ["exp", "sub", "token_use"], "verify_aud": False},
             )
         except jwt.ExpiredSignatureError as exc:
             raise TokenExpiredError() from exc

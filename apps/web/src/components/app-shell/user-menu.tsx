@@ -1,17 +1,30 @@
 "use client";
 
+import { useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { User, Settings, LogOut, ChevronDown } from "lucide-react";
 import { Menu, MenuItem, MenuSeparator } from "@/components/ui/menu";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
+import { useSessionUser } from "@/components/auth/session-provider";
 import { useRouter } from "@/i18n/navigation";
-import { CURRENT_USER } from "@/lib/data/dashboard";
+import { auth } from "@/lib/auth/client";
+import { LOGIN_PATH } from "@/lib/auth/routes";
 
 export function UserMenu() {
   const t = useTranslations("app.header");
-  const tPersona = useTranslations("personas.items.andrea");
+  const user = useSessionUser();
   const router = useRouter();
+  const [signingOut, startSignOut] = useTransition();
+
+  function signOut() {
+    startSignOut(async () => {
+      await auth.signOut();
+      // `replace`, so Back does not return to a screen the session no longer opens.
+      router.replace(LOGIN_PATH);
+      router.refresh();
+    });
+  }
 
   return (
     <Menu
@@ -31,7 +44,7 @@ export function UserMenu() {
             aria-hidden
             className="grid size-7 shrink-0 place-items-center rounded-full bg-evidence-soft font-mono text-[0.625rem] font-semibold text-evidence"
           >
-            {CURRENT_USER.initials}
+            {user.initials}
           </span>
           <ChevronDown aria-hidden className="size-3.5 text-muted-2" strokeWidth={2} />
           <span className="sr-only">{t("userMenu")}</span>
@@ -45,14 +58,14 @@ export function UserMenu() {
               aria-hidden
               className="grid size-9 shrink-0 place-items-center rounded-full bg-evidence-soft font-mono text-[0.75rem] font-semibold text-evidence"
             >
-              {CURRENT_USER.initials}
+              {user.initials}
             </span>
             <span className="flex min-w-0 flex-col leading-tight">
               <span className="truncate text-[0.8125rem] font-medium text-foreground-strong">
-                {CURRENT_USER.name}
+                {user.displayName}
               </span>
               <span className="truncate text-[0.6875rem] text-muted-2">
-                {tPersona("role")}
+                {user.isGuest ? t("guestBadge") : user.organizationName}
               </span>
             </span>
           </div>
@@ -92,8 +105,9 @@ export function UserMenu() {
             icon={<LogOut aria-hidden className="size-4" strokeWidth={1.9} />}
             onClick={() => {
               close();
-              router.push("/auth/login");
+              signOut();
             }}
+            disabled={signingOut}
             className="text-refuted hover:bg-refuted-soft"
           >
             {t("signOut")}

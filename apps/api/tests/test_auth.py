@@ -21,6 +21,7 @@ async def test_register_creates_tenant_and_pending_user(client, app, unique_emai
         json={
             "email": unique_email,
             "password": PASSWORD,
+            "password_confirmation": PASSWORD,
             "full_name": "Andrea Betschart",
             "organization_name": "Staatsarchiv Schwyz",
             "canton": "SZ",
@@ -51,6 +52,7 @@ async def test_register_rejects_a_weak_password(client, unique_email) -> None:
         json={
             "email": unique_email,
             "password": "passwort",
+            "password_confirmation": "passwort",
             "full_name": "Andrea Betschart",
             "accept_terms": True,
         },
@@ -58,8 +60,58 @@ async def test_register_rejects_a_weak_password(client, unique_email) -> None:
     assert response.status_code == 422
     body = response.json()
     assert body["code"] == "validation_failed"
+    assert {"field": "password", "type": "weak_password"}.items() <= body["errors"][0].items()
     # The submitted value must never be echoed back — it is a password.
     assert "passwort" not in response.text
+
+
+async def test_register_requires_the_password_twice(client, app, unique_email) -> None:
+    """A typo in a masked field must not become the account's password."""
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": PASSWORD,
+            "password_confirmation": "Gletscher-1894!",
+            "accept_terms": True,
+        },
+    )
+    assert response.status_code == 422
+    body = response.json()
+    assert body["code"] == "validation_failed"
+    assert [(e["field"], e["type"]) for e in body["errors"]] == [
+        ("password_confirmation", "password_mismatch")
+    ]
+    assert PASSWORD not in response.text
+    assert "Gletscher-1894!" not in response.text
+    # Refused before Cognito is called: nothing was created anywhere.
+    assert await _rows(app, select(User).where(User.email == unique_email)) == []
+
+
+async def test_register_rejects_a_missing_confirmation(client, unique_email) -> None:
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={"email": unique_email, "password": PASSWORD, "accept_terms": True},
+    )
+    assert response.status_code == 422
+    assert [e["field"] for e in response.json()["errors"]] == ["password_confirmation"]
+
+
+async def test_register_with_only_an_email_and_a_password(client, app, unique_email) -> None:
+    """The sign-up screen asks for nothing else; the name is set on the profile."""
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": PASSWORD,
+            "password_confirmation": PASSWORD,
+            "accept_terms": True,
+        },
+    )
+    assert response.status_code == 201, response.text
+    users = await _rows(app, select(User).where(User.email == unique_email))
+    assert users[0].full_name == ""
+    assert users[0].initials  # falls back to the address
 
 
 async def test_register_requires_accepting_the_terms(client, unique_email) -> None:
@@ -68,6 +120,7 @@ async def test_register_requires_accepting_the_terms(client, unique_email) -> No
         json={
             "email": unique_email,
             "password": PASSWORD,
+            "password_confirmation": PASSWORD,
             "full_name": "Andrea Betschart",
             "accept_terms": False,
         },
@@ -81,6 +134,7 @@ async def test_registering_twice_reports_the_conflict(client, registered) -> Non
         json={
             "email": registered["email"],
             "password": PASSWORD,
+            "password_confirmation": PASSWORD,
             "full_name": "Andrea Betschart",
             "accept_terms": True,
         },
@@ -97,6 +151,7 @@ async def test_colleague_joins_by_verified_domain(client, app, registered) -> No
         json={
             "email": colleague,
             "password": PASSWORD,
+            "password_confirmation": PASSWORD,
             "full_name": "Marco Reichmuth",
             "accept_terms": True,
         },
@@ -116,6 +171,7 @@ async def test_public_mailbox_never_joins_an_existing_tenant(client, app, regist
         json={
             "email": "someone@gmail.com",
             "password": PASSWORD,
+            "password_confirmation": PASSWORD,
             "full_name": "Jemand Anders",
             "accept_terms": True,
         },
@@ -243,3 +299,4 @@ async def test_api_responses_keep_the_strict_policy(client) -> None:
     response = await client.get("/healthz")
     expected = "default-src 'none'; frame-ancestors 'none'"
     assert response.headers["Content-Security-Policy"] == expected
+

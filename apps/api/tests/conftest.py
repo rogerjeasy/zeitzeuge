@@ -230,6 +230,7 @@ async def registered(client, cognito_client, settings, unique_email) -> dict:
         json={
             "email": unique_email,
             "password": PASSWORD,
+            "password_confirmation": PASSWORD,
             "full_name": "Andrea Betschart",
             "organization_name": "Staatsarchiv Schwyz",
             "canton": "SZ",

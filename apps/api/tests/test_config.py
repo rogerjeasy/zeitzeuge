@@ -68,3 +68,26 @@ def test_derived_cognito_urls(monkeypatch) -> None:
     assert settings.cognito_issuer.endswith("/eu-central-2_ABC123")
     assert settings.cognito_jwks_url.endswith("/.well-known/jwks.json")
     assert settings.resource_prefix == "zeitzeuge-local"
+
+
+def test_jwks_comes_from_the_emulator_when_one_is_configured(monkeypatch) -> None:
+    """moto signs its tokens with its own key; AWS's JWKS cannot verify them."""
+    monkeypatch.setenv("ZZ_COGNITO_USER_POOL_ID", "eu-central-2_abc")
+    monkeypatch.setenv("ZZ_AWS_ENDPOINT_URL", "http://localhost:5001/")
+    settings = Settings(_env_file=None)
+    assert settings.cognito_jwks_url == "http://localhost:5001/eu-central-2_abc/.well-known/jwks.json"
+    # The issuer is what moto writes into `iss`, which is AWS's form either way.
+    assert settings.cognito_issuer.startswith("https://cognito-idp.eu-central-2.amazonaws.com/")
+    assert settings.cognito_jwks_headers == {
+        "X-Amz-Target": "AWSCognitoIdentityProviderService.GetJwks"
+    }
+
+
+def test_jwks_comes_from_aws_by_default(monkeypatch) -> None:
+    monkeypatch.setenv("ZZ_COGNITO_USER_POOL_ID", "eu-central-2_abc")
+    monkeypatch.setenv("ZZ_AWS_ENDPOINT_URL", "")
+    settings = Settings(_env_file=None)
+    assert settings.cognito_jwks_url == (
+        "https://cognito-idp.eu-central-2.amazonaws.com/eu-central-2_abc/.well-known/jwks.json"
+    )
+    assert settings.cognito_jwks_headers == {}

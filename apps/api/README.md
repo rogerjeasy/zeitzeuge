@@ -20,11 +20,16 @@ APIs, in a container) so the service can be run and tested end to end.
 ```bash
 cp .env.example .env
 poetry install
-make up            # Postgres :5432 · AWS emulator :5001
-make migrate
+make dev           # up + bootstrap (pool, bucket, table in moto) + migrate + seed
 make run           # → http://localhost:8000/docs
 make test          # the unit suite; no Docker needed
 ```
+
+`make bootstrap` recreates the user pool in the emulator and writes its ids
+into `.env`; moto forgets everything when its container stops, so run it after
+every `make up`. Locally any six-digit code confirms an address — moto does not
+check it — and moto also lets an unconfirmed account sign in, which real
+Cognito refuses with `email_not_verified`.
 
 **Swagger UI is at `/docs`**, the raw document at `/openapi.json`. Both are
 served without a database, without Cognito and without an AWS account — the
@@ -81,7 +86,8 @@ poetry run python -m zeitzeuge_api.scripts.seed_demo    # demo tenant + guest us
 ## The endpoints
 
 ```
-POST   /api/v1/auth/register            create an account (founds or joins an archive)
+POST   /api/v1/auth/register            create an account (founds or joins an archive);
+                                        `password_confirmation` must equal `password`
 POST   /api/v1/auth/verify              confirm the address with the mailed code
 POST   /api/v1/auth/verify/resend       send a new code                         202
 POST   /api/v1/auth/login               → tokens, or an MFA / new-password challenge

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
-import { auth, AUTH_LANDING } from "@/lib/auth/client";
+import { auth, type AuthErrorCode } from "@/lib/auth/client";
+import { AUTH_ERROR_KEY } from "@/lib/auth/errors";
 import { cn } from "@/lib/cn";
+import { FormAlert } from "./form-alert";
+import { useEnterApp } from "./use-enter-app";
 
 /**
  * The guest path, given its own card rather than a link under the form.
@@ -16,19 +18,23 @@ import { cn } from "@/lib/cn";
  */
 export function GuestCard({ className }: { className?: string }) {
   const t = useTranslations("auth.common");
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const te = useTranslations("auth.errors");
+  const { entering, enterApp } = useEnterApp();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<AuthErrorCode | null>(null);
 
   async function enter() {
+    setError(null);
     setBusy(true);
-    await auth.continueAsGuest();
-    startTransition(() => {
-      router.push(AUTH_LANDING);
-    });
+    // A real Cognito sign-in as the seeded, read-only demo user — the same
+    // path as everyone else's, so it can fail like everyone else's.
+    const result = await auth.continueAsGuest();
+    setBusy(false);
+    if (!result.ok) return setError(result.code);
+    enterApp();
   }
 
-  const loading = busy || pending;
+  const loading = busy || entering;
 
   return (
     <div
@@ -43,6 +49,8 @@ export function GuestCard({ className }: { className?: string }) {
         </p>
         <p className="text-[0.75rem] leading-snug text-muted">{t("guestBody")}</p>
       </div>
+
+      {error && <FormAlert title={te("title")} message={te(AUTH_ERROR_KEY[error])} />}
 
       <button
         type="button"
