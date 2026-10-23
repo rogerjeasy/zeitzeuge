@@ -24,7 +24,7 @@ creates subnets or security groups.
   PostgreSQL only — no plain HTTP out.
 - **Data tier has no internet route at all**, not even through the NAT.
 
-## Cost (Zurich list prices, 2026-09)
+## Cost (Zurich list prices, 2026-10)
 
 | Item | ~USD / month |
 |---|---|

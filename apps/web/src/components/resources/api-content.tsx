@@ -32,7 +32,7 @@ const RESPONSE = `{
         "agent": "geo",
         "model": "claude-sonnet-5",
         "evidence": ["ev_001", "ev_007", "ev_012"],
-        "decided_at": "2026-09-22T14:15:41Z"
+        "decided_at": "2026-10-24T14:15:41Z"
       }
     },
     {
@@ -44,7 +44,7 @@ const RESPONSE = `{
         "agent": "adjudicator",
         "model": "claude-opus-5",
         "evidence": [],
-        "decided_at": "2026-09-22T14:16:03Z"
+        "decided_at": "2026-10-24T14:16:03Z"
       }
     }
   ]

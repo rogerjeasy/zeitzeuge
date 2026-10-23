@@ -15,7 +15,7 @@ import type { RunStatus } from "./dashboard";
  *  prerendered, and a relative label computed at render time would disagree
  *  between the server and the browser. Every day header prints the real date
  *  beside the word, so nothing is hidden behind "today". */
-export const DEMO_TODAY = "2026-09-22";
+export const DEMO_TODAY = "2026-10-23";
 
 /** Fourteen days, ending on DEMO_TODAY — the window the dashboard trend covers,
  *  so the two screens are telling one story about one fortnight. */
@@ -232,7 +232,7 @@ const EXPORT_FORMATS = ["isadCsv", "ead", "dc", "iiif", "ricoXml"];
 const HOLD_REASONS = ["minor", "person", "pii"];
 
 function history(): HistoryEvent[] {
-  const random = rng(20260922);
+  const random = rng(20261024);
   const events: HistoryEvent[] = [...TODAY];
   const pick = <T,>(list: readonly T[]) => list[Math.floor(random() * list.length)];
   const hhmm = (h: number, m: number) =>

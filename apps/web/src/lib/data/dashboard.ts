@@ -1,3 +1,5 @@
+import { DAYS } from "./history";
+
 /**
  * Demo figures for the dashboard. Shapes match what the API in §9.3 will
  * return, so wiring this to real endpoints is a fetch, not a refactor.
@@ -45,22 +47,30 @@ export interface TrendPoint {
   override: number;
 }
 
-export const TREND: TrendPoint[] = [
-  { day: "2026-09-09", precision: 89.2, override: 14.8 },
-  { day: "2026-09-10", precision: 89.9, override: 14.1 },
-  { day: "2026-09-11", precision: 90.4, override: 13.6 },
-  { day: "2026-09-12", precision: 90.1, override: 13.9 },
-  { day: "2026-09-13", precision: 91.3, override: 12.7 },
-  { day: "2026-09-14", precision: 91.8, override: 12.2 },
-  { day: "2026-09-15", precision: 92.0, override: 11.9 },
-  { day: "2026-09-16", precision: 92.6, override: 11.1 },
-  { day: "2026-09-17", precision: 92.4, override: 11.4 },
-  { day: "2026-09-18", precision: 93.1, override: 10.3 },
-  { day: "2026-09-19", precision: 93.4, override: 9.8 },
-  { day: "2026-09-20", precision: 93.6, override: 9.4 },
-  { day: "2026-09-21", precision: 93.9, override: 8.9 },
-  { day: "2026-09-22", precision: 94.1, override: 8.6 },
+/** One point per day of the history window (`DAYS`, ending on `DEMO_TODAY`),
+ *  so the trend and the audit trail cover the same fortnight. */
+const TREND_VALUES: [precision: number, override: number][] = [
+  [89.2, 14.8],
+  [89.9, 14.1],
+  [90.4, 13.6],
+  [90.1, 13.9],
+  [91.3, 12.7],
+  [91.8, 12.2],
+  [92.0, 11.9],
+  [92.6, 11.1],
+  [92.4, 11.4],
+  [93.1, 10.3],
+  [93.4, 9.8],
+  [93.6, 9.4],
+  [93.9, 8.9],
+  [94.1, 8.6],
 ];
+
+export const TREND: TrendPoint[] = TREND_VALUES.map(([precision, override], i) => ({
+  day: DAYS[i],
+  precision,
+  override,
+}));
 
 export type RunStatus = "running" | "review" | "accepted" | "abstained" | "failed";
 

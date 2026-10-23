@@ -13,7 +13,7 @@ export const PROFILE = {
   /** key under `settings.archive.roles.*` */
   role: "archivist",
   archive: "Staatsarchiv Schwyz",
-  memberSince: "2026-03-01",
+  memberSince: "2026-10-23",
 };
 
 export const CONTRIBUTION_STATS = [
