@@ -59,6 +59,8 @@ def test_names_match_on_tokens_or_the_distinctive_core_but_not_on_generic_words(
     assert not names_match("Kapelle", "Kapelle Maria Hilf")
     assert not names_match("Pfarrkirche St. Martin", "Pfarrkirche St. Jakob")
     assert not names_match("Hotel Schwyz", "Spital Schwyz")  # the shared word is a place
+    assert not names_match("Schwyz", "Spital Schwyz")  # the register entry is the town
+    assert not names_match("Mythen", "Restaurant Grosser Mythen")  # ... or the mountain
 
 
 def test_the_wfs_layer_yields_number_point_and_sheet() -> None:

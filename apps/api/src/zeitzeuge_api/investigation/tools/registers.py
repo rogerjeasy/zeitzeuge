@@ -172,9 +172,13 @@ def names_match(register_name: str, proposed: str) -> bool:
     a, b = distinctive(register_name), distinctive(proposed)
     if not a:
         return False  # «Kapelle», «Haus»: a register entry with no name of its own
-    if contains_all_tokens(register_name, proposed) or contains_all_tokens(proposed, register_name):
+    if contains_all_tokens(register_name, proposed):
         return True
-    return a == b and a not in PLACE_WORDS
+    if a in PLACE_WORDS:
+        # «Schwyz» inside «Spital Schwyz», «Mythen» inside «Restaurant Grosser Mythen»:
+        # the register entry is the place, not the building.
+        return False
+    return contains_all_tokens(proposed, register_name) or a == b
 
 
 class KsiInventory(HttpTool):
@@ -290,7 +294,12 @@ class WikidataGazetteer(HttpTool):
         return self._items
 
     async def find(self, name: str, *, near: tuple[float, float] | None = None) -> list[ToolHit]:
-        hits = [h for h in await self.items() if names_match(h.label, name)]
+        """Items of that name that could be a building: no mountains, lakes or municipalities."""
+        hits = [
+            h
+            for h in await self.items()
+            if names_match(h.label, name) and not _NOT_A_BUILDING.search(h.attrs.get("types", ""))
+        ]
         if near is not None:
             hits.sort(key=lambda h: distance_m(near, h.lv95) if h.lv95 else 1e9)
         return hits[:5]
@@ -300,6 +309,13 @@ class WikidataGazetteer(HttpTool):
             (h for h in await self.items() if h.lv95 and distance_m((e, n), h.lv95) <= radius_m),
             key=lambda h: distance_m((e, n), h.lv95),  # type: ignore[arg-type]
         )
+
+
+_NOT_A_BUILDING = re.compile(
+    r"Berg|Gipfel|Gebirge|Alpen|Pass\b|See\b|Fluss|Bach\b|Tal\b|Gemeinde|Bezirk|Kanton|Ortschaft"
+    r"|Dorf|Weiler|Stadt|Ortsteil|Siedlung|Insel|Halbinsel|Wasserfall|Höhle|Massiv",
+    re.IGNORECASE,
+)
 
 
 def _wikidata_hit(row: dict[str, Any]) -> ToolHit | None:

@@ -196,6 +196,10 @@ class GoogleTools(HttpTool):
             self._cache.put(key, meta)
         if meta.get("status") != "OK" or not meta.get("pano_id"):
             return None
+        if "google" not in str(meta.get("copyright", "")).lower():
+            # A user-uploaded panorama can be a balcony or an interior; on SG.CIV.17.3 one was
+            # judged «same building» and moved the point to Ibach. Street imagery only.
+            return None
         pano_lat, pano_lon = meta["location"]["lat"], meta["location"]["lng"]
         heading = _bearing(pano_lat, pano_lon, lat, lon)
         pano = wgs84_to_lv95(pano_lat, pano_lon)

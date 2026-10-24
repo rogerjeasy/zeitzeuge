@@ -28,7 +28,7 @@ from zeitzeuge_api.investigation.tools.base import ToolCache, ToolUnavailable
 
 log = get_logger(__name__)
 
-PROMPT_VERSION = "research-v1"
+PROMPT_VERSION = "research-v1"  # Gemini answers are keyed by model too
 OPENAI_URL = "https://api.openai.com/v1/responses"
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
@@ -315,13 +315,14 @@ class GeminiResearch(_Base):
                             },
                             {
                                 "text": PROMPT.format(
-                                    maps=" and Google Maps", context=_context(exif_date)
+                                    maps=" (Google Search)", context=_context(exif_date)
                                 )
                             },
                         ],
                     }
                 ],
-                "tools": [{"google_search": {}}, {"google_maps": {}}],
+                # This model refuses Search and Maps grounding in one request (400).
+                "tools": [{"google_search": {}}],
             }
             started = time.monotonic()
             try:

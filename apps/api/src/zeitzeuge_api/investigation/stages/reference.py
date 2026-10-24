@@ -41,7 +41,7 @@ from zeitzeuge_api.investigation.tools.text import fold, tokens
 STAGE = "reference"
 ADDRESS = re.compile(r"\b[A-ZÄÖÜ][\wäöüéè-]*(?:strasse|gasse|weg|platz|rain|matt)\s+\d+\b")
 """A street and house number in a catalogue title: «Grundstrasse 32 (Acherhof)»."""
-MAX_CANDIDATES = 6
+MAX_CANDIDATES = 8
 REFS_PER_CANDIDATE = 5
 CONFIRM_AT = 0.7
 """A «same building» verdict below this is not a confirmation: on SG.CIV.17.3 a 0.65
