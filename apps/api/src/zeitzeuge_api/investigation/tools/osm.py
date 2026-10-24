@@ -20,6 +20,13 @@ from zeitzeuge_api.investigation.tools.geo import distance_m, lv95_to_wgs84, wgs
 from zeitzeuge_api.investigation.tools.text import name_match
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+MIRRORS = (
+    OVERPASS_URL,
+    "https://overpass.private.coffee/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+)
+"""The main instance refuses connections under load; the same query and the
+same ODbL data are served by public mirrors, tried in order."""
 SOURCE = "OpenStreetMap-Mitwirkende (ODbL), via Overpass API"
 
 # Keys whose value says what a named feature *is*, in order of preference.
@@ -105,8 +112,16 @@ class Overpass(HttpTool):
     """Named OSM features around a point, or by name."""
 
     async def _run(self, query: str) -> list[dict[str, Any]]:
-        data = await self.post_form_json(OVERPASS_URL, {"data": query}, validate=_check_remark)
-        return list(data.get("elements", []))
+        failure: ToolUnavailable | None = None
+        for url in MIRRORS:
+            try:
+                data = await self.post_form_json(url, {"data": query}, validate=_check_remark)
+            except ToolUnavailable as exc:
+                failure = exc
+                continue
+            return list(data.get("elements", []))
+        assert failure is not None
+        raise failure
 
     async def named_features_near(
         self, e: float, n: float, *, radius_m: float = 400
