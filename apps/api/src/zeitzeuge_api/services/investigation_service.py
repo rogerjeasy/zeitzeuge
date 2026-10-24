@@ -767,6 +767,32 @@ class InvestigationService:
         data: schemas.FieldReviewRequest,
         if_match: int | None,
     ) -> schemas.CaseFile:
+        asset_id = await self.apply_review(
+            session,
+            user=user,
+            record_id=record_id,
+            field_key=field_key,
+            data=data,
+            if_match=if_match,
+        )
+        return await self.case_file(session, asset_id)
+
+    async def apply_review(
+        self,
+        session: AsyncSession,
+        *,
+        user: User,
+        record_id: uuid.UUID,
+        field_key: str,
+        data: schemas.FieldReviewRequest,
+        if_match: int | None,
+    ) -> uuid.UUID:
+        """One human decision on one field: a new version, a review row, an audit row.
+
+        The review screen and the QC-label import (`services.qc_import`) both
+        come through here, so an imported label is the same kind of fact as a
+        click. Returns the photograph's id.
+        """
         if field_key not in RANKED_FIELDS:
             raise errors.NotFoundError("Only the five ranked fields are reviewed here.")
         record = await session.get(CatalogueRecord, record_id)
@@ -969,7 +995,7 @@ class InvestigationService:
         )
         record.current_version = version.version
         await session.flush()
-        return await self.case_file(session, record.asset_id)
+        return record.asset_id
 
     # --- batch management (batch-management note) ---------------------------------
 

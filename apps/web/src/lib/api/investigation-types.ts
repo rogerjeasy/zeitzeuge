@@ -344,6 +344,17 @@ export type WithdrawRequest = { reason?: string };
 export type BatchDeleteResult = { batch_id: string; deleted_at: string; assets: number };
 /** Failed runs deleted for good (API `DELETE /runs/failed`); finished runs are never touched. */
 export type PurgeResult = { purged: number; batch_id: string | null };
+export type QcImportResult = {
+  batch_id: string;
+  photos: number;
+  accepted: number;
+  edited: number;
+  filled: number;
+  already_reviewed: number;
+  no_decision: number;
+  unmatched: string[];
+  label_issues: string[];
+};
 export type MirrorResult = {
   source_batch: string;
   mirror_batch: string;

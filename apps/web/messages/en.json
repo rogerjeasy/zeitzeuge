@@ -1025,6 +1025,15 @@
       "fields": "Fields",
       "accuracy": "Hit rate",
       "bandHint": "The brief accepts values at 90 % reliability: the band 0.90–1.00 is the one to check."
+    },
+    "import": {
+      "title": "Import the QC workbook",
+      "body": "Upload the checked copy of the export: cells marked green count as correct. Each becomes a review in your name — accepted, corrected or filled — as on the review screen. Fields already reviewed stay unchanged.",
+      "cta": "Upload Excel",
+      "busy": "Importing …",
+      "done": "{photos} photos: {accepted} accepted, {edited} corrected, {filled} filled, {skipped} already reviewed.",
+      "unmatched": "{count} rows match no photo in this batch.",
+      "labelIssues": "Not imported (not a political municipality): {list}"
     }
   },
   "assist": {

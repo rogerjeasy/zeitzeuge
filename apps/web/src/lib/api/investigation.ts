@@ -21,6 +21,7 @@ import type {
   WithdrawRequest,
   PurgeResult,
   MirrorResult,
+  QcImportResult,
   HistoryEntry,
   CostReport,
   Collection,
@@ -165,6 +166,25 @@ export const investigationApi = {
     return apiRequest(`/runs/failed?batch_id=${id(batchId)}`, {
       method: "DELETE",
       timeoutMs: 30_000,
+      ...auth(a),
+    });
+  },
+
+  /** The team's labelled workbook (green cells) → field reviews. */
+  importQcLabels(
+    a: ApiAuth,
+    batchId: string,
+    workbook: Uint8Array,
+    filename: string,
+  ): Promise<ApiResult<QcImportResult>> {
+    const name = encodeURIComponent(filename.slice(0, 120));
+    return apiRequest(`/batches/${id(batchId)}/qc-import?filename=${name}`, {
+      method: "POST",
+      raw: {
+        body: workbook,
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      },
+      timeoutMs: 120_000,
       ...auth(a),
     });
   },

@@ -4,6 +4,7 @@ import { ClipboardCheck, Target } from "lucide-react";
 import { routing } from "@/i18n/routing";
 import { QcPanel } from "@/components/investigation/qc-panel";
 import { MeasuredPanel } from "@/components/investigation/measured-panel";
+import { QcImport } from "@/components/investigation/qc-import";
 import { ApiNotice } from "@/components/investigation/api-notice";
 import { EmptyState } from "@/components/ui/empty-state";
 import { loadQcView } from "@/lib/investigation/qc";
@@ -55,7 +56,10 @@ export default async function EvaluationPage({
       {view.error && <ApiNotice code={view.error} />}
 
       {view.qc ? (
-        <QcPanel qc={view.qc} batchId={view.batchId} />
+        <>
+          <QcPanel qc={view.qc} batchId={view.batchId} />
+          {view.batchId && <QcImport batchId={view.batchId} />}
+        </>
       ) : (
         !view.error && (
           <EmptyState

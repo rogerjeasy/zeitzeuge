@@ -23,6 +23,7 @@ import {
   type RunMode,
   PurgeResult,
   MirrorResult,
+  QcImportResult,
 } from "@/lib/api/investigation";
 import type { ApiResult } from "@/lib/api/server";
 
@@ -180,6 +181,22 @@ export async function withdrawBatchAction(
 export async function purgeFailedRunsAction(batchId: string): Promise<InvestigationResult<PurgeResult>> {
   if (!isUuid(String(batchId))) return INVALID;
   return call((a) => investigationApi.purgeFailedRuns(a, batchId));
+}
+
+const QC_IMPORT_MAX = 1024 * 1024;
+
+/** Upload the team's labelled workbook; each green cell becomes a review. */
+export async function importQcLabelsAction(
+  form: FormData,
+): Promise<InvestigationResult<QcImportResult>> {
+  const batchId = String(form.get("batchId") ?? "");
+  const file = form.get("file");
+  if (!isUuid(batchId) || !(file instanceof File)) return INVALID;
+  if (!file.name.toLowerCase().endsWith(".xlsx") || file.size === 0 || file.size > QC_IMPORT_MAX) {
+    return INVALID;
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  return call((a) => investigationApi.importQcLabels(a, batchId, bytes, file.name));
 }
 
 export async function mirrorBatchAction(batchId: string): Promise<InvestigationResult<MirrorResult>> {

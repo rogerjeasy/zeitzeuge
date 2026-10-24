@@ -1025,6 +1025,15 @@
       "fields": "Champs",
       "accuracy": "Taux de réussite",
       "bandHint": "Le cahier des charges accepte une fiabilité de 90 % : c'est la tranche 0,90–1,00 qui compte."
+    },
+    "import": {
+      "title": "Importer le classeur de contrôle",
+      "body": "Téléversez la copie contrôlée de l'export : les cellules marquées en vert valent comme correctes. Chacune devient une vérification à votre nom — acceptée, corrigée ou complétée —, comme dans l'écran de vérification. Les champs déjà vérifiés restent inchangés.",
+      "cta": "Téléverser l'Excel",
+      "busy": "Import en cours …",
+      "done": "{photos} photos : {accepted} acceptées, {edited} corrigées, {filled} complétées, {skipped} déjà vérifiées.",
+      "unmatched": "{count} lignes ne correspondent à aucune photo de ce lot.",
+      "labelIssues": "Non importé (pas une commune politique) : {list}"
     }
   },
   "assist": {

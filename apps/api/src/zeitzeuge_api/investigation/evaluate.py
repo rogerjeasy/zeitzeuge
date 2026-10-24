@@ -31,6 +31,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
+from typing import IO
 
 from openpyxl import load_workbook
 
@@ -135,9 +136,12 @@ def _rgb(cell: object) -> str:
     return str(fill.fgColor.rgb)
 
 
-def read_labels(path: Path) -> dict[str, dict[str, str]]:
+def read_labels(path: Path | IO[bytes]) -> dict[str, dict[str, str]]:
     sheet = load_workbook(path).worksheets[0]
     header = [c.value for c in sheet[1]]
+    missing = [c for c in ("Dateiname", *(column for column, _ in FIELDS)) if c not in header]
+    if missing:
+        raise ValueError(f"Not a ZEITZEUGE results sheet: missing {', '.join(missing)}.")
     labels: dict[str, dict[str, str]] = {}
     for row in sheet.iter_rows(min_row=2):
         name = row[0].value

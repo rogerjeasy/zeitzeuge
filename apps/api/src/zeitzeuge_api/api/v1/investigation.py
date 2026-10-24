@@ -20,6 +20,7 @@ from zeitzeuge_api.api.deps import CurrentIdentity, Identity, WriteIdentity, res
 from zeitzeuge_api.core import errors
 from zeitzeuge_api.db.models.enums import UserRole
 from zeitzeuge_api.schemas import investigation as schemas
+from zeitzeuge_api.services import qc_import
 from zeitzeuge_api.services.costs import cost_report
 from zeitzeuge_api.services.investigation_service import InvestigationService
 from zeitzeuge_api.services.mirror import mirror_batch
@@ -194,6 +195,34 @@ async def review_field(
         field_key=field_key,
         data=body,
         if_match=version,
+    )
+
+
+@router.post(
+    "/batches/{batch_id}/qc-import",
+    summary="Import the team's labelled workbook (green cells) as field reviews",
+)
+async def import_qc_labels(
+    batch_id: uuid.UUID,
+    request: Request,
+    identity: WriteIdentity,
+    service: Service,
+    filename: str | None = None,
+) -> dict[str, Any]:
+    """The body is the .xlsx file itself, not a form: one file, at most 5 MB."""
+    _adjudicator(identity)
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > qc_import.MAX_BYTES:
+            raise errors.ValidationError("The workbook is larger than 5 MB.")
+    return await qc_import.import_labels(
+        service,
+        identity.session,
+        user=identity.user,
+        batch_id=batch_id,
+        workbook=bytes(body),
+        source_name=(filename or "")[:120] or None,
     )
 
 

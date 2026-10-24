@@ -42,6 +42,8 @@ type RequestOptions = {
   /** Extra request headers, e.g. `If-Match` on a field review. */
   headers?: Record<string, string>;
   timeoutMs?: number;
+  /** A non-JSON body sent as is, e.g. an uploaded workbook. */
+  raw?: { body: Uint8Array; contentType: string };
 };
 
 export async function apiRequest<T>(
@@ -54,10 +56,12 @@ export async function apiRequest<T>(
     caller,
     headers: extra,
     timeoutMs = TIMEOUT_MS,
+    raw,
   }: RequestOptions = {},
 ): Promise<ApiResult<T>> {
   const headers = new Headers({ Accept: "application/json" });
   if (body !== undefined) headers.set("Content-Type", "application/json");
+  if (raw) headers.set("Content-Type", raw.contentType);
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
   if (sessionId) headers.set("X-ZZ-Session", sessionId);
   for (const [name, value] of Object.entries(caller ?? {})) headers.set(name, value);
@@ -68,7 +72,7 @@ export async function apiRequest<T>(
     response = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: raw ? (raw.body as BodyInit) : body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),
     });

@@ -1025,6 +1025,15 @@
       "fields": "Felder",
       "accuracy": "Trefferquote",
       "bandHint": "Die Aufgabenstellung akzeptiert Angaben ab 90 % Zuverlässigkeit: Massgebend ist der Bereich 0,90–1,00."
+    },
+    "import": {
+      "title": "Prüf-Excel importieren",
+      "body": "Laden Sie die geprüfte Kopie des Exports hoch: grün markierte Zellen gelten als richtig. Jede wird zur Prüfung in Ihrem Namen — bestätigt, korrigiert oder ergänzt —, wie im Prüfbildschirm. Bereits geprüfte Felder bleiben unverändert.",
+      "cta": "Excel hochladen",
+      "busy": "Wird importiert …",
+      "done": "{photos} Fotos: {accepted} bestätigt, {edited} korrigiert, {filled} ergänzt, {skipped} schon geprüft.",
+      "unmatched": "{count} Zeilen passen zu keinem Foto dieses Stapels.",
+      "labelIssues": "Nicht übernommen (keine politische Gemeinde): {list}"
     }
   },
   "assist": {

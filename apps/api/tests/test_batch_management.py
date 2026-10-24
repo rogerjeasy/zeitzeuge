@@ -457,3 +457,56 @@ async def test_the_cost_report_splits_by_vendor_model_stage_and_batch(
 async def test_guests_do_not_see_the_costs(investigation, client, as_user) -> None:
     await _set_role(investigation, as_user["email"], UserRole.GUEST)
     assert (await client.get("/api/v1/costs")).status_code == 403
+
+
+def _labelled_workbook() -> bytes:
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill
+
+    green = PatternFill(start_color="FF92D050", end_color="FF92D050", fill_type="solid")
+    book = Workbook()
+    sheet = book.active
+    sheet.append(["Dateiname", "Ortschaft", "Gemeinde", "Gebaeude", "See_Fluss_Berg", "Strasse"])
+    sheet.append(["SG.CIV.17.3.jpg", "Schwyz", "Ingenbohl", "Kapelle Haggenegg", "Mythen", None])
+    for column in ("B", "C", "D"):  # See_Fluss_Berg is not green: not a label
+        sheet[f"{column}2"].fill = green
+    sheet.append(["SG.CIV.17.999.jpg", "Arth", None, None, None, None])
+    sheet["B3"].fill = green
+    out = io.BytesIO()
+    book.save(out)
+    return out.getvalue()
+
+
+async def test_the_teams_labelled_workbook_becomes_reviews_once(
+    investigation, client, as_user
+) -> None:
+    batch_id, (first, _second) = await _batch_with_two(client)
+    await _machine_run(investigation, first["run_id"])
+    url = f"/api/v1/batches/{batch_id}/qc-import?filename=labels.xlsx"
+
+    result = await client.post(url, content=_labelled_workbook())
+    assert result.status_code == 200, result.text
+    body = result.json()
+    # Schwyz names the machine's Schwyz; Ingenbohl corrects it; the building was open.
+    assert (body["accepted"], body["edited"], body["filled"]) == (1, 1, 1)
+    assert body["unmatched"] == ["SG.CIV.17.999.jpg"]
+
+    qc = (await client.get(f"/api/v1/batches/{batch_id}/qc")).json()
+    rates = qc["overrideRate"]
+    assert rates["locality"] == 0.0
+    assert rates["municipality"] == 1.0
+    assert rates["building"] == 1.0
+    assert rates["landscape_feature"] is None  # an uncoloured cell is no label
+    assert qc["measured"]["fields"]["municipality"]["wrong"] == 1
+
+    again = (await client.post(url, content=_labelled_workbook())).json()
+    assert again["already_reviewed"] == 3
+    assert again["accepted"] + again["edited"] + again["filled"] == 0
+
+
+async def test_a_file_that_is_not_a_results_sheet_is_refused(
+    investigation, client, as_user
+) -> None:
+    batch_id, _ = await _batch_with_two(client)
+    bad = await client.post(f"/api/v1/batches/{batch_id}/qc-import", content=b"not a workbook")
+    assert bad.status_code == 422
