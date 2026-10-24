@@ -21,6 +21,8 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime
 
+from PIL import Image
+
 from zeitzeuge_api.db.models.enums import AgentId, EvidenceKind, SourceClass
 from zeitzeuge_api.investigation.confidence import (
     OPEN_WEB_PAGE,
@@ -29,7 +31,7 @@ from zeitzeuge_api.investigation.confidence import (
 )
 from zeitzeuge_api.investigation.context import RunContext
 from zeitzeuge_api.investigation.contracts import ReferenceVerdicts
-from zeitzeuge_api.investigation.models import Task, prepare_image
+from zeitzeuge_api.investigation.models import ModelError, Task, prepare_image
 from zeitzeuge_api.investigation.names import PLACE_WORDS, distinctive, is_placeholder
 from zeitzeuge_api.investigation.stages.grounding import Anchor, BuildingCandidate
 from zeitzeuge_api.investigation.stages.hypothesise import group_key
@@ -216,27 +218,38 @@ async def run(ctx: RunContext) -> None:
         kept: list[ToolHit] = []
         for hit in references:
             raw = await ctx.tools.fetch_image(str(hit.attrs["thumbnail"]))
-            if raw:
+            if not raw:
+                continue
+            try:
                 images.append(prepare_image(raw, long_edge=800))
-                kept.append(hit)
+            except (OSError, ValueError, Image.DecompressionBombError):
+                # A truncated or corrupt thumbnail is skipped; it must not end the run
+                # (two Prio-1 photos failed on «image file is truncated»).
+                continue
+            kept.append(hit)
         if not kept:
             continue
         listing = "\n".join(
             f"Reference {i + 1}: «{hit.label}» — {hit.source}" for i, hit in enumerate(kept)
         )
-        reply = await ctx.models.ask(
-            Task.COMPARE,
-            ReferenceVerdicts,
-            system=SYSTEM,
-            prompt=(
-                f"Candidate building: «{candidate.name}»"
-                + (f" ({candidate.kind})" if candidate.kind else "")
-                + f".\n{listing}\nPhoto 0 comes first, then references 1..{len(kept)}. "
-                "Judge each reference and call `answer`."
-            ),
-            images=[ctx.asset.prepared, *images],
-            max_tokens=1500,
-        )
+        try:
+            reply = await ctx.models.ask(
+                Task.COMPARE,
+                ReferenceVerdicts,
+                system=SYSTEM,
+                prompt=(
+                    f"Candidate building: «{candidate.name}»"
+                    + (f" ({candidate.kind})" if candidate.kind else "")
+                    + f".\n{listing}\nPhoto 0 comes first, then references 1..{len(kept)}. "
+                    "Judge each reference and call `answer`."
+                ),
+                images=[ctx.asset.prepared, *images],
+                max_tokens=1500,
+            )
+        except ModelError as exc:
+            why = f"Vergleich «{candidate.name}» nicht möglich: {exc}"
+            ctx.ledger.note(AgentId.MEMORY, why[:280])
+            continue
         record.add_reply(reply)
         compared += 1
         best = 0.0

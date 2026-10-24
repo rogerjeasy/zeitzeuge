@@ -33,7 +33,7 @@ from zeitzeuge_api.investigation.confidence import (
 )
 from zeitzeuge_api.investigation.context import RunContext
 from zeitzeuge_api.investigation.contracts import SightingNames
-from zeitzeuge_api.investigation.models import Task
+from zeitzeuge_api.investigation.models import ModelError, Task
 from zeitzeuge_api.investigation.tools.base import ToolUnavailable
 from zeitzeuge_api.investigation.tools.geo import wgs84_to_lv95
 from zeitzeuge_api.investigation.tools.pages import mentions
@@ -199,13 +199,18 @@ async def run(ctx: RunContext) -> None:
         record.ended_at = datetime.now(UTC)
         return
 
-    reply = await ctx.models.ask(
-        Task.EXTRACT,
-        SightingNames,
-        system=SYSTEM,
-        prompt=_brief(pages, labels, [lm["description"] for lm in landmarks], ocr),
-        max_tokens=1200,
-    )
+    try:
+        reply = await ctx.models.ask(
+            Task.EXTRACT,
+            SightingNames,
+            system=SYSTEM,
+            prompt=_brief(pages, labels, [lm["description"] for lm in landmarks], ocr),
+            max_tokens=1200,
+        )
+    except ModelError as exc:
+        ctx.ledger.note(AgentId.RESEARCH, f"Bildersuche: Namen nicht gelesen ({exc})"[:280])
+        record.ended_at = datetime.now(UTC)
+        return
     record.add_reply(reply)
 
     extra: dict[str, list[str]] = ctx.facts.setdefault("extra_candidates", {})
