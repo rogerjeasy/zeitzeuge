@@ -85,7 +85,11 @@ FALLBACKS: dict[Task, Binding] = {
 For the challenge the fallback is the same vendor — labelled as same-family
 wherever it is used, never silently."""
 CHALLENGE_FALLBACK = FALLBACKS[Task.CHALLENGE]
-_REFUSED = {"AccessDeniedException", "ResourceNotFoundException", "ValidationException"}
+_ACCESS_REFUSED = {"AccessDeniedException", "ResourceNotFoundException"}
+"""The model is not available to this account: remembered, so it is not re-asked."""
+_REQUEST_REFUSED = {"ValidationException"}
+"""This one request was rejected: fall back for it alone. Caching it would let a
+single odd input demote every later call to the weaker model."""
 _REFUSAL_TTL_SECONDS = 600.0
 
 
@@ -169,9 +173,11 @@ class ModelClient:
                 return await self._ask(binding, contract, system, prompt, images or [], max_tokens)
             except ClientError as exc:
                 code = exc.response.get("Error", {}).get("Code", "")
-                if code not in _REFUSED or fallback is None or fallback == binding:
+                refused = code in _ACCESS_REFUSED or code in _REQUEST_REFUSED
+                if not refused or fallback is None or fallback == binding:
                     raise ModelError(f"{binding.model_id}: {code or exc}") from exc
-                self._refused[binding.model_id] = time.monotonic()
+                if code in _ACCESS_REFUSED:
+                    self._refused[binding.model_id] = time.monotonic()
             except BotoCoreError as exc:
                 raise ModelError(f"{binding.model_id}: {exc}") from exc
         if fallback is None:

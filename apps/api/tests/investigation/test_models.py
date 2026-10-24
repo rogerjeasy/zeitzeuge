@@ -56,3 +56,21 @@ async def test_the_first_choice_answers_when_it_can() -> None:
     fake = FakeBedrock(refuse=set())
     reply = await ModelClient(client=fake).ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
     assert reply.model_id == OPUS.model_id
+
+
+async def test_one_rejected_request_does_not_demote_the_next() -> None:
+    class Flaky(FakeBedrock):
+        def converse(self, **kwargs: Any) -> dict[str, Any]:
+            if kwargs["modelId"] == OPUS.model_id and not self.calls:
+                self.calls.append(kwargs["modelId"])
+                raise ClientError(
+                    {"Error": {"Code": "ValidationException", "Message": "too large"}}, "Converse"
+                )
+            return super().converse(**kwargs)
+
+    fake = Flaky(refuse=set())
+    client = ModelClient(client=fake)
+    first = await client.ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
+    second = await client.ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
+    assert first.model_id == SONNET.model_id
+    assert second.model_id == OPUS.model_id
