@@ -137,6 +137,19 @@
       ]
     },
     {
+      "Sid": "CrossFamilyRedTeamGlobalRouting",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:*:707938860881:inference-profile/global.openai.*",
+        "arn:aws:bedrock:*::foundation-model/openai.*",
+        "arn:aws:bedrock:::foundation-model/openai.*"
+      ]
+    },
+    {
       "Sid": "ReadOnlyEverywhereElse",
       "Effect": "Allow",
       "Action": [
@@ -161,7 +174,14 @@
         "bedrock:InvokeModel",
         "bedrock:InvokeModelWithResponseStream"
       ],
-      "Resource": "arn:aws:bedrock:*:*:inference-profile/global.*"
+      "NotResource": [
+        "arn:aws:bedrock:*:*:inference-profile/eu.*",
+        "arn:aws:bedrock:*:*:application-inference-profile/*",
+        "arn:aws:bedrock:eu-*::foundation-model/*",
+        "arn:aws:bedrock:*:*:inference-profile/global.openai.*",
+        "arn:aws:bedrock:*::foundation-model/openai.*",
+        "arn:aws:bedrock:::foundation-model/openai.*"
+      ]
     },
     {
       "Sid": "AssumeOnlyZeitzeugeRoles",
