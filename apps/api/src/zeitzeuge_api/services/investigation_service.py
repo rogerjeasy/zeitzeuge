@@ -118,8 +118,13 @@ class InvestigationService:
 
     # --- batches --------------------------------------------------------------
 
-    async def list_batches(self, session: AsyncSession) -> list[schemas.BatchSummary]:
-        rows = await session.scalars(select(UploadBatch).order_by(UploadBatch.created_at.desc()))
+    async def list_batches(
+        self, session: AsyncSession, *, include_deleted: bool = False
+    ) -> list[schemas.BatchSummary]:
+        query = select(UploadBatch).order_by(UploadBatch.created_at.desc())
+        if not include_deleted:
+            query = query.where(UploadBatch.deleted_at.is_(None))
+        rows = await session.scalars(query)
         return [
             schemas.BatchSummary(
                 id=str(b.id),
@@ -128,6 +133,7 @@ class InvestigationService:
                 created_at=b.created_at,
                 asset_count=b.asset_count,
                 mirrored_from=str(b.mirrored_from_id) if b.mirrored_from_id else None,
+                deleted_at=b.deleted_at,
             )
             for b in rows
         ]
@@ -195,6 +201,16 @@ class InvestigationService:
         out: list[schemas.RegisteredFile] = []
         for item in data.files:
             asset = existing.get(item.filename)
+            if asset is not None and asset.deleted_at is not None:
+                out.append(
+                    schemas.RegisteredFile(
+                        asset_id=str(asset.id),
+                        filename=item.filename,
+                        upload=None,
+                        status="withdrawn",
+                    )
+                )
+                continue
             if asset is not None and asset.status not in {
                 AssetStatus.QUEUED,
                 AssetStatus.UPLOADING,
@@ -311,6 +327,8 @@ class InvestigationService:
         asset = await session.get(Asset, asset_id)
         if asset is None:
             raise errors.NotFoundError("No such photograph.")
+        if asset.deleted_at is not None:
+            raise errors.ConflictError("This photograph has been withdrawn; restore it first.")
         latest = await self._latest_run(session, asset.id)
         if latest is not None and latest.status in {RunStatus.QUEUED, RunStatus.RUNNING}:
             raise errors.ConflictError("This photograph is already being investigated.")
@@ -328,10 +346,14 @@ class InvestigationService:
         await session.flush()
         return run.public_id
 
-    async def batch(self, session: AsyncSession, batch_id: uuid.UUID) -> schemas.BatchOut:
+    async def batch(
+        self, session: AsyncSession, batch_id: uuid.UUID, *, include_deleted: bool = False
+    ) -> schemas.BatchOut:
         batch = await self._batch(session, batch_id)
+        everything = list(await session.scalars(select(Asset).where(Asset.batch_id == batch.id)))
+        withdrawn = sum(1 for a in everything if a.deleted_at is not None)
         assets = sorted(
-            await session.scalars(select(Asset).where(Asset.batch_id == batch.id)),
+            (a for a in everything if include_deleted or a.deleted_at is None),
             key=lambda a: natural_key(a.external_ref),
         )
         asset_ids = [a.id for a in assets]
@@ -368,24 +390,27 @@ class InvestigationService:
                 reviews=reviews.get(record.id, []) if record else [],
                 emitted_fields=emitted,
             )
-            counts["total"] += 1
-            if asset.status not in {AssetStatus.QUEUED, AssetStatus.UPLOADING}:
-                counts["uploaded"] += 1
-            if run is not None:
-                if run.status is RunStatus.QUEUED:
-                    counts["queued"] += 1
-                elif run.status is RunStatus.RUNNING:
-                    counts["running"] += 1
-                elif run.status is RunStatus.FAILED:
-                    counts["failed"] += 1
-                elif finished:
-                    counts["done"] += 1
-            if label == "übernahmefähig":
-                counts["accepted"] += 1
-            elif label == "Prüfbedarf":
-                counts["review"] += 1
-            elif label == "unbestimmt":
-                counts["undetermined"] += 1
+            gone = asset.deleted_at is not None
+            if not gone:
+                counts["total"] += 1
+            if not gone:
+                if asset.status not in {AssetStatus.QUEUED, AssetStatus.UPLOADING}:
+                    counts["uploaded"] += 1
+                if run is not None:
+                    if run.status is RunStatus.QUEUED:
+                        counts["queued"] += 1
+                    elif run.status is RunStatus.RUNNING:
+                        counts["running"] += 1
+                    elif run.status is RunStatus.FAILED:
+                        counts["failed"] += 1
+                    elif finished:
+                        counts["done"] += 1
+                if label == "übernahmefähig":
+                    counts["accepted"] += 1
+                elif label == "Prüfbedarf":
+                    counts["review"] += 1
+                elif label == "unbestimmt":
+                    counts["undetermined"] += 1
             rows.append(
                 schemas.BatchAsset(
                     asset_id=str(asset.id),
@@ -410,6 +435,9 @@ class InvestigationService:
                         if f.field_key in RANKED_FIELDS
                     },
                     preview_url=previews.get(asset.id),
+                    captured_at=asset.captured_at,
+                    deleted_at=asset.deleted_at,
+                    deletion_reason=asset.deletion_reason,
                 )
             )
         if (
@@ -426,6 +454,7 @@ class InvestigationService:
             created_at=batch.created_at,
             mirrored_from=str(batch.mirrored_from_id) if batch.mirrored_from_id else None,
             mirrored_at=batch.mirrored_at,
+            deleted_at=batch.deleted_at,
             counts=schemas.BatchCounts(
                 total=counts["total"],
                 uploaded=counts["uploaded"],
@@ -436,6 +465,7 @@ class InvestigationService:
                 accepted=counts["accepted"],
                 review=counts["review"],
                 undetermined=counts["undetermined"],
+                deleted=withdrawn,
             ),
             assets=rows,
         )
@@ -560,6 +590,8 @@ class InvestigationService:
         ]
         ordered = sorted(fields, key=lambda f: definitions[f.field_key].priority_rank or 99)
         return schemas.CaseFile(
+            deleted_at=asset.deleted_at,
+            deletion_reason=asset.deletion_reason,
             record_id=str(record.id) if record else None,
             version=record.current_version if record else None,
             asset_id=str(asset.id),
@@ -876,14 +908,286 @@ class InvestigationService:
         await session.flush()
         return await self.case_file(session, record.asset_id)
 
+    # --- batch management (batch-management note) ---------------------------------
+
+    async def bulk(
+        self,
+        session: AsyncSession,
+        *,
+        user: User,
+        action: str,
+        asset_ids: list[uuid.UUID],
+        reason: str | None = None,
+    ) -> schemas.BulkResult:
+        """Apply one action to many photographs; each succeeds or says why not."""
+        handler = {
+            "delete": self._withdraw_one,
+            "restore": self._restore_one,
+            "rerun": self._rerun_one,
+            "accept": self._accept_one,
+        }[action]
+        results: list[schemas.BulkItem] = []
+        for asset_id in dict.fromkeys(asset_ids):  # de-duplicated, order kept
+            asset = await session.get(Asset, asset_id)
+            if asset is None:
+                results.append(
+                    schemas.BulkItem(asset_id=str(asset_id), ok=False, detail="not_found")
+                )
+                continue
+            detail = await handler(session, user=user, asset=asset, reason=reason)
+            results.append(
+                schemas.BulkItem(asset_id=str(asset_id), ok=detail is None, detail=detail)
+            )
+        await session.flush()
+        if action in {"delete", "restore"}:
+            session.add(
+                AuditLog(
+                    org_id=user.org_id,
+                    actor_user_id=user.id,
+                    action=(
+                        AuditAction.ASSET_WITHDRAWN
+                        if action == "delete"
+                        else AuditAction.ASSET_RESTORED
+                    ),
+                    target_type="asset",
+                    details={
+                        "assets": [r.asset_id for r in results if r.ok],
+                        "reason": reason,
+                    },
+                )
+            )
+        elif action == "accept":
+            session.add(
+                AuditLog(
+                    org_id=user.org_id,
+                    actor_user_id=user.id,
+                    action=AuditAction.RECORD_BULK_ACCEPTED,
+                    target_type="asset",
+                    details={"assets": [r.asset_id for r in results if r.ok]},
+                )
+            )
+        await session.flush()
+        return schemas.BulkResult(
+            action=action,  # type: ignore[arg-type]
+            requested=len(results),
+            succeeded=sum(1 for r in results if r.ok),
+            results=results,
+        )
+
+    async def _withdraw_one(
+        self,
+        session: AsyncSession,
+        *,
+        user: User,
+        asset: Asset,
+        reason: str | None,
+        at: datetime | None = None,
+    ) -> str | None:
+        if asset.deleted_at is not None:
+            return "already_withdrawn"
+        # `at`: a batch withdrawal stamps its photos with its own time, which is
+        # how restoring the batch knows which photos it took with it.
+        asset.deleted_at = at or datetime.now(UTC)
+        asset.deleted_by = user.id
+        asset.deletion_reason = reason
+        latest = await self._latest_run(session, asset.id)
+        if latest is not None and latest.status in {RunStatus.QUEUED, RunStatus.RUNNING}:
+            # The worker checks this at every stage boundary and stops.
+            latest.status = RunStatus.CANCELLED
+            latest.finished_at = datetime.now(UTC)
+            latest.error = {"stage": latest.current_stage, "detail": "withdrawn"}
+        return None
+
+    async def _restore_one(
+        self, session: AsyncSession, *, user: User, asset: Asset, reason: str | None
+    ) -> str | None:
+        if asset.deleted_at is None:
+            return "not_withdrawn"
+        asset.deleted_at = None
+        asset.deleted_by = None
+        asset.deletion_reason = None
+        latest = await self._latest_run(session, asset.id)
+        if latest is not None and latest.status is RunStatus.CANCELLED:
+            session.add(
+                Run(
+                    id=uuid.uuid4(),
+                    org_id=asset.org_id,
+                    public_id=new_public_id("run"),
+                    asset_id=asset.id,
+                    batch_id=asset.batch_id,
+                    kind="rerun",
+                    parent_run_id=latest.id,
+                    triggered_by=user.id,
+                )
+            )
+        return None
+
+    async def _rerun_one(
+        self, session: AsyncSession, *, user: User, asset: Asset, reason: str | None
+    ) -> str | None:
+        if asset.deleted_at is not None:
+            return "withdrawn"
+        latest = await self._latest_run(session, asset.id)
+        if latest is not None and latest.status in {RunStatus.QUEUED, RunStatus.RUNNING}:
+            return "running"
+        if asset.status in {AssetStatus.QUEUED, AssetStatus.UPLOADING}:
+            return "not_uploaded"
+        await self.rerun(session, user=user, asset_id=asset.id)
+        return None
+
+    async def _accept_one(
+        self, session: AsyncSession, *, user: User, asset: Asset, reason: str | None
+    ) -> str | None:
+        """Accept every emitted ranked field no human has reviewed yet, in one version."""
+        if asset.deleted_at is not None:
+            return "withdrawn"
+        record = await session.scalar(
+            select(CatalogueRecord).where(CatalogueRecord.asset_id == asset.id)
+        )
+        if record is None:
+            return "no_record"
+        head = await self._head_version(session, record)
+        fields = (await self._head_fields(session, [record])).get(record.id, [])
+        targets = {
+            f.id
+            for f in fields
+            if f.field_key in RANKED_FIELDS
+            and f.decision is not FieldDecisionKind.ABSTAIN
+            and f.reviewed_by is None
+        }
+        if head is None or not targets:
+            return "nothing_to_accept"
+        now = datetime.now(UTC)
+        version = RecordVersion(
+            id=uuid.uuid4(),
+            org_id=record.org_id,
+            record_id=record.id,
+            version=record.current_version + 1,
+            run_id=head.run_id,
+            parent_version=record.current_version,
+            actor_kind=ActorKind.HUMAN,
+            actor_user_id=user.id,
+            change_kind=VersionChange.APPROVED_SNAPSHOT,
+            formula_weights=head.formula_weights,
+            summary=f"{len(targets)} Felder übernommen durch {user.full_name or user.email}",
+        )
+        session.add(version)
+        await session.flush()
+        for field in fields:
+            links = list(
+                await session.scalars(
+                    select(RecordFieldEvidence).where(
+                        RecordFieldEvidence.record_field_id == field.id
+                    )
+                )
+            )
+            copy = _carry(field, version.id)
+            if field.id in targets:
+                copy.reviewed_by = user.id
+                copy.reviewed_at = now
+                copy.review_action = ReviewAction.ACCEPTED_UNCHANGED
+                session.add(
+                    FieldReview(
+                        org_id=record.org_id,
+                        record_id=record.id,
+                        from_version=record.current_version,
+                        to_version=version.version,
+                        field_key=field.field_key,
+                        action=ReviewAction.ACCEPTED_UNCHANGED,
+                        from_value_text=field.value_text,
+                        to_value_text=field.value_text,
+                        user_id=user.id,
+                    )
+                )
+            session.add(copy)
+            await session.flush()
+            for link in links:
+                session.add(
+                    RecordFieldEvidence(
+                        record_field_id=copy.id,
+                        evidence_id=link.evidence_id,
+                        org_id=record.org_id,
+                        role=link.role,
+                    )
+                )
+        record.current_version = version.version
+        return None
+
+    async def withdraw_batch(
+        self, session: AsyncSession, *, user: User, batch_id: uuid.UUID, reason: str | None
+    ) -> schemas.BatchWithdrawResult:
+        batch = await self._batch(session, batch_id)
+        assets = list(
+            await session.scalars(
+                select(Asset).where(Asset.batch_id == batch.id, Asset.deleted_at.is_(None))
+            )
+        )
+        when = datetime.now(UTC)
+        for asset in assets:
+            await self._withdraw_one(session, user=user, asset=asset, reason=reason, at=when)
+        batch.deleted_at = when
+        batch.deleted_by = user.id
+        session.add(
+            AuditLog(
+                org_id=user.org_id,
+                actor_user_id=user.id,
+                action=AuditAction.BATCH_WITHDRAWN,
+                target_type="upload_batch",
+                target_id=str(batch.id),
+                details={"assets": len(assets), "reason": reason},
+            )
+        )
+        await session.flush()
+        return schemas.BatchWithdrawResult(
+            batch_id=str(batch.id), deleted_at=batch.deleted_at, assets=len(assets)
+        )
+
+    async def restore_batch(
+        self, session: AsyncSession, *, user: User, batch_id: uuid.UUID
+    ) -> schemas.BatchWithdrawResult:
+        batch = await self._batch(session, batch_id)
+        if batch.deleted_at is None:
+            raise errors.ConflictError("This batch is not withdrawn.")
+        withdrawn_at = batch.deleted_at
+        # Only the photos the batch withdrawal took with it; a photo withdrawn
+        # on its own before stays withdrawn.
+        assets = list(
+            await session.scalars(
+                select(Asset).where(Asset.batch_id == batch.id, Asset.deleted_at >= withdrawn_at)
+            )
+        )
+        for asset in assets:
+            await self._restore_one(session, user=user, asset=asset, reason=None)
+        batch.deleted_at = None
+        batch.deleted_by = None
+        session.add(
+            AuditLog(
+                org_id=user.org_id,
+                actor_user_id=user.id,
+                action=AuditAction.BATCH_RESTORED,
+                target_type="upload_batch",
+                target_id=str(batch.id),
+                details={"assets": len(assets)},
+            )
+        )
+        await session.flush()
+        return schemas.BatchWithdrawResult(batch_id=str(batch.id), assets=len(assets))
+
     # --- export and QC ------------------------------------------------------------
 
     async def export_xlsx(
-        self, session: AsyncSession, *, user: User, batch_id: uuid.UUID
+        self,
+        session: AsyncSession,
+        *,
+        user: User,
+        batch_id: uuid.UUID,
+        asset_ids: list[uuid.UUID] | None = None,
     ) -> tuple[bytes, str]:
         batch = await self._batch(session, batch_id)
         generated_at = datetime.now(UTC)
-        workbook = await build_workbook(session, batch.id, generated_at=generated_at)
+        workbook = await build_workbook(
+            session, batch.id, generated_at=generated_at, asset_ids=asset_ids
+        )
         digest = hashlib.sha256(workbook).hexdigest()
         export = Export(
             id=uuid.uuid4(),
@@ -1048,6 +1352,37 @@ class InvestigationService:
             ):
                 out[review.record_id].append(review)
         return out
+
+
+def _carry(field: RecordField, version_id: uuid.UUID) -> RecordField:
+    """The same field in a new version, unchanged (`origin = carried`)."""
+    return RecordField(
+        id=uuid.uuid4(),
+        org_id=field.org_id,
+        record_version_id=version_id,
+        field_key=field.field_key,
+        decision=field.decision,
+        abstain_reason=field.abstain_reason,
+        value_text=field.value_text,
+        value=field.value,
+        value_uri=field.value_uri,
+        confidence=field.confidence,
+        raw_confidence=field.raw_confidence,
+        source_classes=list(field.source_classes),
+        corroborating_count=field.corroborating_count,
+        objection_count=field.objection_count,
+        explanation=field.explanation,
+        rationale=field.rationale,
+        generated_by=field.generated_by,
+        agent_id=field.agent_id,
+        models=list(field.models),
+        method=field.method,
+        origin=FieldOrigin.CARRIED,
+        reviewed_by=field.reviewed_by,
+        review_action=field.review_action,
+        reviewed_at=field.reviewed_at,
+        overrode_confidence=field.overrode_confidence,
+    )
 
 
 def _f(value: Decimal | float | None) -> float | None:

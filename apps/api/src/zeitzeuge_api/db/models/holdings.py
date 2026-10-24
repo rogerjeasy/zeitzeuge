@@ -112,6 +112,8 @@ class UploadBatch(Base):
     """Set on the demo tenant's copy of a Staatsarchiv batch (D9). Deliberately
     not a foreign key: the source lives in another tenant, invisible under RLS."""
     mirrored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -151,8 +153,14 @@ class Asset(Base, TimestampMixin):
     forensics: Mapped[dict[str, Any] | None] = mapped_column(JSONDict())
     created_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
 
+    # --- withdrawal (batch-management note §1): never a hard delete ----------
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
+    deletion_reason: Mapped[str | None] = mapped_column(Text)
+
     __table_args__ = (
         UniqueConstraint("org_id", "batch_id", "external_ref", name="uq_assets_batch_external_ref"),
+        Index("ix_assets_org_id_deleted_at", "org_id", "deleted_at"),
         CheckConstraint("priority IS NULL OR priority BETWEEN 1 AND 9", name="priority_range"),
         Index("ix_assets_org_id_priority", "org_id", "priority"),
     )

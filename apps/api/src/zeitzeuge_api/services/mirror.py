@@ -86,7 +86,11 @@ async def mirror_batch(
         if batch is None:
             raise errors.NotFoundError("No such batch.")
         fonds = await s.get(Fonds, batch.fonds_id) if batch.fonds_id else None
-        assets = list(await s.scalars(select(Asset).where(Asset.batch_id == batch.id)))
+        assets = list(
+            await s.scalars(
+                select(Asset).where(Asset.batch_id == batch.id, Asset.deleted_at.is_(None))
+            )
+        )
         asset_ids = [a.id for a in assets]
         files = list(await s.scalars(select(AssetFile).where(AssetFile.asset_id.in_(asset_ids))))
         runs_all = list(

@@ -94,6 +94,11 @@ class AuditAction(StrEnum):
     BATCH_MIRRORED = "batch.mirrored"
     ASSET_UPLOADED = "asset.uploaded"
     RECORD_FIELD_REVIEWED = "record.field_reviewed"
+    RECORD_BULK_ACCEPTED = "record.bulk_accepted"
+    ASSET_WITHDRAWN = "asset.withdrawn"
+    ASSET_RESTORED = "asset.restored"
+    BATCH_WITHDRAWN = "batch.withdrawn"
+    BATCH_RESTORED = "batch.restored"
 
 
 # --- Holdings, investigation, catalogue (data-model §19) ----------------------

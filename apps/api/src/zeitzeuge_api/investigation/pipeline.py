@@ -162,6 +162,9 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
 
     for name, stage in STAGES:
         async with db.session(tenant) as session:
+            if await _cancelled(session, run_id):
+                log.info("investigation.cancelled", run_id=str(run_id), before=name)
+                return
             await writer.stage_started(session, name)
         try:
             await stage(ctx)
@@ -180,6 +183,9 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
                 await _record_exif(session, asset_id, ctx.facts["exif"])
 
     async with db.session(tenant) as session:
+        if await _cancelled(session, run_id):
+            log.info("investigation.cancelled", run_id=str(run_id), before="produce")
+            return
         await writer.produce(
             session,
             ctx.facts["decisions"],
@@ -188,6 +194,12 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
             fonds_id=fonds_id,
         )
     log.info("investigation.done", run_id=str(run_id), asset=external_ref)
+
+
+async def _cancelled(session: Any, run_id: uuid.UUID) -> bool:
+    """A withdrawal cancels the run; the pipeline stops at the next stage boundary."""
+    status = await session.scalar(select(Run.status).where(Run.id == run_id))
+    return status is RunStatus.CANCELLED
 
 
 async def _record_fixity(session: Any, asset_id: uuid.UUID, raw: bytes) -> None:

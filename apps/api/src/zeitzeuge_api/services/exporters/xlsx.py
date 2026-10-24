@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import io
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -177,13 +177,14 @@ async def build_workbook(
     batch_id: uuid.UUID,
     *,
     generated_at: datetime | None = None,
+    asset_ids: Collection[uuid.UUID] | None = None,
 ) -> bytes:
     """The `.xlsx` for one batch, read under the session's tenant.
 
     Raises `BatchNotFoundError` if the batch is not visible.
     """
     stamp = _iso(generated_at or datetime.now(UTC))
-    state = await load_batch(session, batch_id)
+    state = await load_batch(session, batch_id, asset_ids=asset_ids)
     ranked = _ranked_fields(state.definitions)
     header = _ergebnisse_header(ranked)
     evidence = await _cited_evidence(session, state)

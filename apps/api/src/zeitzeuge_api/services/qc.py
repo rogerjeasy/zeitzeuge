@@ -21,7 +21,7 @@ fact the archive most needs to see: it is what the override rate counts.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -148,7 +148,12 @@ class BatchState:
     definitions: list[FieldDefinition]
 
 
-async def load_batch(session: AsyncSession, batch_id: uuid.UUID) -> BatchState:
+async def load_batch(
+    session: AsyncSession,
+    batch_id: uuid.UUID,
+    *,
+    asset_ids: Collection[uuid.UUID] | None = None,
+) -> BatchState:
     """Read one batch with its head versions, reviews and runs.
 
     A fixed handful of queries, each joined through `assets.batch_id`, so the
@@ -160,7 +165,12 @@ async def load_batch(session: AsyncSession, batch_id: uuid.UUID) -> BatchState:
     if batch is None:
         raise BatchNotFoundError(str(batch_id))
 
-    in_batch = Asset.batch_id == batch_id
+    # Withdrawn photos are out of every count and every export (batch-management
+    # note §1); `asset_ids` narrows the workbook to a selection.
+    conditions = [Asset.batch_id == batch_id, Asset.deleted_at.is_(None)]
+    if asset_ids is not None:
+        conditions.append(Asset.id.in_(list(asset_ids)))
+    in_batch = and_(*conditions)
     assets = list(await session.scalars(select(Asset).where(in_batch)))
     states = {a.id: AssetState(asset=a) for a in assets}
 

@@ -39,8 +39,10 @@ Service = Annotated[InvestigationService, Depends(get_service)]
 
 
 @router.get("/batches", response_model=list[schemas.BatchSummary], summary="This archive's batches")
-async def list_batches(identity: CurrentIdentity, service: Service) -> list[schemas.BatchSummary]:
-    return await service.list_batches(identity.session)
+async def list_batches(
+    identity: CurrentIdentity, service: Service, include_deleted: bool = False
+) -> list[schemas.BatchSummary]:
+    return await service.list_batches(identity.session, include_deleted=include_deleted)
 
 
 @router.post(
@@ -107,9 +109,9 @@ async def mirror(batch_id: uuid.UUID, request: Request, identity: WriteIdentity)
 
 @router.get("/batches/{batch_id}", response_model=schemas.BatchOut, summary="Progress per photo")
 async def read_batch(
-    batch_id: uuid.UUID, identity: CurrentIdentity, service: Service
+    batch_id: uuid.UUID, identity: CurrentIdentity, service: Service, include_deleted: bool = False
 ) -> schemas.BatchOut:
-    return await service.batch(identity.session, batch_id)
+    return await service.batch(identity.session, batch_id, include_deleted=include_deleted)
 
 
 @router.get(
@@ -125,12 +127,22 @@ async def read_qc(batch_id: uuid.UUID, identity: CurrentIdentity, service: Servi
     response_class=Response,
 )
 async def export_batch(
-    batch_id: uuid.UUID, identity: CurrentIdentity, service: Service, fmt: str = "xlsx"
+    batch_id: uuid.UUID,
+    identity: CurrentIdentity,
+    service: Service,
+    fmt: str = "xlsx",
+    asset_ids: str | None = None,
 ) -> Response:
     if fmt != "xlsx":
         raise errors.InvalidRequestError("P0 exports xlsx only.")
+    selection: list[uuid.UUID] | None = None
+    if asset_ids:
+        try:
+            selection = [uuid.UUID(part) for part in asset_ids.split(",") if part.strip()][:600]
+        except ValueError as exc:
+            raise errors.InvalidRequestError("asset_ids must be comma-separated UUIDs.") from exc
     content, filename = await service.export_xlsx(
-        identity.session, user=identity.user, batch_id=batch_id
+        identity.session, user=identity.user, batch_id=batch_id, asset_ids=selection
     )
     return Response(
         content=content,
@@ -172,6 +184,99 @@ async def review_field(
         data=body,
         if_match=version,
     )
+
+
+# --- batch management (batch-management note §3) -------------------------------
+
+
+def _approver(identity: Identity) -> Identity:
+    if not identity.user.role.can_approve:
+        raise errors.ForbiddenError("Only an archivist or admin may withdraw or restore.")
+    return identity
+
+
+@router.delete(
+    "/assets/{asset_id}",
+    response_model=schemas.BulkResult,
+    summary="Withdraw a photograph (it leaves every view; the master stays in storage)",
+)
+async def withdraw_asset(
+    asset_id: uuid.UUID,
+    identity: WriteIdentity,
+    service: Service,
+    body: schemas.WithdrawRequest | None = None,
+) -> schemas.BulkResult:
+    _approver(identity)
+    return await service.bulk(
+        identity.session,
+        user=identity.user,
+        action="delete",
+        asset_ids=[asset_id],
+        reason=body.reason if body else None,
+    )
+
+
+@router.post(
+    "/assets/{asset_id}/restore", response_model=schemas.BulkResult, summary="Undo a withdrawal"
+)
+async def restore_asset(
+    asset_id: uuid.UUID, identity: WriteIdentity, service: Service
+) -> schemas.BulkResult:
+    _approver(identity)
+    return await service.bulk(
+        identity.session, user=identity.user, action="restore", asset_ids=[asset_id]
+    )
+
+
+@router.post(
+    "/assets/bulk",
+    response_model=schemas.BulkResult,
+    summary="Withdraw, restore, re-investigate or accept many photographs at once",
+)
+async def bulk_assets(
+    body: schemas.BulkRequest, identity: WriteIdentity, service: Service
+) -> schemas.BulkResult:
+    if body.action in {"delete", "restore"}:
+        _approver(identity)
+    return await service.bulk(
+        identity.session,
+        user=identity.user,
+        action=body.action,
+        asset_ids=body.asset_ids,
+        reason=body.reason,
+    )
+
+
+@router.delete(
+    "/batches/{batch_id}",
+    response_model=schemas.BatchWithdrawResult,
+    summary="Withdraw a batch and every photograph in it",
+)
+async def withdraw_batch(
+    batch_id: uuid.UUID,
+    identity: WriteIdentity,
+    service: Service,
+    body: schemas.WithdrawRequest | None = None,
+) -> schemas.BatchWithdrawResult:
+    _approver(identity)
+    return await service.withdraw_batch(
+        identity.session,
+        user=identity.user,
+        batch_id=batch_id,
+        reason=body.reason if body else None,
+    )
+
+
+@router.post(
+    "/batches/{batch_id}/restore",
+    response_model=schemas.BatchWithdrawResult,
+    summary="Undo a batch withdrawal",
+)
+async def restore_batch(
+    batch_id: uuid.UUID, identity: WriteIdentity, service: Service
+) -> schemas.BatchWithdrawResult:
+    _approver(identity)
+    return await service.restore_batch(identity.session, user=identity.user, batch_id=batch_id)
 
 
 # The identity's transaction must end before the stream starts: an open

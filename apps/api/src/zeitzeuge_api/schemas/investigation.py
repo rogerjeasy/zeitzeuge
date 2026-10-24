@@ -7,6 +7,7 @@ the web app renders them escaped, never as markup.
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 from typing import Any, Literal
 
@@ -87,6 +88,9 @@ class BatchAsset(Schema):
     qc_status: str
     fields: dict[str, FieldSummary]
     preview_url: str | None
+    captured_at: datetime | None = None
+    deleted_at: datetime | None = None
+    deletion_reason: str | None = None
 
 
 class BatchCounts(Schema):
@@ -99,6 +103,8 @@ class BatchCounts(Schema):
     accepted: int
     review: int
     undetermined: int
+    deleted: int = 0
+    """Withdrawn photos in the batch, whatever `include_deleted` says."""
 
 
 class BatchOut(Schema):
@@ -108,6 +114,7 @@ class BatchOut(Schema):
     created_at: datetime
     mirrored_from: str | None
     mirrored_at: datetime | None
+    deleted_at: datetime | None = None
     counts: BatchCounts
     assets: list[BatchAsset]
 
@@ -119,6 +126,7 @@ class BatchSummary(Schema):
     created_at: datetime
     asset_count: int
     mirrored_from: str | None
+    deleted_at: datetime | None = None
 
 
 class EvidenceOut(Schema):
@@ -197,6 +205,8 @@ class CaseRun(Schema):
 
 
 class CaseFile(Schema):
+    deleted_at: datetime | None = None
+    deletion_reason: str | None = None
     record_id: str | None
     version: int | None
     asset_id: str
@@ -232,3 +242,40 @@ class QcSummaryOut(Schema):
     open: int
     machine: int
     override_rate: dict[str, float | None] = Field(alias="overrideRate")
+
+
+# --- batch management (batch-management note §3) -------------------------------
+
+BulkAction = Literal["delete", "restore", "rerun", "accept"]
+
+
+class WithdrawRequest(Schema):
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class BulkRequest(Schema):
+    action: BulkAction
+    asset_ids: list[uuid.UUID] = Field(min_length=1, max_length=600)
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class BulkItem(Schema):
+    asset_id: str
+    ok: bool
+    detail: str | None = None
+    """already_withdrawn · not_withdrawn · not_found · running · withdrawn ·
+    no_record · nothing_to_accept"""
+
+
+class BulkResult(Schema):
+    action: BulkAction
+    requested: int
+    succeeded: int
+    results: list[BulkItem]
+
+
+class BatchWithdrawResult(Schema):
+    batch_id: str
+    deleted_at: datetime | None = None
+    assets: int
+
