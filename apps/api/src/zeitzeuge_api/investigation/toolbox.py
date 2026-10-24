@@ -29,7 +29,10 @@ class Toolbox:
         self._images: dict[str, bytes | None] = {}
         self._image_dir = cache_dir / "images" if cache_dir else None
         if self._image_dir:
-            self._image_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                self._image_dir.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                self._image_dir = None
         self._replay = replay
 
     async def fetch_image(self, url: str) -> bytes | None:

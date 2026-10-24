@@ -72,7 +72,12 @@ class ToolCache:
         self._replay = replay
         self._memory: dict[str, Any] = {}
         if directory is not None:
-            directory.mkdir(parents=True, exist_ok=True)
+            try:
+                directory.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                # A read-only or foreign-owned volume: the cache still works in
+                # memory, which is all a single task needs.
+                self._directory = None
 
     @staticmethod
     def key(method: str, url: str, params: dict[str, Any] | None, body: str | None) -> str:

@@ -184,25 +184,30 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
         app.state.notifier = RunNotifier(dsn)
         await app.state.notifier.start()
         if settings.worker_enabled:
-            toolbox = Toolbox(
-                cache_dir=Path(settings.tool_cache_dir) if settings.tool_cache_dir else None
-            )
-            app.state.toolbox = toolbox
-            worker = InvestigationWorker(
-                database,
-                Deps(
-                    models=ModelClient(
-                        region=settings.region, openai_key=await _openai_key(secrets, settings)
+            try:
+                toolbox = Toolbox(
+                    cache_dir=Path(settings.tool_cache_dir) if settings.tool_cache_dir else None
+                )
+                app.state.toolbox = toolbox
+                worker = InvestigationWorker(
+                    database,
+                    Deps(
+                        models=ModelClient(
+                            region=settings.region, openai_key=await _openai_key(secrets, settings)
+                        ),
+                        tools=toolbox,
+                        images=S3ImageStore(clients.s3),
+                        code_version=__version__,
+                        access_bucket=settings.derivatives_bucket,
                     ),
-                    tools=toolbox,
-                    images=S3ImageStore(clients.s3),
-                    code_version=__version__,
-                    access_bucket=settings.derivatives_bucket,
-                ),
-                concurrency=settings.worker_concurrency,
-            )
-            app.state.worker = worker
-            app.state.worker_task = asyncio.create_task(worker.run_forever())
+                    concurrency=settings.worker_concurrency,
+                )
+                app.state.worker = worker
+                app.state.worker_task = asyncio.create_task(worker.run_forever())
+            except Exception as exc:  # the API serves reviews and exports without it
+                log.error(
+                    "startup.worker_unavailable", error=str(exc), error_type=type(exc).__name__
+                )
 
     await jwks.warm()
 
