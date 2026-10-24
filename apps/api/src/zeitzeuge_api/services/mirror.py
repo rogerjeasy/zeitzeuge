@@ -70,7 +70,8 @@ async def mirror_batch(
     async with db.session(TenantContext.bootstrap()) as session:
         source = await session.get(Organization, source_org)
         # Slug *and* the ISIL the seed set: sign-up cannot produce either.
-        if source is None or MIRROR_SOURCES.get(source.slug) != source.isil:
+        expected = MIRROR_SOURCES.get(source.slug) if source is not None else None
+        if source is None or expected is None or source.isil != expected:
             raise errors.ForbiddenError("This archive may not publish into the demo archive.")
         target = await session.scalar(select(Organization).where(Organization.slug == target_slug))
         if target is None or not target.is_demo:
