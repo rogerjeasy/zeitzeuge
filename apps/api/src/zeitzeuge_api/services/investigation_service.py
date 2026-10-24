@@ -80,6 +80,7 @@ from zeitzeuge_api.db.models.enums import (
 from zeitzeuge_api.integrations.aws.originals import OriginalsStorage, master_key
 from zeitzeuge_api.investigation.confidence import SOURCE_CLASS_DE, Support, score
 from zeitzeuge_api.investigation.contracts import RANKED_FIELDS
+from zeitzeuge_api.investigation.timing import duration_ms, summarise
 from zeitzeuge_api.schemas import investigation as schemas
 from zeitzeuge_api.services.exporters.xlsx import build_workbook
 from zeitzeuge_api.services.qc import qc_status, qc_summary
@@ -449,6 +450,13 @@ class InvestigationService:
                     deleted_at=asset.deleted_at,
                     deletion_reason=asset.deletion_reason,
                     deleted_by_name=withdrawers.get(asset.deleted_by) if asset.deleted_by else None,
+                    queued_at=run.created_at if run else None,
+                    started_at=run.started_at if run else None,
+                    finished_at=run.finished_at if run else None,
+                    duration_ms=(
+                        duration_ms(run.started_at, run.finished_at) if run and finished else None
+                    ),
+                    wait_ms=duration_ms(run.created_at, run.started_at) if run else None,
                 )
             )
         if (
@@ -466,6 +474,22 @@ class InvestigationService:
             mirrored_from=str(batch.mirrored_from_id) if batch.mirrored_from_id else None,
             mirrored_at=batch.mirrored_at,
             deleted_at=batch.deleted_at,
+            timing=schemas.BatchTiming(
+                **summarise(
+                    (
+                        (
+                            r.started_at,
+                            r.finished_at
+                            if r.status not in {RunStatus.QUEUED, RunStatus.RUNNING}
+                            else None,
+                            r.status in FINISHED,
+                        )
+                        for a, r in ((a, runs.get(a.id)) for a in assets)
+                        if r is not None and a.deleted_at is None
+                    ),
+                    now=datetime.now(UTC),
+                )
+            ),
             counts=schemas.BatchCounts(
                 total=counts["total"],
                 uploaded=counts["uploaded"],
@@ -566,19 +590,18 @@ class InvestigationService:
             if run
             else []
         )
-        models = (
-            sorted(
-                {
-                    m
-                    for m in await session.scalars(
-                        select(AgentInvocation.model_id).where(AgentInvocation.run_id == run.id)
-                    )
-                    if m
-                }
+        invocations = (
+            list(
+                await session.scalars(
+                    select(AgentInvocation)
+                    .where(AgentInvocation.run_id == run.id)
+                    .order_by(AgentInvocation.started_at)
+                )
             )
             if run
             else []
         )
+        models = sorted({i.model_id for i in invocations if i.model_id})
         definitions = {d.key: d for d in await session.scalars(select(FieldDefinition))}
         reviewers = {
             u.id: u.full_name
@@ -629,6 +652,29 @@ class InvestigationService:
                     cost_usd=float(run.cost_usd),
                     models=models,
                     error=(run.error or {}).get("detail") if run.error else None,
+                    queued_at=run.created_at,
+                    duration_ms=(
+                        duration_ms(run.started_at, run.finished_at)
+                        if run.status in FINISHED
+                        else None
+                    ),
+                    wait_ms=duration_ms(run.created_at, run.started_at),
+                    stages=[
+                        schemas.StageTiming(
+                            stage=i.stage,
+                            agent=str(i.agent_id),
+                            acting_as=list(i.acting_as),
+                            status=str(i.status),
+                            started_at=i.started_at,
+                            ended_at=i.ended_at,
+                            duration_ms=duration_ms(i.started_at, i.ended_at),
+                            model=i.model_id,
+                            input_tokens=i.input_tokens,
+                            output_tokens=i.output_tokens,
+                            cost_usd=float(i.cost_usd),
+                        )
+                        for i in invocations
+                    ],
                 )
                 if run
                 else None

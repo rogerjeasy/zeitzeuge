@@ -67,7 +67,8 @@ HEADER = [
     "Motiv_LV95_E", "Motiv_LV95_N",
     "Aufnahmestandort_LV95_E", "Aufnahmestandort_LV95_N", "Aufnahmerichtung_Grad",
     "Aufnahmedatum_EXIF", "Ausserhalb_SZ", "Gesamtkonfidenz", "Status",
-    "Pruefbedarf", "Unbestimmt", "QC_Status", "QC_Von", "Bemerkung", "Run_ID", "Erzeugt_am",
+    "Pruefbedarf", "Unbestimmt", "QC_Status", "QC_Von", "Bemerkung", "Run_ID",
+    "Untersuchung_Beginn", "Untersuchung_Ende", "Untersuchung_Dauer_s", "Erzeugt_am",
 ]  # fmt: skip
 """§8.12 in order, with the one design-note addition `Status` after `Gesamtkonfidenz`."""
 

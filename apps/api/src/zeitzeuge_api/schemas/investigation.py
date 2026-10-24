@@ -92,6 +92,27 @@ class BatchAsset(Schema):
     deleted_at: datetime | None = None
     deletion_reason: str | None = None
     deleted_by_name: str | None = None
+    queued_at: datetime | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    duration_ms: int | None = None
+    """finished - started; only for a finished run (batch-management note §6)."""
+    wait_ms: int | None = None
+    """started - queued: time in the queue before a worker took it."""
+
+
+class BatchTiming(Schema):
+    finished: int
+    mean_ms: int | None
+    median_ms: int | None
+    p90_ms: int | None
+    min_ms: int | None
+    max_ms: int | None
+    first_started_at: datetime | None
+    last_finished_at: datetime | None
+    wall_ms: int | None
+    """First start to last finish, or to now while photos are still running."""
+    per_hour: float | None
 
 
 class BatchCounts(Schema):
@@ -116,6 +137,7 @@ class BatchOut(Schema):
     mirrored_from: str | None
     mirrored_at: datetime | None
     deleted_at: datetime | None = None
+    timing: BatchTiming | None = None
     counts: BatchCounts
     assets: list[BatchAsset]
 
@@ -194,6 +216,20 @@ class RunEventOut(Schema):
     evidence: str | None
 
 
+class StageTiming(Schema):
+    stage: str
+    agent: str
+    acting_as: list[str]
+    status: str
+    started_at: datetime | None
+    ended_at: datetime | None
+    duration_ms: int | None
+    model: str | None
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+
+
 class CaseRun(Schema):
     id: str
     status: str
@@ -203,6 +239,10 @@ class CaseRun(Schema):
     cost_usd: float
     models: list[str]
     error: str | None
+    queued_at: datetime | None = None
+    duration_ms: int | None = None
+    wait_ms: int | None = None
+    stages: list[StageTiming] = Field(default_factory=list)
 
 
 class CaseFile(Schema):
@@ -279,4 +319,3 @@ class BatchWithdrawResult(Schema):
     batch_id: str
     deleted_at: datetime | None = None
     assets: int
-

@@ -57,6 +57,7 @@ from zeitzeuge_api.investigation.confidence import (
     score,
     strength_for_match,
 )
+from zeitzeuge_api.investigation.timing import duration_ms
 from zeitzeuge_api.investigation.tools.base import MatchKind
 from zeitzeuge_api.services.qc import (
     QC_OPEN,
@@ -101,6 +102,9 @@ _TRAILING = (
     "QC_Von",
     "Bemerkung",
     "Run_ID",
+    "Untersuchung_Beginn",
+    "Untersuchung_Ende",
+    "Untersuchung_Dauer_s",
     "Erzeugt_am",
 )
 
@@ -300,6 +304,13 @@ def _row(state: AssetState, ranked: Sequence[_Ranked], stamp: str) -> dict[str, 
     if state.record is not None and state.record.publication_hold:
         row["Bemerkung"] = "Publikation zurückgehalten (Schutzvermerk)"
     row["Run_ID"] = state.run.public_id if state.run is not None else None
+    if state.run is not None:
+        # The run behind these values: when it started, ended, and how long it took.
+        started, ended = state.run.started_at, state.run.finished_at
+        row["Untersuchung_Beginn"] = _iso(started) if started else None
+        row["Untersuchung_Ende"] = _iso(ended) if ended else None
+        took = duration_ms(started, ended)
+        row["Untersuchung_Dauer_s"] = round(took / 1000, 1) if took is not None else None
     row["Erzeugt_am"] = stamp
     return row
 
@@ -317,6 +328,9 @@ _WIDTHS: Mapping[str, float] = {
     "QC_Von": 18,
     "Bemerkung": 24,
     "Run_ID": 16,
+    "Untersuchung_Beginn": 21,
+    "Untersuchung_Ende": 21,
+    "Untersuchung_Dauer_s": 12,
     "Erzeugt_am": 21,
     "Aufnahmedatum_EXIF": 13,
     "Ausserhalb_SZ": 8,
@@ -340,7 +354,11 @@ def _write_ergebnisse(ws: Worksheet, header: Sequence[str], rows: Sequence[dict[
     formats = {c: "0.000" for c in header if c.endswith("_Konfidenz") or c == "Gesamtkonfidenz"} | {
         c: "0" for c in header if "_LV95_" in c or c.endswith("_BFS")
     }
-    formats |= {"Aufnahmerichtung_Grad": "0.0", "Aufnahmedatum_EXIF": "yyyy-mm-dd"}
+    formats |= {
+        "Aufnahmerichtung_Grad": "0.0",
+        "Aufnahmedatum_EXIF": "yyyy-mm-dd",
+        "Untersuchung_Dauer_s": "0.0",
+    }
     status_col = header.index("Status") + 1
     for r, values in enumerate(rows, start=2):
         for c, column in enumerate(header, start=1):
@@ -667,6 +685,13 @@ def _column_definitions(ranked: Sequence[_Ranked]) -> dict[str, str]:
         "QC_Von": "Wer die Zeile zuletzt geprüft oder korrigiert hat.",
         "Bemerkung": "Hinweis des Archivs, etwa ein Schutzvermerk.",
         "Run_ID": "Kennung der Analyse, die die Werte erzeugt hat; im Programm nachschlagbar.",
+        "Untersuchung_Beginn": "Beginn dieser Analyse: Zeitpunkt, an dem das Programm das Foto "
+        "zu untersuchen begann (UTC).",
+        "Untersuchung_Ende": "Ende dieser Analyse: Zeitpunkt, an dem die Werte geschrieben "
+        "wurden (UTC).",
+        "Untersuchung_Dauer_s": "Dauer der Analyse in Sekunden (Ende minus Beginn): alle neun "
+        "Schritte von der EXIF-Auswertung bis zur Entscheidung, ohne Wartezeit in der "
+        "Warteschlange.",
         "Erzeugt_am": "Zeitpunkt dieses Exports (UTC).",
     }
     for f in ranked:

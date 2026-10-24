@@ -90,3 +90,32 @@ Action semantics:
 ## 5. Out of scope (said on the screen where relevant)
 
 Hard deletion of masters (Object Lock, by design); editing a photo's file name or Signatur (not sent to the API yet); moving photos between batches.
+
+## 6. Timing — how long each photo takes (added 06:10)
+
+Every investigation already records `runs.created_at` (queued), `started_at` (claimed by the worker) and `finished_at` (record written, failed or cancelled), and every stage records its own `agent_invocations.started_at` / `ended_at`. The API now exposes them; nothing new is measured.
+
+**`BatchAsset`** gains (all `null` until they exist):
+`queued_at`, `started_at`, `finished_at` (ISO datetimes, UTC), `duration_ms` (finished − started, only when finished), `wait_ms` (started − queued).
+
+**`BatchOut`** gains `timing`:
+```jsonc
+{ "finished": 32,            // runs with a duration
+  "mean_ms": 95400, "median_ms": 88100, "p90_ms": 141000,
+  "min_ms": 41200, "max_ms": 212000,
+  "first_started_at": "…", "last_finished_at": "…",
+  "wall_ms": 2460000,        // first start → last finish (or now, while running)
+  "per_hour": 46.8 }         // finished / wall hours; null while < 2 finished
+```
+
+**`CaseRun`** gains `queued_at`, `duration_ms`, `wait_ms`, and `stages`:
+```jsonc
+[ { "stage": "perception", "agent": "scene", "acting_as": ["scene", "text-in-image", "skyline"],
+    "status": "succeeded", "started_at": "…", "ended_at": "…", "duration_ms": 14200,
+    "model": "eu.anthropic.claude-opus-4-6-v1", "input_tokens": 2100, "output_tokens": 640,
+    "cost_usd": 0.026 } ]   // in execution order; the produce step is the run's finished_at
+```
+
+**Excel** (`Ergebnisse`, after `Run_ID`): `Untersuchung_Beginn`, `Untersuchung_Ende` (ISO, UTC) and `Untersuchung_Dauer_s` (seconds, one decimal); defined on the `Methode` sheet.
+
+**Web**: per row the duration («1 min 28 s») or, while running, a live elapsed counter («läuft seit 0:42», ticking client-side from `started_at`); batch header «Zeit» card — Ø, Median, schnellste/langsamste, Gesamtdauer, Fotos pro Stunde, and «Restzeit ca. …» while running (remaining photos × median ÷ concurrency 4, labelled as an estimate); the duration is a sortable column. Review screen: a stage timeline — one horizontal bar per stage, proportional to its duration, with model, tokens and cost on hover/focus, plus wait time and total.

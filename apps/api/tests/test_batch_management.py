@@ -242,3 +242,41 @@ async def test_the_papierkorb_is_for_approvers_and_names_no_address(
     assert (await client.get("/api/v1/batches?include_deleted=true")).status_code == 403
     case = (await client.get(f"/api/v1/assets/{first['asset_id']}/case")).json()
     assert case["deleted_at"] and case["deletion_reason"] is None
+
+
+async def test_timing_reaches_the_batch_the_case_and_the_workbook(
+    investigation, client, as_user
+) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    batch_id, (first, _second) = await _batch_with_two(client)
+    async with investigation.state.database.session(TenantContext(role="worker")) as session:
+        run = await session.scalar(select(Run).where(Run.public_id == first["run_id"]))
+        assert run is not None
+        run.started_at = datetime.now(UTC) - timedelta(seconds=95)
+    await _machine_run(investigation, first["run_id"])
+
+    batch = (await client.get(f"/api/v1/batches/{batch_id}")).json()
+    row = next(a for a in batch["assets"] if a["asset_id"] == first["asset_id"])
+    assert row["queued_at"] and row["started_at"] and row["finished_at"]
+    assert 90_000 <= row["duration_ms"] <= 120_000
+    assert batch["timing"]["finished"] == 1
+    assert batch["timing"]["median_ms"] == row["duration_ms"]
+
+    case = (await client.get(f"/api/v1/assets/{first['asset_id']}/case")).json()
+    assert case["run"]["duration_ms"] == row["duration_ms"]
+    assert [s["stage"] for s in case["run"]["stages"]] == ["grounding", "hypothesise"]
+    assert case["run"]["stages"][0]["duration_ms"] is not None
+
+    sheet = load_workbook(
+        io.BytesIO((await client.get(f"/api/v1/batches/{batch_id}/export?fmt=xlsx")).content)
+    )["Ergebnisse"]
+    header = [c.value for c in sheet[1]]
+    values = {
+        r[0].value: dict(zip(header, [c.value for c in r], strict=False))
+        for r in sheet.iter_rows(min_row=2)
+    }
+    took = values["SG.CIV.17.3.jpg"]["Untersuchung_Dauer_s"]
+    assert took == round(row["duration_ms"] / 1000, 1)
+    assert values["SG.CIV.17.3.jpg"]["Untersuchung_Beginn"].endswith("Z")
+    assert values["SG.CIV.17.11.jpg"]["Untersuchung_Dauer_s"] is None  # not investigated yet
