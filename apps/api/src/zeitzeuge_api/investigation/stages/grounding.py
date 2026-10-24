@@ -26,7 +26,13 @@ from zeitzeuge_api.db.models.enums import AgentId, EvidenceKind, SourceClass
 from zeitzeuge_api.investigation.confidence import REGISTER_EXISTENCE, strength_for_match
 from zeitzeuge_api.investigation.context import RunContext
 from zeitzeuge_api.investigation.contracts import Perception
-from zeitzeuge_api.investigation.names import feature_key, is_placeholder, massif
+from zeitzeuge_api.investigation.names import (
+    PLACE_WORDS,
+    distinctive,
+    feature_key,
+    is_placeholder,
+    massif,
+)
 from zeitzeuge_api.investigation.tools.base import MatchKind, ToolHit, ToolUnavailable
 from zeitzeuge_api.investigation.tools.geo import distance_m
 from zeitzeuge_api.investigation.tools.registers import names_match
@@ -76,6 +82,9 @@ class Anchor:
     name: str
     lv95: tuple[float, float]
     evidence_id: str
+    kind: str = "zipcode"
+    """`alpine` (Gebiet, Pass, Flurname …), `settlement` (Ort) or `zipcode` (Ortschaft):
+    the more specific a place, the earlier it is used to search around."""
 
 
 @dataclass(slots=True)
@@ -186,7 +195,47 @@ async def run(ctx: RunContext) -> None:
                     value=place,
                 )
                 if hit.lv95 and not any(a.name == place for a in anchors):
-                    anchors.append(Anchor(name=place, lv95=hit.lv95, evidence_id=item.local_id))
+                    anchors.append(
+                        Anchor(
+                            name=place,
+                            lv95=hit.lv95,
+                            evidence_id=item.local_id,
+                            kind="settlement" if hit.kind == "settlement" else "zipcode",
+                        )
+                    )
+
+    # --- alpine places: Gebiet, Pass, Grat, Flurname, named points ----------
+    # Up on the alps the names are not Ortschaften («Gebiet Glattalp - Muotathal»,
+    # «Pass Haggenegg - Schwyz»). They place the photo; they are never the Ortschaft
+    # value (the resolver identifies that at the point). Challenge feedback, 11:00:
+    # «auf der Alp mit Strasse funktioniert es nicht gut».
+    building_cores = [
+        distinctive(n)
+        for n in candidate_names(ctx, "building", [b.name for b in seen.buildings])
+        if distinctive(n)
+    ]
+    for name in list(dict.fromkeys([*localities, *building_cores]))[:8]:
+        if any(fold(a.name) == fold(name) for a in anchors):
+            continue
+        alpine = [
+            h
+            for h in await _search(ctx, name)
+            if h.kind in ALPINE_KINDS and _equal(h) and in_schwyz(h) and h.lv95
+        ]
+        for hit in alpine[:1]:
+            item = ctx.ledger.add_from_hit(
+                hit,
+                kind=EvidenceKind.EXTERNAL,
+                source_class=SourceClass.GEODATA_LAYER,
+                agent_id=AgentId.GEO,
+                observation=f"{hit.attrs.get('category') or 'Ort'} «{hit.label}» in "
+                "swissNAMES3D — der Name existiert, er verortet das Foto",
+                strength=REGISTER_EXISTENCE,
+            )
+            anchors.append(
+                Anchor(name=name, lv95=hit.lv95, evidence_id=item.local_id, kind="alpine")  # type: ignore[arg-type]
+            )
+    anchors.sort(key=lambda a: _ANCHOR_RANK.get(a.kind, 2))
 
     # --- named features (See / Fluss / Berg) --------------------------------
     for feature in candidate_names(ctx, "landscape_feature", [c.name for c in seen.features])[:5]:
@@ -239,6 +288,8 @@ async def run(ctx: RunContext) -> None:
                 for h in await _places(ctx, f"{building_name} {where}", near)
                 if names_match(h.label, building_name)
             ][:1]
+        if not hits:
+            hits = await _address_named(ctx, building_name)
         if not hits:
             try:
                 hits = await ctx.tools.overpass.search_name(building_name, near=near, radius_m=8000)
@@ -343,6 +394,7 @@ _REGISTER_DE = {
     "wikidata": "Wikidata",
     "osm.overpass": "OpenStreetMap",
     "google.places": "Google Maps",
+    "swisstopo.search": "Das Gebäudeadressverzeichnis",
 }
 _TYPE_WORDS = {
     "nursing_home": "Alterszentrum Pflegeheim",
@@ -393,6 +445,48 @@ def _same_place(a: str, b: str) -> bool:
     """«Küssnacht» ~ «Küssnacht am Rigi» ~ «Küssnacht (SZ)»: one is in the other's tokens."""
     ta, tb = set(tokens(a)) - {"am", "sz", "bei", "im"}, set(tokens(b)) - {"am", "sz", "bei", "im"}
     return bool(ta) and bool(tb) and (ta <= tb or tb <= ta)
+
+
+ALPINE_KINDS = frozenset({"area_name", "field_name", "terrain_name", "named_point"})
+_ANCHOR_RANK = {"alpine": 0, "settlement": 1, "zipcode": 2}
+
+
+async def _address_named(ctx: RunContext, building_name: str) -> list[ToolHit]:
+    """«Kapelle Glattalp» → the official address «Glattalp 1, 6436 Bisisthal».
+
+    Alpine buildings are addressed by the place name, not by a street. When no
+    register names the building, an address whose street *is* its distinctive name
+    places it; the reference stage then checks the photo against that spot.
+    """
+    core = distinctive(building_name)
+    if not core or core in PLACE_WORDS:
+        return []
+    try:
+        found = await ctx.tools.swisstopo.search_locations(core, limit=8, origins="address")
+    except ToolUnavailable as exc:
+        ctx.ledger.note(AgentId.GEO, f"Adresssuche nicht erreichbar: {exc}")
+        return []
+    hits = [h for h in found if fold(str(h.attrs.get("street", ""))) == core and in_canton(h.lv95)]
+    hits.sort(key=lambda h: str(h.attrs.get("house_number") or "").isdigit() is False)
+    return [
+        ToolHit(
+            tool=h.tool,
+            label=building_name,
+            source=h.source,
+            source_uri=h.source_uri,
+            match=MatchKind.FUZZY,
+            kind="address",
+            lv95=h.lv95,
+            attrs={
+                **h.attrs,
+                "addr:street": h.attrs.get("street"),
+                "addr:housenumber": h.attrs.get("house_number"),
+                "municipality": h.attrs.get("locality"),
+                "via_address": h.label,
+            },
+        )
+        for h in hits[:1]
+    ]
 
 
 def _value_for(hit: ToolHit, proposed: str) -> str:

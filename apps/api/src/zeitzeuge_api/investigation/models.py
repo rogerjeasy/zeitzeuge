@@ -267,6 +267,11 @@ class ModelClient:
                     raise ModelError(f"{binding.model_id}: {code or exc}") from exc
                 if code in _ACCESS_REFUSED:
                     self._refused[binding.model_id] = time.monotonic()
+            except _TRANSIENT as exc:
+                # The connection kept dropping through every retry (SG.CIV.17.325 at
+                # adjudicate): give this call to the fallback model, like throttling.
+                if fallback is None or fallback == binding:
+                    raise ModelError(f"{binding.model_id}: {exc}") from exc
             except BotoCoreError as exc:
                 raise ModelError(f"{binding.model_id}: {exc}") from exc
         if fallback is None:

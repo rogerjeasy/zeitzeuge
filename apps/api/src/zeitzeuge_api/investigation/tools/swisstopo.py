@@ -78,6 +78,13 @@ _OBJEKTART_KIND = {
     "Fliessgewaesser": "river",
     "Gebaeude": "building",
     "Offenes Gebaeude": "building",
+    # The categories SearchServer prints for alpine names (identification-upgrade §12).
+    "Ort": "settlement",
+    "Gebiet": "area_name",
+    "Alp": "area_name",
+    "Pass": "named_point",
+    "Grat": "terrain_name",
+    "Flurname swisstopo": "field_name",
 }
 # swissTLM3D object classes when no `objektart` is given (SearchServer labels).
 _OBJECTCLASS_KIND = {
@@ -96,6 +103,7 @@ _OBJECTCLASS_KIND = {
 NAME_KINDS = frozenset({"peak", "lake", "river", "building", "other"})
 
 _CATEGORY = re.compile(r"<i>(.*?)</i>", re.S)
+_CANTON_TAIL = re.compile(r"\s+SZ$")
 _CANTON_SUFFIX = re.compile(r"\s*\([A-Z]{2}\)(\s*-.*)?$")
 _ADDRESS = re.compile(r"^(?P<street>.+?)\s+(?P<number>\d[\w./-]*)\s+(?P<plz>\d{4})\s+(?P<loc>.+)$")
 _ZIPCODE = re.compile(r"^(?P<plz>\d{4})\s*-\s*(?P<loc>.+)$")
@@ -203,7 +211,9 @@ def _search_hit(item: dict[str, Any], query: str) -> ToolHit:
         label=label,
         source=_SEARCH_SOURCE.get(origin, "swisstopo, GeoAdmin-Suche"),
         source_uri=map_url(e, n, layer=layer, feature_id=selected, zoom=zoom),
-        match=name_match(name, query),
+        # «Stoos SZ» is how the register tells the Schwyz Stoos from four others; the
+        # suffix is not part of the name the photo or a researcher would use.
+        match=name_match(_CANTON_TAIL.sub("", name), query),
         kind=kind,
         lv95=(e, n),
         attrs=attrs,

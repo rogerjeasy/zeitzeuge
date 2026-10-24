@@ -190,3 +190,22 @@ async def test_a_dropped_connection_is_retried(monkeypatch) -> None:
     reply = await ModelClient(client=fake).ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
     assert reply.model_id == OPUS.model_id
     assert fake.calls == [OPUS.model_id, OPUS.model_id]
+
+
+async def test_a_connection_that_keeps_dropping_falls_back(monkeypatch) -> None:
+    from botocore.exceptions import ConnectionClosedError
+
+    from zeitzeuge_api.investigation import models
+
+    monkeypatch.setattr(models, "_BACKOFF_SECONDS", (0.0,))
+
+    class AlwaysDropping(FakeBedrock):
+        def converse(self, **kwargs: Any) -> dict[str, Any]:
+            if kwargs["modelId"] == OPUS.model_id:
+                self.calls.append(kwargs["modelId"])
+                raise ConnectionClosedError(endpoint_url="https://bedrock")
+            return super().converse(**kwargs)
+
+    fake = AlwaysDropping(refuse=set())
+    reply = await ModelClient(client=fake).ask(Task.ADJUDICATE, Challenge, system="s", prompt="p")
+    assert reply.model_id == OPUS_45.model_id
