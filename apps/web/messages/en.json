@@ -607,7 +607,8 @@
       "closeMenu": "Close menu",
       "soon": "in progress",
       "editor": "Catalogue record",
-      "batches": "Batches"
+      "batches": "Batches",
+      "costs": "Costs"
     },
     "header": {
       "searchPlaceholder": "Search",
@@ -2067,6 +2068,108 @@
         "wait": "Wait",
         "total": "Total time"
       }
+    }
+  },
+  "costs": {
+    "metaTitle": "Costs — ZEITZEUGE",
+    "metaDescription": "What the investigation costs, per day, model, stage and batch.",
+    "title": "Costs",
+    "subtitle": "What the investigation costs, from every recorded model call: per day and vendor, per model, per stage and per batch, with the cost per photo and what the collection would cost.",
+    "periodLabel": "Period",
+    "periods": {
+      "d7": "7 days",
+      "d30": "30 days",
+      "d90": "90 days",
+      "all": "All time"
+    },
+    "tiles": {
+      "spend": "Spend",
+      "spendHint": "{calls, plural, one {# model call} other {# model calls}}",
+      "perPhoto": "Cost per photo",
+      "perPhotoHint": "Mean over finished investigations, failed runs excluded",
+      "photos": "Photos investigated",
+      "photosHint": "{runs, plural, one {# run} other {# runs}}, {failed} failed",
+      "tokens": "Tokens",
+      "tokensHint": "{input} in · {output} out"
+    },
+    "daily": {
+      "title": "Spend per day",
+      "hint": "Per day in Europe/Zurich, stacked by vendor. Hover a day for its breakdown.",
+      "asTable": "Table view",
+      "asChart": "Chart view",
+      "legend": "Vendors",
+      "day": "Day",
+      "total": "Total",
+      "empty": "No model calls in this period.",
+      "aria": "Column chart of spend per day over {days, plural, one {# day} other {# days}}, stacked by vendor"
+    },
+    "vendors": {
+      "anthropic": "Anthropic (Bedrock, EU)",
+      "openai": "OpenAI",
+      "google": "Google",
+      "mixed": "Research, both families",
+      "other": "Other"
+    },
+    "byModel": {
+      "title": "Cost per model",
+      "hint": "Each model's share of the spend, its calls and tokens, the list price it is billed at, and the average cost of one call.",
+      "model": "Model",
+      "share": "Share",
+      "calls": "Calls",
+      "tokens": "Tokens in / out",
+      "price": "USD per 1M in / out",
+      "perCall": "Per call",
+      "cost": "Cost",
+      "total": "Total",
+      "priceHint": "Costs are the provider's list price applied to the tokens each call reported, the same rule the pipeline uses. Research calls before 24 Oct, 12:00 are recorded for both families together."
+    },
+    "byStage": {
+      "title": "Cost per stage",
+      "hint": "Where in the pipeline the money goes.",
+      "meta": "{calls, plural, one {# call} other {# calls}} · {share} · Ø {seconds} s"
+    },
+    "stages": {
+      "perception": "Perception (vision model)",
+      "research": "Web research (two families)",
+      "sighting": "Image search (name reading)",
+      "reference": "Reference comparison",
+      "check": "Red team",
+      "adjudicate": "Adjudication",
+      "grounding": "Grounding",
+      "resolve": "Point → fields"
+    },
+    "byBatch": {
+      "title": "Cost per batch",
+      "hint": "What each upload cost, and what one photo in it cost.",
+      "batch": "Batch",
+      "created": "Created",
+      "photos": "Photos",
+      "failed": "Failed",
+      "perPhoto": "Per photo",
+      "cost": "Cost",
+      "unlabelled": "Unlabelled",
+      "withdrawn": "removed"
+    },
+    "projection": {
+      "title": "What it would cost",
+      "hint": "The measured cost per photo, applied to the archive's sets.",
+      "prio1": "The 50 Prio-1 photos",
+      "delivery": "The delivery of ≈ 600 photos",
+      "collection": "The collection of ≈ 200,000 photos",
+      "none": "No finished investigation in this period yet.",
+      "caveat": "A projection, not a quote: research answers are cached, so a re-run costs less; a bulk mode with lighter research for the clear cases would cost less again."
+    },
+    "footnote": "Amounts in US dollars, at the providers' list prices. Not metered per call because they run inside their free monthly quotas: {tools}.",
+    "unmetered": {
+      "google_cloud_vision": "Google Cloud Vision",
+      "google_places": "Google Places",
+      "google_street_view": "Google Street View",
+      "serpapi_lens": "Google Lens (SerpApi)"
+    },
+    "empty": {
+      "title": "No costs yet",
+      "body": "As soon as photos are investigated, every model call and its cost appears here.",
+      "cta": "Upload photos"
     }
   }
 }

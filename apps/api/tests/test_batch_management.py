@@ -374,3 +374,81 @@ async def test_history_collections_and_open_questions_show_real_work(
 async def test_guests_do_not_see_the_history(investigation, client, as_user) -> None:
     await _set_role(investigation, as_user["email"], UserRole.GUEST)
     assert (await client.get("/api/v1/history")).status_code == 403
+
+
+async def test_the_cost_report_splits_by_vendor_model_stage_and_batch(
+    investigation, client, as_user
+) -> None:
+    import uuid as _uuid
+    from datetime import UTC, datetime, timedelta
+    from decimal import Decimal
+
+    from zeitzeuge_api.db.models import AgentInvocation
+    from zeitzeuge_api.db.models.enums import AgentId, InvocationStatus
+
+    batch_id, (first, _second) = await _batch_with_two(client)
+    await _machine_run(investigation, first["run_id"])
+    async with investigation.state.database.session(TenantContext(role="worker")) as session:
+        run = await session.scalar(select(Run).where(Run.public_id == first["run_id"]))
+        assert run is not None
+        start = datetime.now(UTC) - timedelta(minutes=5)
+
+        def call(stage: str, model: str, cost: str, output: dict | None = None) -> AgentInvocation:
+            return AgentInvocation(
+                id=_uuid.uuid4(),
+                org_id=run.org_id,
+                run_id=run.id,
+                agent_id=AgentId.SCENE,
+                stage=stage,
+                acting_as=["scene"],
+                tier=1,
+                status=InvocationStatus.SUCCEEDED,
+                model_id=model,
+                inference_profile=model,
+                region="eu",
+                output=output,
+                started_at=start,
+                ended_at=start + timedelta(seconds=30),
+                input_tokens=1000,
+                output_tokens=200,
+                cost_usd=Decimal(cost),
+            )
+
+        session.add(call("perception", "eu.anthropic.claude-opus-4-6-v1", "0.0800"))
+        session.add(
+            call(
+                "research",
+                "gpt-5.5-2026-04-23, gemini-4-argon",
+                "0.5000",
+                {
+                    "cost_by_model": [
+                        {
+                            "model_id": "gpt-5.5-2026-04-23",
+                            "input_tokens": 900,
+                            "output_tokens": 100,
+                            "cost_usd": 0.45,
+                        },
+                        {
+                            "model_id": "gemini-4-argon",
+                            "input_tokens": 100,
+                            "output_tokens": 100,
+                            "cost_usd": 0.05,
+                        },
+                    ]
+                },
+            )
+        )
+
+    report = await client.get("/api/v1/costs?days=7")
+    assert report.status_code == 200, report.text
+    body = report.json()
+    assert body["totals"]["cost_usd"] == 0.58
+    labels = {m["label"]: m for m in body["by_model"]}
+    assert labels["GPT-5.5 + Websuche"]["cost_usd"] == 0.45
+    assert labels["Claude Opus 4.6"]["vendor"] == "anthropic"
+    today = body["by_day"][-1]
+    assert (today["anthropic"], today["openai"], today["google"]) == (0.08, 0.45, 0.05)
+    assert {s["stage"] for s in body["by_stage"]} >= {"perception", "research"}
+    assert body["by_batch"][0]["batch_id"] == batch_id
+    assert "google_cloud_vision" in body["unmetered"]
+    assert (await client.get("/api/v1/costs?days=3")).status_code in (400, 422)

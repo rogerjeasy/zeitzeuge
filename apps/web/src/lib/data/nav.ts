@@ -13,6 +13,7 @@ export type NavIcon =
   | "history"
   | "collections"
   | "evaluation"
+  | "costs"
   | "assist"
   | "settings"
   | "admin";
@@ -34,6 +35,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { id: "history", href: "/history", icon: "history", ready: true },
   { id: "collections", href: "/collections", icon: "collections", ready: true },
   { id: "evaluation", href: "/evaluation", icon: "evaluation", ready: true },
+  { id: "costs", href: "/costs", icon: "costs", ready: true },
   { id: "assist", href: "/help-identify", icon: "assist", ready: true },
 ];
 

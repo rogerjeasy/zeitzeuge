@@ -21,6 +21,7 @@ import type {
   WithdrawRequest,
   PurgeResult,
   HistoryEntry,
+  CostReport,
   Collection,
   OpenQuestion,
 } from "./investigation-types";
@@ -75,6 +76,10 @@ const deletedQuery = ({ includeDeleted }: { includeDeleted?: boolean }) =>
   includeDeleted ? "?include_deleted=true" : "";
 
 export const investigationApi = {
+  costs(a: ApiAuth, days: number | null): Promise<ApiResult<CostReport>> {
+    return apiRequest(`/costs${days ? `?days=${days}` : ""}`, { method: "GET", ...auth(a) });
+  },
+
   history(a: ApiAuth): Promise<ApiResult<HistoryEntry[]>> {
     return apiRequest("/history?limit=300", { method: "GET", ...auth(a) });
   },

@@ -607,7 +607,8 @@
       "closeMenu": "Menü schliessen",
       "soon": "in Arbeit",
       "editor": "Katalogeintrag",
-      "batches": "Stapel"
+      "batches": "Stapel",
+      "costs": "Kosten"
     },
     "header": {
       "searchPlaceholder": "Suchen",
@@ -2067,6 +2068,108 @@
         "wait": "Wartezeit",
         "total": "Gesamtdauer"
       }
+    }
+  },
+  "costs": {
+    "metaTitle": "Kosten — ZEITZEUGE",
+    "metaDescription": "Was die Untersuchung kostet: pro Tag, Modell, Schritt und Stapel.",
+    "title": "Kosten",
+    "subtitle": "Was die Untersuchung kostet, aus jedem aufgezeichneten Modellaufruf: pro Tag und Anbieter, pro Modell, pro Schritt und pro Stapel, mit den Kosten pro Foto und dem, was der Bestand kosten würde.",
+    "periodLabel": "Zeitraum",
+    "periods": {
+      "d7": "7 Tage",
+      "d30": "30 Tage",
+      "d90": "90 Tage",
+      "all": "Gesamt"
+    },
+    "tiles": {
+      "spend": "Ausgaben",
+      "spendHint": "{calls, plural, one {# Modellaufruf} other {# Modellaufrufe}}",
+      "perPhoto": "Kosten pro Foto",
+      "perPhotoHint": "Mittel über abgeschlossene Untersuchungen, ohne fehlgeschlagene",
+      "photos": "Untersuchte Fotos",
+      "photosHint": "{runs, plural, one {# Lauf} other {# Läufe}}, {failed} fehlgeschlagen",
+      "tokens": "Tokens",
+      "tokensHint": "{input} ein · {output} aus"
+    },
+    "daily": {
+      "title": "Ausgaben pro Tag",
+      "hint": "Pro Tag in Europe/Zurich, nach Anbieter gestapelt. Für die Aufteilung über einen Tag fahren.",
+      "asTable": "Tabelle",
+      "asChart": "Diagramm",
+      "legend": "Anbieter",
+      "day": "Tag",
+      "total": "Total",
+      "empty": "Keine Modellaufrufe in diesem Zeitraum.",
+      "aria": "Säulendiagramm der Ausgaben pro Tag über {days, plural, one {# Tag} other {# Tage}}, nach Anbieter gestapelt"
+    },
+    "vendors": {
+      "anthropic": "Anthropic (Bedrock, EU)",
+      "openai": "OpenAI",
+      "google": "Google",
+      "mixed": "Recherche, beide Familien",
+      "other": "Andere"
+    },
+    "byModel": {
+      "title": "Kosten pro Modell",
+      "hint": "Anteil jedes Modells an den Ausgaben, seine Aufrufe und Tokens, der Listenpreis, zu dem es abgerechnet wird, und die mittleren Kosten eines Aufrufs.",
+      "model": "Modell",
+      "share": "Anteil",
+      "calls": "Aufrufe",
+      "tokens": "Tokens ein / aus",
+      "price": "USD pro 1 Mio. ein / aus",
+      "perCall": "Pro Aufruf",
+      "cost": "Kosten",
+      "total": "Total",
+      "priceHint": "Die Kosten sind der Listenpreis des Anbieters, angewandt auf die Tokens, die jeder Aufruf gemeldet hat: dieselbe Regel, die die Pipeline verwendet. Rechercheaufrufe vor dem 24. Okt., 12:00 sind für beide Familien zusammen erfasst."
+    },
+    "byStage": {
+      "title": "Kosten pro Schritt",
+      "hint": "Wo in der Pipeline das Geld hingeht.",
+      "meta": "{calls, plural, one {# Aufruf} other {# Aufrufe}} · {share} · Ø {seconds} s"
+    },
+    "stages": {
+      "perception": "Wahrnehmung (Bildmodell)",
+      "research": "Web-Recherche (zwei Familien)",
+      "sighting": "Bildersuche (Namen lesen)",
+      "reference": "Referenzvergleich",
+      "check": "Red Team",
+      "adjudicate": "Entscheid",
+      "grounding": "Verortung",
+      "resolve": "Punkt → Felder"
+    },
+    "byBatch": {
+      "title": "Kosten pro Stapel",
+      "hint": "Was jeder Upload gekostet hat und was ein Foto darin.",
+      "batch": "Stapel",
+      "created": "Angelegt",
+      "photos": "Fotos",
+      "failed": "Fehlgeschlagen",
+      "perPhoto": "Pro Foto",
+      "cost": "Kosten",
+      "unlabelled": "Ohne Namen",
+      "withdrawn": "entfernt"
+    },
+    "projection": {
+      "title": "Was es kosten würde",
+      "hint": "Die gemessenen Kosten pro Foto, angewandt auf die Bestände des Archivs.",
+      "prio1": "Die 50 Prio-1-Fotos",
+      "delivery": "Die Lieferung von ≈ 600 Fotos",
+      "collection": "Der Bestand von ≈ 200'000 Fotos",
+      "none": "In diesem Zeitraum noch keine abgeschlossene Untersuchung.",
+      "caveat": "Eine Hochrechnung, keine Offerte: Rechercheantworten werden zwischengespeichert, ein erneuter Lauf kostet weniger; ein Massenmodus mit leichterer Recherche für die klaren Fälle kostete nochmals weniger."
+    },
+    "footnote": "Beträge in US-Dollar, zu den Listenpreisen der Anbieter. Nicht pro Aufruf erfasst, weil innerhalb der monatlichen Gratiskontingente: {tools}.",
+    "unmetered": {
+      "google_cloud_vision": "Google Cloud Vision",
+      "google_places": "Google Places",
+      "google_street_view": "Google Street View",
+      "serpapi_lens": "Google Lens (SerpApi)"
+    },
+    "empty": {
+      "title": "Noch keine Kosten",
+      "body": "Sobald Fotos untersucht werden, erscheint hier jeder Modellaufruf mit seinen Kosten.",
+      "cta": "Fotos hochladen"
     }
   }
 }

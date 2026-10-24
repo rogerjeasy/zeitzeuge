@@ -607,7 +607,8 @@
       "closeMenu": "Fermer le menu",
       "soon": "en cours",
       "editor": "Notice de catalogue",
-      "batches": "Lots"
+      "batches": "Lots",
+      "costs": "Coûts"
     },
     "header": {
       "searchPlaceholder": "Rechercher",
@@ -2067,6 +2068,108 @@
         "wait": "Attente",
         "total": "Durée totale"
       }
+    }
+  },
+  "costs": {
+    "metaTitle": "Coûts — ZEITZEUGE",
+    "metaDescription": "Ce que coûte l'analyse : par jour, modèle, étape et lot.",
+    "title": "Coûts",
+    "subtitle": "Ce que coûte l'analyse, à partir de chaque appel de modèle enregistré : par jour et fournisseur, par modèle, par étape et par lot, avec le coût par photo et ce que coûterait le fonds.",
+    "periodLabel": "Période",
+    "periods": {
+      "d7": "7 jours",
+      "d30": "30 jours",
+      "d90": "90 jours",
+      "all": "Tout"
+    },
+    "tiles": {
+      "spend": "Dépenses",
+      "spendHint": "{calls, plural, one {# appel de modèle} other {# appels de modèle}}",
+      "perPhoto": "Coût par photo",
+      "perPhotoHint": "Moyenne des analyses terminées, échecs exclus",
+      "photos": "Photos analysées",
+      "photosHint": "{runs, plural, one {# exécution} other {# exécutions}}, {failed} échouées",
+      "tokens": "Tokens",
+      "tokensHint": "{input} entrée · {output} sortie"
+    },
+    "daily": {
+      "title": "Dépenses par jour",
+      "hint": "Par jour (Europe/Zurich), empilées par fournisseur. Survolez un jour pour le détail.",
+      "asTable": "Tableau",
+      "asChart": "Graphique",
+      "legend": "Fournisseurs",
+      "day": "Jour",
+      "total": "Total",
+      "empty": "Aucun appel de modèle sur cette période.",
+      "aria": "Histogramme des dépenses par jour sur {days, plural, one {# jour} other {# jours}}, empilées par fournisseur"
+    },
+    "vendors": {
+      "anthropic": "Anthropic (Bedrock, UE)",
+      "openai": "OpenAI",
+      "google": "Google",
+      "mixed": "Recherche, deux familles",
+      "other": "Autre"
+    },
+    "byModel": {
+      "title": "Coût par modèle",
+      "hint": "La part de chaque modèle dans les dépenses, ses appels et tokens, le prix catalogue appliqué et le coût moyen d'un appel.",
+      "model": "Modèle",
+      "share": "Part",
+      "calls": "Appels",
+      "tokens": "Tokens entrée / sortie",
+      "price": "USD par 1 M entrée / sortie",
+      "perCall": "Par appel",
+      "cost": "Coût",
+      "total": "Total",
+      "priceHint": "Les coûts sont le prix catalogue du fournisseur appliqué aux tokens que chaque appel a déclarés, la règle que suit le pipeline. Les appels de recherche avant le 24 oct., 12:00 sont comptés pour les deux familles ensemble."
+    },
+    "byStage": {
+      "title": "Coût par étape",
+      "hint": "Où va l'argent dans le pipeline.",
+      "meta": "{calls, plural, one {# appel} other {# appels}} · {share} · Ø {seconds} s"
+    },
+    "stages": {
+      "perception": "Perception (modèle visuel)",
+      "research": "Recherche web (deux familles)",
+      "sighting": "Recherche d'image (lecture des noms)",
+      "reference": "Comparaison de références",
+      "check": "Red team",
+      "adjudicate": "Arbitrage",
+      "grounding": "Ancrage",
+      "resolve": "Point → champs"
+    },
+    "byBatch": {
+      "title": "Coût par lot",
+      "hint": "Ce qu'a coûté chaque téléversement, et une photo dans celui-ci.",
+      "batch": "Lot",
+      "created": "Créé",
+      "photos": "Photos",
+      "failed": "Échecs",
+      "perPhoto": "Par photo",
+      "cost": "Coût",
+      "unlabelled": "Sans nom",
+      "withdrawn": "retiré"
+    },
+    "projection": {
+      "title": "Ce que cela coûterait",
+      "hint": "Le coût mesuré par photo, appliqué aux ensembles de l'archive.",
+      "prio1": "Les 50 photos Prio 1",
+      "delivery": "La livraison d'environ 600 photos",
+      "collection": "Le fonds d'environ 200 000 photos",
+      "none": "Pas encore d'analyse terminée sur cette période.",
+      "caveat": "Une projection, pas une offre : les réponses de recherche sont mises en cache, une nouvelle exécution coûte moins ; un mode de masse avec une recherche plus légère pour les cas clairs coûterait encore moins."
+    },
+    "footnote": "Montants en dollars US, aux prix catalogue des fournisseurs. Non mesurés par appel car dans les quotas gratuits mensuels : {tools}.",
+    "unmetered": {
+      "google_cloud_vision": "Google Cloud Vision",
+      "google_places": "Google Places",
+      "google_street_view": "Google Street View",
+      "serpapi_lens": "Google Lens (SerpApi)"
+    },
+    "empty": {
+      "title": "Pas encore de coûts",
+      "body": "Dès que des photos sont analysées, chaque appel de modèle et son coût apparaissent ici.",
+      "cta": "Téléverser des photos"
     }
   }
 }

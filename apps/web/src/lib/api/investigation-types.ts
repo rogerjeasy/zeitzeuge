@@ -436,3 +436,54 @@ export type OpenQuestion = {
   open_fields: string[];
   known: Record<string, string>;
 };
+
+/** What the investigation costs (`GET /costs`), from the recorded model calls. */
+export type CostVendor = "anthropic" | "openai" | "google" | "mixed" | "other";
+export type CostReport = {
+  currency: "USD";
+  period: { days: number | null; from: string; to: string };
+  totals: {
+    cost_usd: number;
+    calls: number;
+    runs: number;
+    photos: number;
+    failed_runs: number;
+    input_tokens: number;
+    output_tokens: number;
+    cost_per_photo: number | null;
+    live_photos: number;
+  };
+  by_day: ({ day: string; total: number } & Record<CostVendor, number>)[];
+  by_model: {
+    label: string;
+    vendor: CostVendor;
+    model_ids: string[];
+    calls: number;
+    input_tokens: number;
+    output_tokens: number;
+    cost_usd: number;
+    share: number;
+    price_in_per_mtok: number | null;
+    price_out_per_mtok: number | null;
+    cost_per_call: number | null;
+  }[];
+  by_stage: { stage: string; calls: number; cost_usd: number; share: number; avg_seconds: number | null }[];
+  by_batch: {
+    batch_id: string;
+    label: string | null;
+    withdrawn: boolean;
+    runs: number;
+    photos: number;
+    failed_runs: number;
+    cost_usd: number;
+    cost_per_photo: number | null;
+    created_at: string | null;
+  }[];
+  projection: {
+    cost_per_photo: number | null;
+    prio1_set: number | null;
+    delivery_600: number | null;
+    collection_200000: number | null;
+  };
+  unmetered: string[];
+};

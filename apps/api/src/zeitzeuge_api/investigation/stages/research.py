@@ -219,5 +219,16 @@ async def run(ctx: RunContext) -> None:
             for (r, f, _, _), page in zip(claims, pages, strict=True)
         },
         "latency_ms": {r.family: r.latency_ms for r in results},
+        # Each family's own bill, so the cost page can split the stage by model.
+        "cost_by_model": [
+            {
+                "model_id": r.model_id,
+                "family": r.family,
+                "input_tokens": r.input_tokens,
+                "output_tokens": r.output_tokens,
+                "cost_usd": round(r.cost_usd, 6),
+            }
+            for r in results
+        ],
     }
     record.ended_at = datetime.now(UTC)

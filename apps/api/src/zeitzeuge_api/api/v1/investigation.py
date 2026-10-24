@@ -20,6 +20,7 @@ from zeitzeuge_api.api.deps import CurrentIdentity, Identity, WriteIdentity, res
 from zeitzeuge_api.core import errors
 from zeitzeuge_api.db.models.enums import UserRole
 from zeitzeuge_api.schemas import investigation as schemas
+from zeitzeuge_api.services.costs import cost_report
 from zeitzeuge_api.services.investigation_service import InvestigationService
 from zeitzeuge_api.services.mirror import mirror_batch
 
@@ -300,6 +301,17 @@ async def restore_batch(
 ) -> schemas.BatchWithdrawResult:
     _approver(identity)
     return await service.restore_batch(identity.session, user=identity.user, batch_id=batch_id)
+
+
+@router.get(
+    "/costs",
+    summary="What the investigation costs: per day and vendor, per model, stage and batch",
+)
+async def costs(identity: CurrentIdentity, days: int | None = None) -> dict[str, Any]:
+    """From the recorded model calls only (`services/costs.py`); unmetered tools are named."""
+    if days is not None and days not in (1, 7, 30, 90, 365):
+        raise errors.ValidationError("days must be one of 1, 7, 30, 90, 365, or omitted.")
+    return await cost_report(identity.session, days=days)
 
 
 @router.get(
