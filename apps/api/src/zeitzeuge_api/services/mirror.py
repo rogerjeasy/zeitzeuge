@@ -101,6 +101,9 @@ async def mirror_batch(
         batch = await s.get(UploadBatch, batch_id)
         if batch is None:
             raise errors.NotFoundError("No such batch.")
+        if batch.deleted_at is not None:
+            # A withdrawn batch is never republished, to the guests or to a sandbox.
+            raise errors.ConflictError("This batch has been withdrawn.")
         fonds = await s.get(Fonds, batch.fonds_id) if batch.fonds_id else None
         assets = list(
             await s.scalars(
@@ -353,10 +356,10 @@ async def mirror_batch(
 async def seed_sandbox(db: Database, *, target_id: uuid.UUID) -> dict[str, Any] | None:
     """Fill a fresh «Start demo» archive with the curated Prio-1 results.
 
-    The source is whatever the Staatsarchiv last published to the guests' demo
-    archive (its QC decision, not ours); failing that, its most recent batch.
-    Returns None when there is nothing to copy, so a demo still opens — empty,
-    and fully usable — on a database without the Staatsarchiv's work.
+    The source is only what the Staatsarchiv last published to the guests' demo
+    archive (its QC decision, not ours), and only while that batch is still
+    live at the source. Returns None when there is nothing to copy, so a demo
+    still opens — empty, and fully usable.
     """
     async with db.session(TenantContext.bootstrap()) as session:
         sources = list(
@@ -380,13 +383,9 @@ async def seed_sandbox(db: Database, *, target_id: uuid.UUID) -> dict[str, Any] 
                 .limit(1)
             )
     if batch_id is None:
-        async with db.session(TenantContext(org_id=source_org, role="mirror")) as s:
-            batch_id = await s.scalar(
-                select(UploadBatch.id)
-                .where(UploadBatch.deleted_at.is_(None), UploadBatch.mirrored_from_id.is_(None))
-                .order_by(UploadBatch.created_at.desc())
-                .limit(1)
-            )
-    if batch_id is None:
-        return None
+        return None  # nothing published: the demo opens empty, never with unreviewed work
+    async with db.session(TenantContext(org_id=source_org, role="mirror")) as s:
+        original = await s.get(UploadBatch, batch_id)
+        if original is None or original.deleted_at is not None:
+            return None  # withdrawn at the source since it was published
     return await mirror_batch(db, source_org=source_org, batch_id=batch_id, target_id=target_id)

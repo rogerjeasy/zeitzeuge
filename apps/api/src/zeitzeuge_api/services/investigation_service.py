@@ -1071,6 +1071,7 @@ class InvestigationService:
         asset.deletion_reason = None
         latest = await self._latest_run(session, asset.id)
         if latest is not None and latest.status is RunStatus.CANCELLED:
+            await self._demo_guard(session, asset.org_id, new_runs=1)
             session.add(
                 Run(
                     id=uuid.uuid4(),
@@ -1644,6 +1645,14 @@ class InvestigationService:
         org = await session.get(Organization, org_id)
         if org is None or not (org.settings or {}).get("sandbox"):
             return
+        if session.get_bind().dialect.name == "postgresql":
+            # Serialise the count-then-insert per archive: two parallel uploads
+            # must not both read nine and both add one. Held to commit; needs
+            # no privilege beyond the tenant's own connection.
+            await session.execute(
+                text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"),
+                {"k": f"demo-guard:{org_id}"},
+            )
         if new_photos:
             own = await session.scalar(
                 select(func.count())
