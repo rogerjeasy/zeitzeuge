@@ -469,7 +469,8 @@ export type CostReport = {
   }[];
   by_stage: { stage: string; calls: number; cost_usd: number; share: number; avg_seconds: number | null }[];
   by_batch: {
-    batch_id: string;
+    /** null for the one row that sums withdrawn batches for non-approvers. */
+    batch_id: string | null;
     label: string | null;
     withdrawn: boolean;
     runs: number;

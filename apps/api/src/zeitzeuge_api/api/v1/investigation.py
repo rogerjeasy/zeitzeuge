@@ -308,10 +308,20 @@ async def restore_batch(
     summary="What the investigation costs: per day and vendor, per model, stage and batch",
 )
 async def costs(identity: CurrentIdentity, days: int | None = None) -> dict[str, Any]:
-    """From the recorded model calls only (`services/costs.py`); unmetered tools are named."""
+    """From the recorded model calls only (`services/costs.py`); unmetered tools are named.
+
+    Spending is internal: the public demo guest does not see it.
+    """
+    if identity.user.role is UserRole.GUEST:
+        raise errors.ForbiddenError("Costs are internal to the archive; guests do not see them.")
     if days is not None and days not in (1, 7, 30, 90, 365):
         raise errors.ValidationError("days must be one of 1, 7, 30, 90, 365, or omitted.")
-    return await cost_report(identity.session, days=days)
+    return await cost_report(
+        identity.session,
+        org_id=identity.user.org_id,
+        days=days,
+        show_withdrawn=identity.user.role.can_approve,
+    )
 
 
 @router.get(

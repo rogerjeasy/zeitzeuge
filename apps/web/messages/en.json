@@ -2148,7 +2148,8 @@
       "perPhoto": "Per photo",
       "cost": "Cost",
       "unlabelled": "Unlabelled",
-      "withdrawn": "removed"
+      "withdrawn": "removed",
+      "withdrawnGroup": "Removed batches (combined)"
     },
     "projection": {
       "title": "What it would cost",

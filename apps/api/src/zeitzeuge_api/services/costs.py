@@ -81,10 +81,24 @@ def _calls(row: AgentInvocation) -> list[dict[str, Any]]:
     ]
 
 
-async def cost_report(session: AsyncSession, *, days: int | None) -> dict[str, Any]:
+async def cost_report(
+    session: AsyncSession,
+    *,
+    org_id: uuid.UUID,
+    days: int | None,
+    show_withdrawn: bool = False,
+) -> dict[str, Any]:
+    """RLS scopes the session already; `org_id` is applied too (defence in depth).
+
+    Withdrawn batches belong to the Papierkorb: only approvers see them by name
+    (`show_withdrawn`); for everyone else their cost is one unnamed row, so the
+    totals stay complete without disclosing what was removed.
+    """
     now = datetime.now(UTC)
     since = now - timedelta(days=days) if days else None
-    query = select(AgentInvocation).where(AgentInvocation.model_id.is_not(None))
+    query = select(AgentInvocation).where(
+        AgentInvocation.org_id == org_id, AgentInvocation.model_id.is_not(None)
+    )
     if since is not None:
         query = query.where(AgentInvocation.started_at >= since)
     rows = list(await session.scalars(query))
@@ -141,7 +155,12 @@ async def cost_report(session: AsyncSession, *, days: int | None) -> dict[str, A
             totals["calls"] += 1
 
     runs = (
-        {r.id: r for r in await session.scalars(select(Run).where(Run.id.in_(list(run_cost))))}
+        {
+            r.id: r
+            for r in await session.scalars(
+                select(Run).where(Run.org_id == org_id, Run.id.in_(list(run_cost)))
+            )
+        }
         if run_cost
         else {}
     )
@@ -156,7 +175,11 @@ async def cost_report(session: AsyncSession, *, days: int | None) -> dict[str, A
     batches = (
         {
             b.id: b
-            for b in await session.scalars(select(UploadBatch).where(UploadBatch.id.in_(batch_ids)))
+            for b in await session.scalars(
+                select(UploadBatch).where(
+                    UploadBatch.org_id == org_id, UploadBatch.id.in_(batch_ids)
+                )
+            )
         }
         if batch_ids
         else {}
@@ -175,7 +198,9 @@ async def cost_report(session: AsyncSession, *, days: int | None) -> dict[str, A
         elif run.finished_at is not None:
             slot["photos"].add(run.asset_id)
     live_assets = await session.scalar(
-        select(func.count()).select_from(Asset).where(Asset.deleted_at.is_(None))
+        select(func.count())
+        .select_from(Asset)
+        .where(Asset.org_id == org_id, Asset.deleted_at.is_(None))
     )
 
     first_day = min(by_day) if by_day else None
@@ -250,26 +275,7 @@ async def cost_report(session: AsyncSession, *, days: int | None) -> dict[str, A
             ),
             key=lambda s: -s["cost_usd"],
         ),
-        "by_batch": sorted(
-            (
-                {
-                    "batch_id": str(bid),
-                    "label": (batches[bid].label if bid in batches else None),
-                    "withdrawn": bool(batches[bid].deleted_at) if bid in batches else False,
-                    "runs": b["runs"],
-                    "photos": len(b["photos"]),
-                    "failed_runs": b["failed"],
-                    "cost_usd": round(b["cost"], 4),
-                    "cost_per_photo": round(b["cost"] / len(b["photos"]), 4)
-                    if b["photos"]
-                    else None,
-                    "created_at": batches[bid].created_at.isoformat() if bid in batches else None,
-                }
-                for bid, b in batch_rows.items()
-            ),
-            key=lambda b: b["created_at"] or "",
-            reverse=True,
-        ),
+        "by_batch": _batch_rows(batch_rows, batches, show_withdrawn),
         "projection": {
             "cost_per_photo": round(per_photo, 4) if per_photo is not None else None,
             "prio1_set": round(per_photo * 50, 2) if per_photo is not None else None,
@@ -278,3 +284,52 @@ async def cost_report(session: AsyncSession, *, days: int | None) -> dict[str, A
         },
         "unmetered": list(UNMETERED),
     }
+
+
+def _batch_rows(
+    rows: dict[uuid.UUID, dict[str, Any]],
+    batches: dict[uuid.UUID, UploadBatch],
+    show_withdrawn: bool,
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    hidden = {"cost": 0.0, "photos": 0, "runs": 0, "failed": 0}
+    for bid, b in rows.items():
+        batch = batches.get(bid)
+        withdrawn = bool(batch and batch.deleted_at)
+        if withdrawn and not show_withdrawn:
+            hidden["cost"] += b["cost"]
+            hidden["photos"] += len(b["photos"])
+            hidden["runs"] += b["runs"]
+            hidden["failed"] += b["failed"]
+            continue
+        out.append(
+            {
+                "batch_id": str(bid),
+                "label": batch.label if batch else None,
+                "withdrawn": withdrawn,
+                "runs": b["runs"],
+                "photos": len(b["photos"]),
+                "failed_runs": b["failed"],
+                "cost_usd": round(b["cost"], 4),
+                "cost_per_photo": round(b["cost"] / len(b["photos"]), 4) if b["photos"] else None,
+                "created_at": batch.created_at.isoformat() if batch else None,
+            }
+        )
+    out.sort(key=lambda r: r["created_at"] or "", reverse=True)
+    if hidden["runs"]:
+        out.append(
+            {
+                "batch_id": None,
+                "label": None,
+                "withdrawn": True,
+                "runs": hidden["runs"],
+                "photos": hidden["photos"],
+                "failed_runs": hidden["failed"],
+                "cost_usd": round(hidden["cost"], 4),
+                "cost_per_photo": round(hidden["cost"] / hidden["photos"], 4)
+                if hidden["photos"]
+                else None,
+                "created_at": None,
+            }
+        )
+    return out

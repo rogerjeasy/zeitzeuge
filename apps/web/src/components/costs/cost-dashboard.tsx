@@ -193,12 +193,18 @@ export function CostDashboard({ report }: { report: CostReport }) {
               </thead>
               <tbody>
                 {report.by_batch.map((b) => (
-                  <tr key={b.batch_id} className="border-b border-line/60">
+                  <tr key={b.batch_id ?? "withdrawn"} className="border-b border-line/60">
                     <th scope="row" className="py-2 pr-3 text-left font-normal">
-                      <Link href={`/batches/${b.batch_id}`} className="font-mono text-evidence hover:underline">
-                        {b.label ?? t("byBatch.unlabelled")}
-                      </Link>
-                      {b.withdrawn && <span className="ml-2 text-[0.6875rem] text-muted-2">{t("byBatch.withdrawn")}</span>}
+                      {b.batch_id ? (
+                        <Link href={`/batches/${b.batch_id}`} className="font-mono text-evidence hover:underline">
+                          {b.label ?? t("byBatch.unlabelled")}
+                        </Link>
+                      ) : (
+                        <span className="text-muted">{t("byBatch.withdrawnGroup")}</span>
+                      )}
+                      {b.withdrawn && b.batch_id && (
+                        <span className="ml-2 text-[0.6875rem] text-muted-2">{t("byBatch.withdrawn")}</span>
+                      )}
                     </th>
                     <td className="py-2 pr-3 text-muted">
                       {b.created_at

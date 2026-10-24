@@ -2148,7 +2148,8 @@
       "perPhoto": "Pro Foto",
       "cost": "Kosten",
       "unlabelled": "Ohne Namen",
-      "withdrawn": "entfernt"
+      "withdrawn": "entfernt",
+      "withdrawnGroup": "Entfernte Stapel (zusammengefasst)"
     },
     "projection": {
       "title": "Was es kosten würde",

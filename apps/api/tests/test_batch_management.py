@@ -452,3 +452,8 @@ async def test_the_cost_report_splits_by_vendor_model_stage_and_batch(
     assert body["by_batch"][0]["batch_id"] == batch_id
     assert "google_cloud_vision" in body["unmetered"]
     assert (await client.get("/api/v1/costs?days=3")).status_code in (400, 422)
+
+
+async def test_guests_do_not_see_the_costs(investigation, client, as_user) -> None:
+    await _set_role(investigation, as_user["email"], UserRole.GUEST)
+    assert (await client.get("/api/v1/costs")).status_code == 403

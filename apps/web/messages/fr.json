@@ -2148,7 +2148,8 @@
       "perPhoto": "Par photo",
       "cost": "Coût",
       "unlabelled": "Sans nom",
-      "withdrawn": "retiré"
+      "withdrawn": "retiré",
+      "withdrawnGroup": "Lots retirés (regroupés)"
     },
     "projection": {
       "title": "Ce que cela coûterait",
