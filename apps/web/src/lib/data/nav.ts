@@ -23,8 +23,6 @@ export interface NavItem {
   href: string;
   icon: NavIcon;
   ready?: boolean;
-  /** Pulls a live count from the dashboard data, e.g. the review queue. */
-  badge?: "queue";
 }
 
 export const PRIMARY_NAV: NavItem[] = [
@@ -32,7 +30,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { id: "upload", href: "/upload", icon: "upload", ready: true },
   // The real investigation: batches, per-photo progress, the Excel export.
   { id: "batches", href: "/batches", icon: "batches", ready: true },
-  { id: "queue", href: "/queue", icon: "queue", badge: "queue", ready: true },
+  { id: "queue", href: "/queue", icon: "queue", ready: true },
   { id: "history", href: "/history", icon: "history", ready: true },
   { id: "collections", href: "/collections", icon: "collections", ready: true },
   { id: "evaluation", href: "/evaluation", icon: "evaluation", ready: true },

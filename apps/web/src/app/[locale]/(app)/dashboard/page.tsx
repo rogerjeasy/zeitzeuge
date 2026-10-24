@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { UploadCloud } from "lucide-react";
 import { routing } from "@/i18n/routing";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { QueueCallout } from "@/components/dashboard/queue-callout";
-import { StatRow } from "@/components/dashboard/stat-row";
-import { TrendChart } from "@/components/dashboard/trend-chart";
-import { CostPanel } from "@/components/dashboard/cost-panel";
-import { RecentRuns } from "@/components/dashboard/recent-runs";
+import { OverviewTiles, RecentBatches, ReviewCallout } from "@/components/dashboard/overview";
 import { QcCounter } from "@/components/investigation/qc-counter";
-import { ExampleBanner } from "@/components/investigation/example-banner";
+import { ApiNotice } from "@/components/investigation/api-notice";
+import { EmptyState } from "@/components/ui/empty-state";
 import { loadQcView } from "@/lib/investigation/qc";
+import { loadArchiveOverview, reviewItems } from "@/lib/investigation/overview";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -29,6 +28,7 @@ export async function generateMetadata({
   };
 }
 
+/** Real numbers only: batches, photographs, verdicts, QC. Nothing invented. */
 export default async function DashboardPage({
   params,
 }: {
@@ -36,26 +36,34 @@ export default async function DashboardPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [qc, t] = await Promise.all([
+  const [overview, qc, t] = await Promise.all([
+    loadArchiveOverview(),
     loadQcView(),
-    getTranslations({ locale, namespace: "investigation.example" }),
+    getTranslations({ locale, namespace: "dashboard" }),
   ]);
+  const empty = overview.ok && overview.summaries.length === 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <PageHeader />
-      <QcCounter view={qc} />
-      <ExampleBanner message={t("dashboard")} href="/batches" cta={t("toBatches")} />
-      <QueueCallout />
-      <StatRow />
 
-      {/* The trend carries the argument, so it gets the wider column. */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-        <TrendChart />
-        <CostPanel />
-      </div>
-
-      <RecentRuns />
+      {!overview.ok ? (
+        <ApiNotice code={overview.code} />
+      ) : empty ? (
+        <EmptyState
+          icon={UploadCloud}
+          title={t("empty.title")}
+          body={t("empty.body")}
+          action={{ href: "/upload", label: t("empty.cta") }}
+        />
+      ) : (
+        <>
+          <ReviewCallout count={reviewItems(overview.batches).length} />
+          <OverviewTiles batches={overview.batches} />
+          {qc.qc && <QcCounter qc={qc.qc} />}
+          <RecentBatches batches={overview.summaries} />
+        </>
+      )}
     </div>
   );
 }

@@ -1,28 +1,16 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { routing } from "@/i18n/routing";
-import { QUEUE_ITEMS } from "@/lib/data/queue";
-import { getCaseFile } from "@/lib/data/editor";
+import { FileQuestion } from "lucide-react";
 import { investigationApi, isUuid, resolveAuth } from "@/lib/api/investigation";
-import { EditorScreen } from "@/components/editor/editor-screen";
 import { CaseScreen } from "@/components/investigation/case-screen";
 import { ApiErrorPage } from "@/components/investigation/api-error-page";
+import { EmptyState } from "@/components/ui/empty-state";
 
 /**
- * Two kinds of id reach this route.
- *
- * - An asset UUID: a real investigation, rendered from `GET /assets/{id}/case`
- *   at request time (`dynamicParams` stays on, so these are never prebuilt).
- * - A demo id (`q1`…): the labelled example editor on mock data, prebuilt for
- *   the ids the example queue links to.
+ * One photograph's catalogue record, rendered from `GET /assets/{id}/case` at
+ * request time. Only real asset ids exist here; anything else is «not found».
  */
-export function generateStaticParams() {
-  return routing.locales.flatMap((locale) =>
-    QUEUE_ITEMS.map((item) => ({ locale, id: item.id })),
-  );
-}
 
 /** One `/case` call per render, shared by the metadata and the page. */
 const loadCase = cache(async (id: string) => {
@@ -38,19 +26,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, id } = await params;
   const t = await getTranslations({ locale, namespace: "editor" });
-
-  if (isUuid(id)) {
-    const result = await loadCase(id);
-    return {
-      title: t("metaTitle", { signature: result.ok ? result.data.external_ref : id.slice(0, 8) }),
-      robots: { index: false, follow: false },
-    };
-  }
-
-  const record = getCaseFile(id);
-  if (!record) return { robots: { index: false, follow: false } };
+  const result = isUuid(id) ? await loadCase(id) : null;
   return {
-    title: t("metaTitle", { signature: record.signature }),
+    title: result?.ok ? t("metaTitle", { signature: result.data.external_ref }) : t("notFound.metaTitle"),
     robots: { index: false, follow: false },
   };
 }
@@ -63,18 +41,21 @@ export default async function RecordPage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  if (isUuid(id)) {
-    const result = await loadCase(id);
-    if (!result.ok) {
-      if (result.problem.status === 404) notFound();
-      return <ApiErrorPage code={result.problem.code} />;
-    }
-    return <CaseScreen key={result.data.asset_id} initial={result.data} />;
+  const result = isUuid(id) ? await loadCase(id) : null;
+  if (!result || (!result.ok && result.problem.status === 404)) {
+    const t = await getTranslations({ locale, namespace: "editor.notFound" });
+    return (
+      <div className="mx-auto flex w-full max-w-[56rem] flex-col px-4 py-8 sm:px-6">
+        <EmptyState
+          icon={FileQuestion}
+          title={t("title")}
+          body={t("body")}
+          action={{ href: "/batches", label: t("cta") }}
+          secondary={{ href: "/queue", label: t("toQueue") }}
+        />
+      </div>
+    );
   }
-
-  const record = getCaseFile(id);
-  if (!record) notFound();
-
-  // Remounting on id keeps the review state from leaking between records.
-  return <EditorScreen key={record.id} record={record} />;
+  if (!result.ok) return <ApiErrorPage code={result.problem.code} />;
+  return <CaseScreen key={result.data.asset_id} initial={result.data} />;
 }

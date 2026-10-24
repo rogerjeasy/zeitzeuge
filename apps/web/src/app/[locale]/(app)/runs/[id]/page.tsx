@@ -1,36 +1,45 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { routing } from "@/i18n/routing";
-import { RUN } from "@/lib/data/theater";
-import { TheaterScreen } from "@/components/theater/theater-screen";
-
-/** One run is replayable; the rest of the run log lives in the history trail. */
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale, id: RUN.id }));
-}
+import { Workflow } from "lucide-react";
+import { UnavailablePage } from "@/components/ui/empty-state";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }): Promise<Metadata> {
-  const { locale, id } = await params;
+  const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "theater" });
   return {
-    title: t("metaTitle", { run: id }),
+    title: t("metaTitle"),
     description: t("metaDescription"),
     robots: { index: false, follow: false },
   };
 }
 
+/**
+ * The step-by-step replay of one investigation has no data source yet. The
+ * steps a run took are on the photograph's own record, so this points there.
+ */
 export default async function RunPage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
-  const { locale, id } = await params;
+  const { locale } = await params;
   setRequestLocale(locale);
-  if (id !== RUN.id) notFound();
-  return <TheaterScreen />;
+  const [t, tApp] = await Promise.all([
+    getTranslations({ locale, namespace: "theater" }),
+    getTranslations({ locale, namespace: "app" }),
+  ]);
+  return (
+    <UnavailablePage
+      heading={t("title")}
+      icon={Workflow}
+      tag={tApp("unavailable")}
+      title={t("empty.title")}
+      body={t("empty.body")}
+      action={{ href: "/batches", label: t("empty.cta") }}
+    />
+  );
 }

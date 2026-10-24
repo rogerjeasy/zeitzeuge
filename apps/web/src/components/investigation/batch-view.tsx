@@ -14,6 +14,7 @@ import { ConfidenceFigure, QcPill, StatusPill } from "./pills";
 import { StageTrack } from "./stage-track";
 import { ExportButton } from "./export-button";
 import { ApiNotice } from "./api-notice";
+import { EmptyState } from "@/components/ui/empty-state";
 import { BATCH_STATUS_KEYS, intlLocale, ARCHIVE_TZ } from "./labels";
 
 /**
@@ -130,17 +131,12 @@ export function BatchView({ initial }: { initial: BatchOut }) {
       </dl>
 
       {batch.assets.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface-2/40 px-6 py-12 text-center">
-          <p className="font-medium text-foreground-strong">{t("emptyTitle")}</p>
-          <p className="max-w-[52ch] text-[0.8125rem] text-muted">{t("emptyBody")}</p>
-          <Link
-            href="/upload"
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-4 text-[0.8125rem] font-medium text-background"
-          >
-            {t("emptyCta")}
-            <ArrowRight aria-hidden className="size-3.5" strokeWidth={2} />
-          </Link>
-        </div>
+        <EmptyState
+          icon={ImageOff}
+          title={t("emptyTitle")}
+          body={t("emptyBody")}
+          action={{ href: "/upload", label: t("emptyCta") }}
+        />
       ) : (
         <section
           aria-label={t("rowsLabel")}
@@ -157,7 +153,7 @@ export function BatchView({ initial }: { initial: BatchOut }) {
           </div>
           <ul className="flex flex-col divide-y divide-line">
             {batch.assets.map((asset) => (
-              <AssetRow key={asset.asset_id} asset={asset} />
+              <BatchAssetRow key={asset.asset_id} asset={asset} />
             ))}
           </ul>
         </section>
@@ -166,7 +162,8 @@ export function BatchView({ initial }: { initial: BatchOut }) {
   );
 }
 
-function AssetRow({ asset }: { asset: BatchAsset }) {
+/** One photograph's row; `batchLabel` names its batch where rows from several batches mix. */
+export function BatchAssetRow({ asset, batchLabel }: { asset: BatchAsset; batchLabel?: string }) {
   const t = useTranslations("investigation");
   const tb = useTranslations("investigation.batch");
 
@@ -193,6 +190,9 @@ function AssetRow({ asset }: { asset: BatchAsset }) {
         <p className="truncate font-mono text-[0.8125rem] font-medium text-foreground-strong" title={asset.external_ref}>
           {asset.external_ref}
         </p>
+        {batchLabel && (
+          <p className="truncate text-[0.6875rem] text-muted">{tb("inBatch", { label: batchLabel })}</p>
+        )}
         <StageTrack stage={asset.stage} runStatus={asset.run_status} />
         {asset.error && (
           <p className="line-clamp-2 text-[0.6875rem] text-refuted" title={asset.error}>

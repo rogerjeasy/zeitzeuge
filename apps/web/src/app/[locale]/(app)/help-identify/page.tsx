@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { HandHelping } from "lucide-react";
 import { routing } from "@/i18n/routing";
-import { AssistScreen } from "@/components/assist/assist-screen";
+import { UnavailablePage } from "@/components/ui/empty-state";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -21,6 +22,7 @@ export async function generateMetadata({
   };
 }
 
+/** No data source for this screen yet: an honest empty state, not an example. */
 export default async function AssistPage({
   params,
 }: {
@@ -28,5 +30,19 @@ export default async function AssistPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <AssistScreen />;
+  const [t, tApp] = await Promise.all([
+    getTranslations({ locale, namespace: "assist" }),
+    getTranslations({ locale, namespace: "app" }),
+  ]);
+  return (
+    <UnavailablePage
+      heading={t("title")}
+      subtitle={t("subtitle")}
+      icon={HandHelping}
+      tag={tApp("unavailable")}
+      title={t("empty.title")}
+      body={t("empty.body")}
+      action={{ href: "/queue", label: t("empty.cta") }}
+    />
+  );
 }

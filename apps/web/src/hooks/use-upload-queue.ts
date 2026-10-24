@@ -40,11 +40,11 @@ const toQueuedFile = (file: File): QueuedFile => ({
 /**
  * The upload queue.
  *
- * Owns intake (drop, picker, paste, zip), pairing, per-asset metadata and the
- * run itself. The upload is simulated for now but goes through the same shape
- * the presigned S3 PUT will — one request per side, progress per asset.
+ * Owns intake (drop, picker, paste, zip), recto/verso pairing and the real
+ * upload: presigned S3 POSTs with progress per asset, then the commit that
+ * queues each investigation.
  */
-export function useUploadQueue(defaultCollection: string) {
+export function useUploadQueue() {
   const [assets, setAssets] = useState<QueuedAsset[]>([]);
   const [rejected, setRejected] = useState<string[]>([]);
   const [zipProblems, setZipProblems] = useState<{ name: string; reason: ZipProblem }[]>([]);
@@ -104,7 +104,6 @@ export function useUploadQueue(defaultCollection: string) {
           // `base` has already lost its extension: stripping again would cut
           // «SG.CIV.17.3» to «SG.CIV.17» and make every Prio-1 file a duplicate.
           signature: group.base,
-          collection: defaultCollection,
           status: "queued",
           progress: 0,
         })),
@@ -114,7 +113,7 @@ export function useUploadQueue(defaultCollection: string) {
       setZipProblems(problems);
       setBusy(false);
     },
-    [defaultCollection],
+    [],
   );
 
   const update = useCallback((id: string, patch: Partial<QueuedAsset>) => {
@@ -151,7 +150,6 @@ export function useUploadQueue(defaultCollection: string) {
         id: nextId(),
         recto: target.verso,
         signature: stripExtension(target.verso.file.name),
-        collection: target.collection,
         status: "queued",
         progress: 0,
       };
@@ -180,10 +178,6 @@ export function useUploadQueue(defaultCollection: string) {
     });
   }, []);
 
-  const applyCollectionToAll = useCallback((collection: string) => {
-    setAssets((list) => list.map((a) => ({ ...a, collection })));
-  }, []);
-
   const issues = useMemo(() => validate(assets), [assets]);
 
   const stats = useMemo(() => {
@@ -197,29 +191,6 @@ export function useUploadQueue(defaultCollection: string) {
   }, [assets]);
 
   /**
-   * Simulated presigned upload, then the run. One asset at a time, and the
-   * chosen mode really does change how long the investigation takes — deep
-   * review runs Opus, falsification and the red team (§5.4 M1).
-   */
-  const start = useCallback(async (mode: string) => {
-    const analysisMs = mode === "fast" ? 220 : mode === "deep" ? 900 : 440;
-    setRunning(true);
-    for (const asset of assets) {
-      update(asset.id, { status: "uploading", progress: 0 });
-      for (let p = 0; p <= 100; p += 10) {
-        update(asset.id, { progress: p });
-        await new Promise((r) => setTimeout(r, 40));
-      }
-      update(asset.id, { status: "uploaded", progress: 100 });
-      await new Promise((r) => setTimeout(r, 120));
-      update(asset.id, { status: "analysing" });
-      await new Promise((r) => setTimeout(r, analysisMs));
-      update(asset.id, { status: "done" });
-    }
-    setRunning(false);
-  }, [assets, update]);
-
-  /**
    * The real path (design note §2.4): find or open the batch, register the
    * files in chunks, POST each one to S3 with its presigned fields (four at a
    * time, with real progress), then commit it — which queues its
@@ -230,7 +201,7 @@ export function useUploadQueue(defaultCollection: string) {
    * endpoint yet, and the screen says so.
    */
   const startReal = useCallback(
-    async (opts: { label: string; priority: number | null; mode: string }): Promise<RealStart> => {
+    async (opts: { label: string; priority: number | null }): Promise<RealStart> => {
       setRunning(true);
       try {
         const existing = await listBatchesAction();
@@ -238,7 +209,7 @@ export function useUploadQueue(defaultCollection: string) {
         let batch = existing.data.find((b) => b.label === opts.label);
         const reused = Boolean(batch);
         if (!batch) {
-          const created = await createBatchAction(opts);
+          const created = await createBatchAction({ ...opts, mode: "standard" });
           if (!created.ok) return { ok: false, code: created.code };
           batch = created.data;
         }
@@ -328,7 +299,7 @@ export function useUploadQueue(defaultCollection: string) {
   );
 
   return {
-    assets, add, update, remove, clear, unpair, pairInto, applyCollectionToAll,
-    issues, stats, busy, running, rejected, zipProblems, start, startReal,
+    assets, add, update, remove, clear, unpair, pairInto,
+    issues, stats, busy, running, rejected, zipProblems, startReal,
   };
 }

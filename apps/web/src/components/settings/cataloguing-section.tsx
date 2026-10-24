@@ -2,9 +2,8 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { Slider } from "@/components/ui/slider";
-import { Select } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
-import { CATALOGUING_DEFAULTS, COLLECTIONS, RUN_MODES } from "@/lib/data/settings";
+import { CATALOGUING_DEFAULTS, RUN_MODES } from "@/lib/data/settings";
 import { useSettingsForm } from "@/hooks/use-settings-form";
 import { SettingCard, SettingRow, InlineWarning } from "./setting-primitives";
 import { SaveBar } from "./save-bar";
@@ -19,7 +18,6 @@ export function CataloguingSection() {
     threshold: CATALOGUING_DEFAULTS.autoAcceptThreshold,
     mode: CATALOGUING_DEFAULTS.mode as string,
     abstention: CATALOGUING_DEFAULTS.allowAbstention,
-    collection: CATALOGUING_DEFAULTS.defaultCollection,
   });
 
   const usd = (v: number) =>
@@ -108,16 +106,6 @@ export function CataloguingSection() {
           )}
         </SettingRow>
 
-        <SettingRow label={t("collectionLabel")} hint={t("collectionHint")} stack>
-          <Select
-            label={t("collectionLabel")}
-            hideLabel
-            className="sm:max-w-[20rem]"
-            value={form.values.collection}
-            onChange={(e) => form.set("collection", e.target.value)}
-            options={COLLECTIONS.map((c) => ({ value: c.id, label: c.name }))}
-          />
-        </SettingRow>
       </SettingCard>
 
       <SaveBar

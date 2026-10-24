@@ -3,9 +3,6 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link2Off, Plus, Trash2, Check, Loader2, AlertTriangle } from "lucide-react";
-import { Field } from "@/components/ui/field";
-import { Select } from "@/components/ui/select";
-import { COLLECTIONS } from "@/lib/data/settings";
 import type { Issue, QueuedAsset } from "@/lib/upload/types";
 import { cn } from "@/lib/cn";
 
@@ -19,13 +16,12 @@ const STATUS_TONE = {
 } as const;
 
 /**
- * One photograph: its two sides, how they came to be paired, and the two pieces
- * of metadata the archive needs before anything is sent.
+ * One photograph: its two sides, how they came to be paired, and where its
+ * upload stands. The filename is the reference the row keeps in the Excel.
  */
 export function AssetRow({
   asset,
   issues,
-  onChange,
   onRemove,
   onUnpair,
   onPairInto,
@@ -33,7 +29,6 @@ export function AssetRow({
 }: {
   asset: QueuedAsset;
   issues: Issue[];
-  onChange: (patch: Partial<QueuedAsset>) => void;
   onRemove: () => void;
   onUnpair: () => void;
   onPairInto: (sourceId: string) => void;
@@ -102,7 +97,7 @@ export function AssetRow({
                 e.dataTransfer.setData("application/x-zeitzeuge-asset", asset.id)
               }
               className={cn(
-                "truncate font-mono text-[0.75rem] text-foreground",
+                "min-w-0 max-w-full truncate font-mono text-[0.75rem] text-foreground",
                 !locked && !asset.verso && "cursor-grab active:cursor-grabbing",
               )}
             >
@@ -134,35 +129,11 @@ export function AssetRow({
                 STATUS_TONE[asset.status],
               )}
             >
-              {asset.status === "error" && asset.error && (
-            <p className="flex items-start gap-1.5 text-[0.6875rem] leading-snug text-refuted">
-              <AlertTriangle aria-hidden className="mt-px size-3 shrink-0" strokeWidth={2} />
-              {t("real.errorLine", { code: asset.error })}
-            </p>
-          )}
-
-          {asset.status === "uploading" && (
+              {asset.status === "uploading" && (
                 <Loader2 aria-hidden className="mr-1 inline size-2.5 animate-spin" strokeWidth={2.5} />
               )}
               {t(`status${asset.status[0].toUpperCase()}${asset.status.slice(1)}`)}
             </span>
-          </div>
-
-          <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-            <Field
-              label={t("signatureLabel")}
-              placeholder={t("signaturePlaceholder")}
-              value={asset.signature}
-              disabled={locked}
-              onChange={(e) => onChange({ signature: e.target.value })}
-            />
-            <Select
-              label={t("collectionLabel")}
-              value={asset.collection}
-              disabled={locked}
-              onChange={(e) => onChange({ collection: e.target.value })}
-              options={COLLECTIONS.map((c) => ({ value: c.id, label: c.name }))}
-            />
           </div>
 
           {blocking.length > 0 && (

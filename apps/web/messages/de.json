@@ -615,28 +615,18 @@
       "searchOpen": "Suche öffnen",
       "searchEmpty": "Nichts gefunden",
       "searchScreens": "Bildschirme",
-      "searchRuns": "Letzte Läufe",
       "searchClose": "Schliessen",
       "notifications": "Benachrichtigungen",
       "notificationsEmpty": "Nichts Neues",
-      "markAllRead": "Alle als gelesen markieren",
       "archiveLabel": "Archiv",
-      "archiveSwitch": "Archiv wechseln",
-      "archiveRecords": "Einträge",
       "userMenu": "Benutzermenü",
       "profile": "Profil",
       "settings": "Einstellungen",
       "signOut": "Abmelden",
-      "guestBadge": "Gastsitzung"
+      "guestBadge": "Gastsitzung",
+      "notificationsEmptyHint": "Benachrichtigungen folgen; den Fortschritt Ihrer Fotos sehen Sie unter «Stapel»."
     },
-    "notifications": {
-      "n1": "3 Läufe warten auf Ihre Prüfung",
-      "n1meta": "Prüfliste · vor 4 Minuten",
-      "n2": "Red-Team hat eine Hypothese widerlegt",
-      "n2meta": "StASZ Ansichtskarten/0042 · vor 12 Minuten",
-      "n3": "Stapellauf «Bettschart» abgeschlossen",
-      "n3meta": "128 Bilder · vor 2 Stunden"
-    }
+    "unavailable": "Noch nicht verfügbar"
   },
   "dashboard": {
     "metaTitle": "Übersicht — ZEITZEUGE",
@@ -644,67 +634,26 @@
     "greetingMorning": "Guten Morgen",
     "greetingDay": "Guten Tag",
     "greetingEvening": "Guten Abend",
-    "subtitle": "Hier steht, was heute Ihre Aufmerksamkeit braucht.",
-    "queueTitle": "{count, plural, =0 {Nichts wartet auf Sie} one {# Eintrag wartet auf Ihre Prüfung} other {# Einträge warten auf Ihre Prüfung}}",
-    "queueMetaAvg": "Ø {seconds} Sek. pro Eintrag",
-    "queueMetaOldest": "ältester seit {days, plural, one {# Tag} other {# Tagen}}",
-    "queueCta": "Prüfung beginnen",
-    "queueEmpty": "Die Prüfliste ist leer. Der Rückstand wartet im Bestand.",
-    "queueThreshold": "Automatisch übernommen ab Konfidenz {value}",
-    "stats": {
-      "catalogued": "Bilder erschlossen",
-      "cataloguedHint": "in diesem Bestand",
-      "precision": "Präzision",
-      "precisionHint": "auf ausgegebenen Feldern",
-      "override": "Korrekturquote",
-      "overrideHint": "wie oft ein Mensch korrigieren musste",
-      "cost": "Kosten bisher",
-      "costHint": "von USD {budget} Guthaben"
-    },
-    "deltaUp": "gegenüber der Vorwoche",
-    "deltaDown": "gegenüber der Vorwoche",
-    "trendTitle": "Genauigkeit über 14 Tage",
-    "trendSubtitle": "Die Korrekturquote ist die Kennzahl, an der sich das System messen lässt — sie soll fallen.",
-    "trendPrecision": "Präzision",
-    "trendOverride": "Korrekturquote",
-    "trendTable": "Werte als Tabelle",
-    "trendDay": "Tag",
-    "costTitle": "Guthaben",
-    "costSpent": "verbraucht",
-    "costRemaining": "verbleibend",
-    "costPerImage": "pro Bild",
-    "costCascadeTitle": "Modellkaskade",
-    "costFast": "Schnelldurchlauf",
-    "costStandard": "Standard",
-    "costDeep": "Vertiefte Prüfung",
-    "costCascadeHint": "Nicht jedes Bild braucht das teuerste Modell. Der Router eskaliert nur bei Unklarheit.",
-    "runsTitle": "Letzte Läufe",
-    "runsAll": "Alle ansehen",
-    "runsSignature": "Signatur",
-    "runsCollection": "Bestand",
-    "runsStatus": "Status",
-    "runsConfidence": "Konfidenz",
-    "runsDuration": "Dauer",
-    "runsCost": "Kosten",
-    "runsWhen": "Zeitpunkt",
-    "status": {
-      "running": "läuft",
-      "review": "Prüfung nötig",
-      "accepted": "übernommen",
-      "abstained": "Enthaltung",
+    "subtitle": "Der Stand Ihres Archivs, direkt aus der Untersuchung.",
+    "tiles": {
+      "batches": "Stapel",
+      "photos": "Fotos",
+      "inProgress": "in Arbeit",
+      "processed": "verarbeitet",
+      "accepted": "übernahmefähig",
+      "review": "Prüfbedarf",
+      "undetermined": "unbestimmt",
       "failed": "fehlgeschlagen"
     },
-    "justNow": "gerade eben",
-    "minutesAgo": "vor {count} Min.",
-    "hoursAgo": "vor {count} Std.",
-    "seconds": "{count} s",
-    "replayRun": "Diesen Lauf abspielen"
-  },
-  "section": {
-    "soonTitle": "{screen} entsteht als Nächstes.",
-    "soonBody": "Dieser Bereich ist noch nicht gebaut. Die Navigation und die Übersicht funktionieren bereits.",
-    "soonBack": "Zur Übersicht",
-    "soonNote": "Platzhalter · keine Produktoberfläche"
+    "reviewTitle": "{count, plural, =0 {Nichts wartet auf Ihre Prüfung.} one {# Foto wartet auf Ihre Prüfung.} other {# Fotos warten auf Ihre Prüfung.}}",
+    "reviewCta": "Zur Prüfliste",
+    "recentTitle": "Letzte Stapel",
+    "recentAll": "Alle Stapel",
+    "empty": {
+      "title": "Noch keine Fotos hochgeladen",
+      "body": "Sobald Sie Scans hochladen, stehen hier Stapel, Fortschritt und QC-Zahlen Ihres Archivs.",
+      "cta": "Fotos hochladen"
+    }
   },
   "settings": {
     "metaTitle": "Einstellungen — ZEITZEUGE",
@@ -728,11 +677,9 @@
     "demoNote": "Demo-Oberfläche · Änderungen werden noch nicht gespeichert",
     "account": {
       "title": "Konto",
-      "desc": "Wie Sie im Archiv erscheinen und wie wir Sie erreichen.",
+      "desc": "So kennt das Archiv Ihr Konto. Name und E-Mail ändert in dieser Version die Archivverwaltung.",
       "nameLabel": "Anzeigename",
-      "nameHint": "So erscheinen Sie neben Ihren Korrekturen im Katalog.",
       "emailLabel": "E-Mail",
-      "emailHint": "Änderungen werden an die neue Adresse bestätigt.",
       "roleLabel": "Rolle",
       "roleHint": "Rollen vergibt die Archivleitung.",
       "profileTitle": "Ihr Beitrag",
@@ -792,9 +739,7 @@
       "perImage": "pro Bild",
       "abstentionLabel": "Enthaltung zulassen",
       "abstentionHint": "Felder ohne ausreichende Belege bleiben leer statt geraten zu werden. Das Abschalten widerspricht dem Grundsatz, auf dem dieses System beruht.",
-      "abstentionWarning": "Ohne Enthaltung gibt das System auch dann einen Wert aus, wenn die Belege nicht reichen.",
-      "collectionLabel": "Standard-Bestand",
-      "collectionHint": "Neue Uploads landen hier, solange nichts anderes gewählt ist."
+      "abstentionWarning": "Ohne Enthaltung gibt das System auch dann einen Wert aus, wenn die Belege nicht reichen."
     },
     "export": {
       "title": "Export & Standards",
@@ -802,47 +747,31 @@
       "formatLabel": "Standardformat",
       "formatHint": "Gilt für den Export-Knopf im Katalogeintrag.",
       "provenanceLabel": "Provenienzblock mitliefern",
-      "provenanceHint": "Je Feld: Belege, Modell und Zeitpunkt. Ohne ihn ist eine Maschinenaussage später nicht mehr von einer menschlichen zu unterscheiden.",
-      "oaiLabel": "OAI-PMH-Schnittstelle",
-      "oaiHint": "Für die Ernte durch übergeordnete Portale.",
-      "copy": "Kopieren",
-      "copied": "Kopiert"
+      "provenanceHint": "Je Feld: Belege, Modell und Zeitpunkt. Ohne ihn ist eine Maschinenaussage später nicht mehr von einer menschlichen zu unterscheiden."
     },
     "security": {
       "title": "Sicherheit",
       "desc": "Zugang zu Ihrem Konto.",
       "passwordLabel": "Passwort",
-      "passwordHint": "Zuletzt vor 3 Monaten geändert.",
+      "passwordHint": "Sie erhalten einen Link per E-Mail, mit dem Sie ein neues Passwort setzen.",
       "passwordCta": "Passwort ändern",
       "twoFactorLabel": "Zwei-Faktor-Authentifizierung",
       "twoFactorHint": "Wird mit der kantonalen Informatik eingerichtet und ist im Pilot noch nicht aktiv.",
       "twoFactorPending": "Im Pilot noch nicht aktiv",
       "sessionsLabel": "Angemeldete Geräte",
       "sessionsHint": "Melden Sie ab, was Sie nicht erkennen.",
-      "sessionCurrent": "Dieses Gerät",
-      "revoke": "Abmelden",
-      "revokeAll": "Alle anderen abmelden",
-      "lastActive": "zuletzt aktiv"
+      "sessionsEmpty": {
+        "title": "Geräteliste folgt",
+        "body": "Hier erscheinen die Geräte, auf denen Sie angemeldet sind, mit der Möglichkeit, sie abzumelden."
+      }
     },
     "api": {
       "title": "API-Zugang",
-      "desc": "Token für die OAI-PMH- und REST-Schnittstellen.",
-      "notice": "Diese Oberfläche ist entworfen, aber noch nicht angeschlossen: der Dienst stellt noch keine echten Token aus. Erzeugte Token sind Platzhalter.",
-      "createLabel": "Neues Token",
-      "createHint": "Der Schlüssel wird genau einmal angezeigt.",
-      "nameLabel": "Bezeichnung",
-      "namePlaceholder": "z. B. Import-Skript",
-      "scopeLabel": "Berechtigung",
-      "scopeRead": "Nur lesen",
-      "scopeWrite": "Lesen und schreiben",
-      "createCta": "Token erzeugen",
-      "listLabel": "Bestehende Token",
-      "created": "erstellt vor {days} Tagen",
-      "lastUsed": "zuletzt vor {days} Tagen",
-      "never": "nie verwendet",
-      "today": "heute",
-      "revoke": "Widerrufen",
-      "empty": "Noch keine Token."
+      "desc": "Schlüssel für den Zugriff von Skripten und Schnittstellen.",
+      "empty": {
+        "title": "API-Schlüssel folgen",
+        "body": "In dieser Version lassen sich noch keine API-Schlüssel anlegen; hier stehen sie, sobald es geht."
+      }
     },
     "archive": {
       "title": "Archiv",
@@ -859,52 +788,40 @@
       "membersLabel": "Mitglieder",
       "membersHint": "Rollen bestimmen, wer übernehmen und wer nur lesen darf.",
       "roles": {
-        "archivist": "Archivarin",
+        "archivist": "Archivarin / Archivar",
+        "reviewer": "Prüfend",
         "operator": "Digitalisierung",
-        "admin": "Kantonale Informatik",
-        "reader": "Lesend"
+        "admin": "Administration",
+        "reader": "Lesend",
+        "guest": "Gast"
       },
-      "invite": "Mitglied einladen",
       "leaveTitle": "Archiv verlassen",
       "leaveDesc": "Sie verlieren den Zugang zu diesem Bestand. Ihre Korrekturen und die daraus entstandenen Aliase bleiben dem Archiv erhalten.",
-      "leaveCta": "Archiv verlassen"
+      "leaveCta": "Archiv verlassen",
+      "membersEmpty": {
+        "title": "Mitgliederliste folgt",
+        "body": "Hier erscheinen die Personen mit Zugang zu diesem Archiv und ihre Rollen."
+      }
     }
   },
   "profile": {
     "metaTitle": "Profil — ZEITZEUGE",
     "metaDescription": "Ihr Beitrag zur Erschliessung.",
-    "since": "Mitglied seit {date}",
-    "editCta": "Konto bearbeiten",
-    "taughtTitle": "Was Sie dem System beigebracht haben",
-    "taughtSubtitle": "Jede Korrektur wird zu einem Gazetteer-Alias, einem Beispiel im Gedächtnis oder einem Testfall. Lernen ohne Fine-Tuning — und jede Verbesserung trägt einen Namen.",
-    "stats": {
-      "reviewed": "Einträge geprüft",
-      "reviewedHint": "in den letzten 90 Tagen",
-      "aliases": "Gazetteer-Aliase",
-      "aliasesHint": "Namensvarianten, die das System jetzt kennt",
-      "evalCases": "Testfälle",
-      "evalCasesHint": "in der Regressionssuite verankert",
-      "confirmed": "Ihrer Korrekturen bestätigt",
-      "confirmedHint": "später unabhängig belegt"
-    },
-    "correctionsTitle": "Letzte Korrekturen",
-    "correctionsHint": "Was aus jeder Korrektur geworden ist.",
-    "effects": {
-      "alias": "Alias angelegt",
-      "evalCase": "Testfall erzeugt",
-      "exemplar": "Beispiel gespeichert"
-    },
-    "changed": "wurde zu",
-    "today": "heute",
-    "daysAgo": "vor {days} Tagen"
+    "editCta": "Konto ansehen",
+    "contributionsTitle": "Ihre Prüfungen",
+    "empty": {
+      "title": "Noch keine Beiträge",
+      "body": "Hier erscheinen die Felder, die Sie übernommen oder korrigiert haben.",
+      "cta": "Zur Prüfliste"
+    }
   },
   "upload": {
     "metaTitle": "Hochladen — ZEITZEUGE",
     "metaDescription": "Scans in den Bestand geben.",
     "title": "Hochladen",
-    "subtitle": "Vorder- und Rückseite gehören zusammen — das System behandelt sie als ein Stück.",
+    "subtitle": "Ziehen Sie Ihre Scans hierher. Jedes Foto geht direkt in den Speicher des Archivs und wird danach untersucht.",
     "dropTitle": "Scans hierher ziehen",
-    "dropHint": "JPEG, PNG, TIFF, WebP oder ein ZIP-Archiv. Auch einfügen mit {shortcut} möglich.",
+    "dropHint": "JPEG, PNG, TIFF oder WebP bis 200 MB pro Datei, oder ein ZIP-Archiv. Einfügen mit {shortcut} geht auch.",
     "dropBrowse": "Dateien wählen",
     "dropActive": "Loslassen",
     "reading": "Archiv wird gelesen …",
@@ -914,7 +831,6 @@
     "summaryPaired": "{count, plural, =0 {kein Paar} one {# Paar erkannt} other {# Paare erkannt}}",
     "summaryUnpaired": "{count, plural, =0 {} one {# ohne Rückseite} other {# ohne Rückseite}}",
     "clearAll": "Alle entfernen",
-    "collectionAll": "Bestand für alle übernehmen",
     "rules": {
       "recto_verso": "_r / _v",
       "front_back": "vorne / hinten",
@@ -922,7 +838,6 @@
       "numeric": "_1 / _2",
       "manual": "von Hand"
     },
-    "paired": "gepaart",
     "pairedBy": "gepaart über {rule}",
     "noVerso": "ohne Rückseite",
     "noRecto": "Vorderseite fehlt",
@@ -931,26 +846,19 @@
     "dropVersoHere": "Rückseite hierher ziehen",
     "unpair": "Paarung lösen",
     "removeAsset": "Entfernen",
-    "signatureLabel": "Signatur",
-    "signaturePlaceholder": "z. B. StASZ Ansichtskarten/0042",
-    "collectionLabel": "Bestand",
-    "modeLabel": "Modus",
     "statusQueued": "wartet",
     "statusUploading": "lädt hoch",
     "statusUploaded": "hochgeladen",
     "statusAnalysing": "in Untersuchung",
     "statusDone": "fertig",
     "statusError": "Fehler",
-    "startCta": "{count, plural, one {# Stück untersuchen} other {# Stück untersuchen}}",
     "startBlocked": "Erst die Hinweise beheben",
     "runningCta": "Läuft …",
-    "doneTitle": "Alles übergeben.",
-    "doneCta": "Zur Prüfliste",
     "totalSize": "{size} gesamt",
     "issuesTitle": "{count, plural, one {# Hinweis} other {# Hinweise}}",
     "issues": {
-      "missing-signature": "Ohne Signatur kann das Stück nicht in den Katalog.",
-      "duplicate-signature": "Signatur {detail} ist doppelt vergeben.",
+      "missing-signature": "Ohne Dateinamen kann das Foto nicht übergeben werden.",
+      "duplicate-signature": "Der Dateiname {detail} kommt doppelt vor.",
       "missing-recto": "Es liegt nur eine Rückseite vor.",
       "too-large": "{detail} überschreitet 200 MB.",
       "wrong-type": "{detail} ist kein unterstütztes Bildformat."
@@ -965,16 +873,10 @@
       "unsupported-compression": "Kompressionsverfahren nicht unterstützt.",
       "empty": "Keine Bilder im Archiv."
     },
-    "emptyTitle": "Noch nichts in der Warteschlange.",
-    "emptyHint": "Ziehen Sie Scans hierher oder wählen Sie Dateien.",
     "pairedManually": "von Hand gepaart",
-    "demoTitle": "Beispieldaten",
-    "demoHint": "Diese Scans sind zum Ausprobieren da. Entfernen Sie sie, um eigene hochzuladen.",
-    "demoLoad": "Beispieldaten laden",
     "real": {
-      "guest": "Gastzugang: Hochladen ist schreibgeschützt. Sie können den Ablauf mit Beispieldaten durchspielen (simuliert, nichts wird gesendet).",
-      "title": "Echter Upload in die Untersuchung",
-      "hint": "Jede Datei geht direkt in den Speicher des Archivs und wird danach untersucht. Der Dateiname wird zum Dateinamen im Excel. Erneutes Hochladen derselben Datei in denselben Stapel legt nichts doppelt an. Signatur und Bestand dieser Liste werden in dieser Version noch nicht übertragen.",
+      "title": "Stapel und Priorität",
+      "hint": "Erneutes Hochladen derselben Datei in denselben Stapel legt nichts doppelt an. Fehlgeschlagene Dateien lassen sich einzeln erneut senden.",
       "labelField": "Stapel-Bezeichnung",
       "labelInvalid": "Nur Kleinbuchstaben, Ziffern, - und _ (max. 64 Zeichen).",
       "labelHint": "Ein bestehender Stapel mit dieser Bezeichnung wird ergänzt.",
@@ -990,688 +892,117 @@
         "off": "noch nicht verbunden"
       },
       "toBatch": "Zum Stapel",
-      "simulated": "Simulation",
       "retryCta": "{count, plural, one {# Fehler erneut versuchen} other {# Fehler erneut versuchen}}",
       "startCta": "{count, plural, one {# Foto hochladen und untersuchen} other {# Fotos hochladen und untersuchen}}",
       "errorLine": "Nicht übertragen (Code: {code}). «Erneut versuchen» schickt nur die fehlgeschlagenen."
+    },
+    "guide": {
+      "title": "So funktioniert das Hochladen",
+      "what": "Ziehen Sie Scans oder ein ZIP-Archiv in das Feld oben. Vorder- und Rückseite erkennt das System am Dateinamen (z. B. _r / _v) und legt sie als ein Foto zusammen; jede Zuordnung lässt sich korrigieren.",
+      "storage": "Jede Datei geht direkt in den Speicher des Archivs, danach beginnt ihre Untersuchung. Der Dateiname erscheint unverändert in der Excel-Tabelle.",
+      "label": "Die Stapel-Bezeichnung (vorgegeben: prio1) fasst die Fotos zusammen. Gibt es den Stapel schon, wird er ergänzt; dieselbe Datei wird nicht doppelt angelegt.",
+      "prio1": "Der Schalter «Priorität 1» markiert die Fotos als Teil des Prio-1-Sets für die Qualitätskontrolle."
+    },
+    "guest": {
+      "title": "Hochladen ist im Gastzugang nicht möglich",
+      "body": "Melden Sie sich mit einem Archivkonto an, um Fotos zu übergeben. Vorhandene Stapel können Sie ansehen.",
+      "cta": "Zu den Stapeln"
     }
   },
   "queue": {
     "metaTitle": "Prüfliste — ZEITZEUGE",
-    "metaDescription": "Was Ihre Aufmerksamkeit braucht, in der Reihenfolge des Nutzens.",
+    "metaDescription": "Fotos, deren Ergebnis eine Prüfung braucht.",
     "title": "Prüfliste",
-    "subtitle": "Sortiert nach erwartetem Erkenntnisgewinn, nicht nach Datum. Oben steht, wo Ihre Minute am meisten bewirkt.",
-    "waiting": "{count, plural, =0 {Nichts wartet} one {# Eintrag wartet} other {# Einträge warten}}",
-    "estimate": "noch etwa {minutes} Min.",
-    "sortLabel": "Sortierung",
-    "sort": {
-      "gain": "Erkenntnisgewinn",
-      "waiting": "Wartezeit",
-      "confidence": "Konfidenz",
-      "signature": "Signatur"
+    "subtitle": "Fotos aus allen Stapeln, deren Ergebnis eine Prüfung braucht (Prüfbedarf oder QC offen). Die unsichersten stehen oben.",
+    "count": "{count, plural, one {# Foto} other {# Fotos}} aus {batches, plural, one {# Stapel} other {# Stapeln}}",
+    "empty": {
+      "title": "Nichts zu prüfen",
+      "body": "Meldet eine Untersuchung Prüfbedarf, erscheint das Foto hier.",
+      "cta": "Zu den Stapeln"
     },
-    "gainHigh": "hoher Gewinn",
-    "gainMedium": "mittlerer Gewinn",
-    "gainLow": "geringer Gewinn",
-    "reasons": {
-      "series": "{count} ähnliche Aufnahmen hängen an dieser Entscheidung",
-      "boundary": "Konfidenz liegt auf der Entscheidungsgrenze",
-      "refuted": "Red-Team hat eine Hypothese widerlegt",
-      "verso": "Rückseite konnte nicht sicher gelesen werden",
-      "waiting": "wartet seit {days, plural, one {# Tag} other {# Tagen}}"
-    },
-    "waitingDays": "{days, plural, =0 {heute} one {# Tag} other {# Tage}}",
-    "estimatedItem": "~{seconds} Sek.",
-    "acceptField": "Feld übernehmen",
-    "rejectField": "Feld verwerfen",
-    "fieldAccepted": "übernommen",
-    "fieldRejected": "verworfen",
-    "acceptItem": "Übernehmen",
-    "openItem": "Im Editor öffnen",
-    "evidenceLabel": "Belege",
-    "bulkTitle": "Mehrere übernehmen",
-    "bulkHint": "Einträge, deren schwächstes Feld über dieser Konfidenz liegt, gehen ohne Einzelprüfung in den Katalog.",
-    "bulkThreshold": "Schwelle",
-    "bulkPreview": "{count, plural, =0 {Kein Eintrag erreicht diese Schwelle} one {# Eintrag erreicht die Schwelle} other {# Einträge erreichen die Schwelle}}",
-    "bulkRemaining": "{count, plural, =0 {nichts bleibt zur Prüfung} one {# bleibt zur Prüfung} other {# bleiben zur Prüfung}}",
-    "bulkCta": "{count, plural, one {# Eintrag übernehmen} other {# Einträge übernehmen}}",
-    "bulkConfirmTitle": "{count, plural, one {# Eintrag übernehmen?} other {# Einträge übernehmen?}}",
-    "bulkConfirmBody": "Diese Einträge gehen ohne weitere Prüfung in den Katalog. Der Katalog ist versioniert — rückgängig machen bleibt möglich.",
-    "bulkConfirmCta": "Ja, übernehmen",
-    "cancel": "Abbrechen",
-    "sweptHighlight": "wird übernommen",
-    "acceptedToast": "{count, plural, one {# Eintrag übernommen} other {# Einträge übernommen}}",
-    "undo": "Rückgängig",
-    "emptyTitle": "Die Prüfliste ist leer.",
-    "emptyBody": "Alles Wartende ist entschieden. Neue Läufe landen hier, sobald sie eine Prüfung brauchen.",
-    "emptyCta": "Zur Übersicht",
-    "demoReset": "Beispieldaten zurücksetzen"
+    "noBatches": {
+      "title": "Noch keine Fotos hochgeladen",
+      "body": "Laden Sie Scans hoch; Fotos mit Prüfbedarf erscheinen danach hier.",
+      "cta": "Fotos hochladen"
+    }
   },
   "editor": {
     "metaTitle": "{signature} — ZEITZEUGE",
-    "back": "Zur Prüfliste",
-    "version": "Fassung {n}",
-    "runMeta": "{seconds} s · {cost} · Lauf {run}",
-    "viewerTitle": "Aufnahme",
-    "recto": "Vorderseite",
-    "verso": "Rückseite",
-    "versoNote": "Stellvertretender Scan — die echte Rückseite liegt noch nicht digitalisiert vor.",
-    "zoomIn": "Vergrössern",
-    "zoomOut": "Verkleinern",
-    "zoomReset": "Ansicht zurücksetzen",
-    "showRegions": "Belegstellen zeigen",
-    "showHorizon": "Horizont einblenden",
-    "regionHint": "Auf ein Feld zeigen, um seine Pixel zu sehen.",
-    "recordTitle": "Katalogeintrag",
-    "recordHint": "Jedes Feld nennt seine Belege. Was Sie ändern, wird als menschliche Aussage vermerkt.",
-    "accept": "Übernehmen",
-    "reject": "Verwerfen",
-    "edit": "Bearbeiten",
-    "cancel": "Abbrechen",
-    "apply": "Übernehmen",
-    "accepted": "übernommen",
-    "rejected": "verworfen",
-    "editedBy": "von Ihnen geändert",
-    "provenanceTitle": "Herkunft",
-    "provenanceAgent": "Agent",
-    "provenanceModel": "Modell",
-    "provenanceEvidence": "Belege",
-    "provenanceWhen": "vor {minutes} Min.",
-    "provenanceHuman": "geprüft von {name}",
-    "abstainTitle": "Enthaltung",
-    "abstainReasons": {
-      "photographer": "Kein Signaturstempel, kein beschriftetes Verso, kein Treffer im Bestandsgedächtnis. Das System enthält sich — und das ist ein richtiges Ergebnis.",
-      "generic": "Die Belege tragen dieses Feld nicht. Das System enthält sich, statt zu raten — und das ist ein richtiges Ergebnis."
-    },
-    "abstainFill": "Selbst eintragen",
-    "evidence": {
-      "twinPeak": "Zweigipfliges Felsmassiv am Horizont, rechter Gipfel höher, ausgeprägter Sattel dazwischen.",
-      "horizonMatch": "Horizont aus 2687540 / 1206310 LV95 neu gerendert — normierte Korrelation 0.941 über 1280 Spalten.",
-      "quaiMap": "Uferbebauung entspricht dem Zustand nach dem Quai-Ausbau; auf der Siegfriedkarte ab Revision 1893.",
-      "printCaption": "Im Druck stehende Bildlegende «6319 P.Z. — BRUNNEN MIT MYTHEN».",
-      "photochrom": "Farbschichtung und Rasterstruktur entsprechen dem Photochromverfahren.",
-      "quaiObjection": "Einwand: Die Uferpromenade zeigt noch nicht den Ausbau von 1900."
-    },
-    "tabs": {
-      "map": "Karte",
-      "time": "Zeit",
-      "verso": "Verso",
-      "similar": "Ähnliche"
-    },
-    "map": {
-      "title": "Kameraposition",
-      "hint": "Geometrisch bestimmt, nicht geraten: der Horizont aus dieser Position deckt sich mit dem Bild.",
-      "coords": "Koordinaten",
-      "bearing": "Blickrichtung",
-      "fov": "Bildwinkel",
-      "accuracy": "Genauigkeit",
-      "correlation": "Horizont-Korrelation",
-      "overlayToggle": "Horizont im Bild einblenden",
-      "viewCone": "Sichtfeld",
-      "summit": "Gipfel",
-      "unresolvedTitle": "Standort nicht bestimmt",
-      "unresolvedBody": "Auf diesem Scan hat keine Horizontlinie die Korrelationsschwelle überstanden, darum wird keine Kameraposition behauptet. Der Ort stammt aus Text und Bestand, nicht aus der Geometrie."
-    },
-    "time": {
-      "title": "Datierung",
-      "hint": "Keine Jahreszahl, sondern eine Verteilung — jede Schranke ist ein Beleg.",
-      "result": "Ergebnisbereich",
-      "drop": "Schranke entfernen",
-      "restore": "Wiederherstellen",
-      "removed": "entfernt",
-      "noConstraints": "Für diesen Scan sind keine Datierungsschranken erfasst — die Spanne stützt sich allein auf Verfahren und Bildinhalt.",
-      "noBracket": "Keine Datierung vorgeschlagen."
-    },
-    "versoTab": {
-      "title": "Rückseite",
-      "original": "Original",
-      "reading": "Lesung",
-      "readerA": "Sonnet 5 · Paläografie",
-      "readerB": "Amazon Textract",
-      "agree": "Übereinstimmung",
-      "conflict": "Abweichung — zur Prüfung markiert",
-      "normalised": "normalisiert",
-      "missingTitle": "Rückseite nicht digitalisiert",
-      "missingBody": "Von diesem Abzug ist nur die Vorderseite gescannt. Sobald das Verso vorliegt, laufen die beiden Lese-Agenten darauf."
-    },
-    "similar": {
-      "title": "Aus dem Bestandsgedächtnis",
-      "hint": "Nächste Nachbarn über den ganzen Bestand — Serien, Dubletten, Aufnahmen desselben Tages.",
-      "match": "Ähnlichkeit",
-      "notes": {
-        "sameShoot": "vermutlich gleiche Aufnahmesitzung",
-        "samePlace": "gleicher Ort, anderer Blickwinkel",
-        "sameSeries": "gleiche Serie",
-        "sameMassif": "gleiches Bergmassiv"
-      },
-      "empty": "Noch keine Nachbarn im Bestandsgedächtnis."
-    },
-    "steer": {
-      "title": "Steuern & neu rechnen",
-      "hint": "Sagen Sie dem System, was Sie wissen. Nur die Schritte, die davon abhängen, werden neu gerechnet — alles andere behält seine Belege.",
-      "placeholder": "z. B. Dies ist aus dem Bestand Goetz, vermutlich Stoos",
-      "affected": "Wird neu gerechnet",
-      "kept": "Bleibt erhalten",
-      "chains": {
-        "place": "Ortsannahme geändert",
-        "date": "Datierungsannahme geändert",
-        "collection": "Bestandszuordnung geändert"
-      },
-      "estimate": "~{seconds} Sek. statt {full} Sek.",
-      "start": "Neu rechnen",
-      "running": "Wird gerechnet …",
-      "done": "Neu gerechnet",
-      "empty": "Schreiben Sie einen Hinweis, um zu sehen, was davon abhängt."
-    },
-    "footer": {
-      "save": "Speichern",
-      "saved": "Gespeichert",
-      "export": "Exportieren",
-      "exported": "Als {format} exportiert",
-      "approve": "Freigeben",
-      "approved": "Freigegeben — an das Archiv übergeben",
-      "approveHint": "Nur freigegebene Einträge verlassen das System.",
-      "exporting": "Wird vorbereitet …"
-    },
-    "unsaved": "Nicht gespeicherte Änderungen",
-    "progress": "{done} von {total} Feldern entschieden",
-    "contextTitle": "Kontext",
-    "exportLabel": "Exportformat",
-    "exportFormats": {
-      "isadCsv": "ISAD(G) CSV",
-      "ead": "EAD XML",
-      "dc": "Dublin Core XML",
-      "iiif": "IIIF-Manifest",
-      "ricoXml": "RiC-O / JSON-LD",
-      "xmpJpeg": "JPEG mit XMP"
-    },
-    "noRegionsHint": "Auf diesem Scan wurden keine Belegstellen lokalisiert — es gibt hier nichts, worauf gezeigt werden könnte."
+    "notFound": {
+      "metaTitle": "Datensatz nicht gefunden — ZEITZEUGE",
+      "title": "Datensatz nicht gefunden",
+      "body": "Zu dieser Adresse gibt es in Ihrem Archiv keinen Katalogeintrag.",
+      "cta": "Zu den Stapeln",
+      "toQueue": "Zur Prüfliste"
+    }
   },
   "history": {
     "metaTitle": "Verlauf — ZEITZEUGE",
     "metaDescription": "Der Prüfpfad des Archivs: jeder Lauf, jede Korrektur, jede Freigabe und jeder Export, fortlaufend.",
     "title": "Verlauf",
-    "subtitle": "Jeder Lauf, jede Korrektur, jede Freigabe — fortlaufend, und nie geht verloren, was das System einmal gesagt hat. Maschine und Mensch sind nie zu verwechseln.",
-    "stats": {
-      "events": "Ereignisse",
-      "eventsHint": "in den letzten 14 Tagen",
-      "approved": "Freigaben",
-      "approvedHint": "Einträge unterzeichnet",
-      "overrides": "Korrekturen",
-      "overridesHint": "Maschinenaussagen von Hand geändert",
-      "held": "Sperren",
-      "heldHint": "von der Schutzprüfung gestoppt"
-    },
-    "band": {
-      "title": "Aktivität",
-      "hint": "Vierzehn Tage, aufgeteilt nach Urheberschaft. Einen Tag wählen, um nur diesen zu lesen.",
-      "machine": "Maschine",
-      "human": "Mensch",
-      "events": "{count, plural, =0 {keine Ereignisse} =1 {1 Ereignis} other {# Ereignisse}}",
-      "clearDay": "Alle Tage",
-      "tableToggle": "Als Tabelle zeigen",
-      "tableDay": "Tag",
-      "tableTotal": "Total"
-    },
-    "filter": {
-      "searchLabel": "Prüfpfad durchsuchen",
-      "searchPlaceholder": "Signatur, Person, Bestand …",
-      "actorLabel": "Urheberschaft",
-      "actorAll": "Alle",
-      "actorMachine": "Maschine",
-      "actorHuman": "Mensch",
-      "collectionLabel": "Bestand",
-      "collectionAll": "Alle Bestände",
-      "clear": "Filter zurücksetzen",
-      "showing": "{shown} von {total} Ereignissen"
-    },
-    "presets": {
-      "all": "Alle",
-      "runs": "Läufe",
-      "edits": "Korrekturen",
-      "approvals": "Freigaben",
-      "exports": "Exporte"
-    },
-    "kinds": {
-      "run": "Lauf",
-      "steered": "Gesteuert",
-      "edited": "Geändert",
-      "rejected": "Verworfen",
-      "approved": "Freigegeben",
-      "exported": "Exportiert",
-      "held": "Gesperrt",
-      "uploaded": "Hochgeladen",
-      "reopened": "Wiedereröffnet"
-    },
-    "actors": {
-      "pipeline": "ZEITZEUGE-Pipeline"
-    },
-    "today": "Heute",
-    "detail": {
-      "run": "{seconds} s · {cost} · {agents} Agenten",
-      "abstentions": "{count, plural, =1 {1 Enthaltung} other {# Enthaltungen}}",
-      "steered": "{affected} Agenten neu gerechnet, {kept} behalten · {seconds} s",
-      "approved": "Fassung {version} freigegeben · {fields} Felder",
-      "exported": "{records, plural, =1 {1 Eintrag} other {# Einträge}} als {format}",
-      "uploaded": "{count} Scans übernommen",
-      "held": "Publikationssperre",
-      "reopened": "Fassung {version} wiedereröffnet"
-    },
-    "diff": {
-      "overrode": "überstimmt {value}",
-      "abstained": "hatte sich enthalten",
-      "filled": "von Hand eingetragen"
-    },
-    "holds": {
-      "minor": "Erkennbare minderjährige Person im Bild",
-      "person": "Möglicherweise lebende Person",
-      "pii": "Personendaten in der Verso-Transkription"
-    },
-    "openRecord": "Eintrag öffnen",
-    "exportTrail": {
-      "label": "Prüfpfad exportieren",
-      "csv": "CSV",
-      "json": "JSON",
-      "done": "Als {format} heruntergeladen"
-    },
+    "subtitle": "Der Prüfpfad des Archivs.",
     "empty": {
-      "title": "Nichts entspricht diesen Filtern.",
-      "body": "Der Prüfpfad enthält {total} Ereignisse über vierzehn Tage. Filter erweitern, um sie zu sehen.",
-      "action": "Filter zurücksetzen"
+      "title": "Noch kein Verlauf",
+      "body": "Hier erscheint, wer wann welches Foto untersucht, geprüft oder korrigiert hat.",
+      "cta": "Zu den Stapeln"
     }
   },
   "collections": {
     "metaTitle": "Bestände — ZEITZEUGE",
     "metaDescription": "Die Fotobestände des Staatsarchivs Schwyz und wie weit jeder davon beschrieben ist.",
     "title": "Bestände",
-    "subtitle": "Die fotografischen Bestände im {archive}, Bestand für Bestand — was er enthält und wie viel davon beschrieben ist.",
-    "catalogue": "Findmittel",
-    "stats": {
-      "holdings": "Bestand",
-      "holdingsHint": "digitalisierte Einheiten in vier Beständen",
-      "described": "Beschrieben",
-      "describedHint": "von der Pipeline erzeugte Einträge",
-      "approved": "Freigegeben",
-      "approvedHint": "von einer Archivarin unterzeichnet",
-      "unknown": "Ort unbekannt",
-      "unknownHint": "Einträge, bei denen sich der Ortsagent enthalten hat"
-    },
-    "extent": {
-      "plates": "{count, plural, =1 {1 Glasplattennegativ} other {{formatted} Glasplattennegative}}",
-      "photographs": "{count, plural, =1 {1 Fotografie} other {{formatted} Fotografien}}",
-      "prints": "{count, plural, =1 {1 Albuminabzug} other {{formatted} Albuminabzüge}}",
-      "cards": "{count, plural, =1 {1 Ansichtskarte} other {{formatted} Ansichtskarten}}",
-      "mixed": "Umfang noch nicht erfasst"
-    },
-    "circa": "ca.",
-    "coverage": "{percent} % beschrieben",
-    "card": {
-      "open": "Bestand öffnen",
-      "notDigitised": "Nicht digitalisiert",
-      "notDigitisedHint": "Es sind noch keine Scans im System, also gibt es nichts zu beschreiben."
-    },
-    "fonds": {
-      "bettschart": "Fotografischer Nachlass von Josef Alois Bettschart aus Schwyz — Glasplattennegative des Fleckens, des Klosters Einsiedeln und des Muotatals.",
-      "goetz": "Landschaften, Panoramen, Bergkurorte, Wintersport, Dörfer und Bauten im ganzen Kanton Schwyz.",
-      "braun": "Albuminabzüge von Adolphe Braun und der Nachfolgefirma Ad. Braun & Cie — hochalpine Panoramen und später die Gotthardlinie durch den Kanton.",
-      "ansichtskarten": "Ansichtskarten mit bedruckten Rückseiten, Verlagsimpressen und Poststempeln — die reichhaltigste Verso-Evidenz im Archiv.",
-      "leidbilder": "Leidbilder.",
-      "graphische": "Druckgrafik, Aquarelle und Zeichnungen."
-    },
-    "series": {
-      "klosterFacade": "Klosterwestfassade, eine Aufnahmekampagne",
-      "muotaValley": "Muotatal, ein Tag",
-      "schwyzPortraits": "Schwyzer Atelieraufnahmen",
-      "mythenPanorama": "Mythen-Panorama, ein Aufstieg",
-      "winterSports": "Wintersport auf Stoos und Sattel",
-      "quaiSeries": "Der Quai Brunnen, vor und nach dem Umbau",
-      "publisherWehrli": "Impressum Gebr. Wehrli AG",
-      "alpinePanoramas": "Hochalpine Panoramen, eine Kampagne"
-    },
-    "detail": {
-      "back": "Alle Bestände",
-      "identity": "Identifikation",
-      "reference": "Signatur",
-      "creator": "Provenienz",
-      "extentLabel": "Umfang",
-      "periodLabel": "Laufzeit gemäss Findmittel",
-      "describedLabel": "Beschrieben",
-      "scopeLabel": "Form und Inhalt",
-      "medianSeconds": "Median {seconds} s pro Aufnahme",
-      "coverageTitle": "Abdeckung",
-      "coverageHint": "Der Bestand umfasst {extent}. Die Pipeline hat davon {described} beschrieben, {approved} sind freigegeben.",
-      "remaining": "Noch nicht beschrieben",
-      "timelineTitle": "Entstehungszeit des Bestands",
-      "timelineHint": "Beschriebene Einträge nach Jahrzehnt, gegen die im Findmittel angegebene Laufzeit.",
-      "timelineFindingAid": "Findmittel",
-      "timelineRecords": "{count, plural, =1 {1 Eintrag} other {# Einträge}}",
-      "driftTitle": "Ausserhalb der angegebenen Laufzeit",
-      "driftBody": "{count, plural, =1 {Ein Jahrzehnt mit Einträgen liegt} other {# Jahrzehnte mit Einträgen liegen}} ausserhalb von {from}–{to}. Ein Findmittel wird einmal und grob geschrieben; eine Datierung aus Belegen wird ihm früher oder später widersprechen. Das gehört einer Archivarin vorgelegt, nicht von uns korrigiert.",
-      "placesTitle": "Entstehungsorte des Bestands",
-      "placesHint": "Verortete Einträge nach Gemeinde. Gemeinden des Kantons Schwyz, wie das Gazetteer sie benennt.",
-      "placesUnknown": "Ort unbekannt",
-      "placesNoBasemap": "Die swisstopo-Grundkarte kommt mit der Kachelebene hierher. Bis dahin wird die Verteilung gezählt, nicht gezeichnet — eine Karte ohne Koordinaten wäre ein Bild, kein Beleg.",
-      "seriesTitle": "Erkannte Serien",
-      "seriesHint": "Das Bestandsgedächtnis gruppiert den Bestand in Aufnahmesitzungen — nächste Nachbarn über den ganzen Bestand, keine getippte Ordnerstruktur.",
-      "seriesCount": "{count, plural, =1 {1 Aufnahme} other {# Aufnahmen}}",
-      "seriesCohesion": "Kohäsion"
+    "subtitle": "Die Bestände Ihres Archivs.",
+    "empty": {
+      "title": "Noch keine Bestandsübersicht",
+      "body": "Hier erscheinen die Bestände des Archivs mit dem Stand ihrer Erschliessung.",
+      "cta": "Zu den Stapeln"
     }
   },
   "evaluation": {
     "metaTitle": "Evaluation — ZEITZEUGE",
-    "metaDescription": "Gold-Set-Metriken, Zuverlässigkeitsdiagramm und die Ablation Baseline gegen ZEITZEUGE.",
+    "metaDescription": "Die Qualitätskontrolle des Prio-1-Sets.",
     "title": "Evaluation",
-    "subtitle": "Die meisten Teams zeigen eine ausgesuchte Aufnahme. Hier steht eine Zahl, auf einem zurückgehaltenen Set, gegen eine Baseline — und Sie können selbst darin klicken.",
-    "runMeta": "Lauf {id} · {images} Aufnahmen · {blind} % von niemandem im Team je gesehen",
-    "heroLabel": "Halluzinationsrate",
-    "heroNote": "Ausgegebene Aussagen ohne gültigen Beleg. Die Null ist kein Ergebnis von Feinabstimmung: eine Aussage ohne Belegzeile scheitert an der Schemaprüfung, bevor sie geschrieben werden kann.",
-    "filterTitle": "Schicht",
-    "filterAll": "Ganzes Set",
-    "filterHint": "Das Gold-Set ist geschichtet. Grenzen Sie es ein, und jede Zahl auf dieser Seite wird neu gerechnet — auch die, die ihr Ziel dann verfehlen.",
-    "showing": "{shown} von {total} Aufnahmen",
-    "strata": {
-      "terrain": "Gelände sichtbar",
-      "urban": "Siedlung",
-      "interior": "Innenraum",
-      "verso": "Karte mit Verso",
-      "hard": "Unbekannt-schwer"
+    "subtitle": "Die Qualitätskontrolle des Prio-1-Sets, aus Ihren eigenen Prüfungen.",
+    "qcEmpty": {
+      "title": "Noch keine QC-Zahlen",
+      "body": "Sobald ein Stapel hochgeladen ist, steht hier, wie viele Fotos geprüft und korrigiert wurden.",
+      "cta": "Fotos hochladen"
     },
     "goldSet": {
-      "title": "Das Gold-Set",
-      "hint": "Vor dem Bau zusammengestellt, geschichtet nach dem, was eine Aufnahme schwer macht, ein Fünftel davon zurückgehalten und nie angesehen.",
-      "heldOut": "{count} zurückgehalten",
-      "heldOutHint": "Von niemandem im Team gesehen — auf diesen Anteil bezieht sich die Schlusszahl.",
-      "sourcesTitle": "Woher die Referenzdaten stammen",
-      "groundTruth": "Referenzdaten",
-      "sources": {
-        "eth": "ETH-Bibliothek Bildarchiv",
-        "commons": "Wikimedia Commons, Schweizer Historienkategorien",
-        "stasz": "Staatsarchiv Schwyz, erschlossene Einträge"
-      },
-      "truth": {
-        "ethTruth": "Ort, Datierung, Fotograf, oft exakte Koordinaten",
-        "commonsTruth": "Ort, oft Datierung",
-        "staszTruth": "Archivarisch geprüft — die besten verfügbaren Referenzdaten"
-      }
-    },
-    "metrics": {
-      "title": "Metriken gegen Ziel",
-      "hint": "Jedes Ziel wurde vor dem Lauf gesetzt, nicht danach.",
-      "headerMetric": "Metrik",
-      "headerDefinition": "Definition",
-      "headerTarget": "Ziel",
-      "headerMeasured": "Gemessen",
-      "pass": "erreicht",
-      "fail": "verfehlt",
-      "na": "n/v",
-      "naHint": "In dieser Schicht nicht definiert",
-      "municipality": "Gemeindegenauigkeit",
-      "municipalityDef": "Korrekte Gemeinde unter den ausgegebenen",
-      "site": "Objektgenauigkeit",
-      "siteDef": "Korrekter konkreter Ort oder Blickwinkel",
-      "geo": "Verortungsfehler",
-      "geoDef": "Median in Metern, geländegelöste Teilmenge",
-      "datingMae": "Datierungsfehler (Jahre)",
-      "datingMaeDef": "Medianer absoluter Fehler in Jahren, Spannenmitte",
-      "datingHit": "Trefferquote der Datierungsspanne",
-      "datingHitDef": "Wahres Jahr innerhalb der ausgegebenen Spanne",
-      "coverage": "Abdeckung",
-      "coverageDef": "Aufnahmen mit mindestens einem ausgegebenen Feld",
-      "hallucination": "Halluzinationsrate",
-      "hallucinationDef": "Ausgegebene Aussagen ohne gültigen Beleg",
-      "ece": "Kalibrierungsfehler",
-      "eceDef": "Erwarteter Kalibrierungsfehler der angegebenen Konfidenz",
-      "abstentionPrecision": "Enthaltungsgenauigkeit",
-      "abstentionPrecisionDef": "Anteil der Enthaltungen, der tatsächlich unlösbar ist",
-      "minutesSaved": "Zeitersparnis pro Aufnahme",
-      "minutesSavedDef": "Reduktion gegenüber einem gestoppten Archivdurchgang",
-      "cost": "Kosten pro Aufnahme",
-      "costDef": "Aus dem Kostenjournal, Modus Standard",
-      "latency": "p95-Latenz",
-      "latencyDef": "Modus Standard, eine Aufnahme"
-    },
-    "calibrationTitle": "Kalibrierung",
-    "calibrationHint": "Die Konfidenz ist gegen das Gold-Set angepasst, nicht vom Modell behauptet. Die Lesart ist der senkrechte Abstand zur Diagonale.",
-    "eceLabel": "Erwarteter Kalibrierungsfehler",
-    "ablation": {
-      "title": "Die Ablation",
-      "hint": "Dieselben zurückgehaltenen Aufnahmen durch drei Konfigurationen. Das hat die zusätzliche Architektur gebracht — kein Gefühl, eine Zahl.",
-      "headerConfig": "Konfiguration",
-      "configs": {
-        "single": "A · Einzelner VLM-Aufruf",
-        "singleDesc": "«Was ist das für eine Aufnahme?» — ein Bildmodell, keine Werkzeuge, keine Urteilsinstanz.",
-        "noFalsification": "B · Multi-Agent, ohne Falsifikation",
-        "noFalsificationDesc": "Der volle Agentensatz, Geländefalsifikator und Red-Team abgeschaltet.",
-        "full": "C · ZEITZEUGE",
-        "fullDesc": "Vollständige adversarielle Pipeline mit Geländefalsifikation. Es sind dieselben Zahlen wie in der Metriktabelle oben — einmal gemessen, zweimal gedruckt."
-      },
-      "best": "bestes",
-      "delta": "ggü. Baseline"
-    },
-    "exampleNote": "Die Genauigkeitszahlen unten stammen aus einem Beispiel-Goldset und sind nicht auf Ihren Fotos gemessen."
+      "tag": "Noch keine Auswertung",
+      "title": "Genauigkeit und Kalibrierung folgen",
+      "body": "Ein Goldset mit geprüften Fotos folgt; erst dann wird hier gemessen, wie oft das System richtig liegt."
+    }
   },
   "assist": {
     "metaTitle": "Mithilfe — ZEITZEUGE",
     "metaDescription": "Der unbekannte Rest, der Öffentlichkeit geöffnet — und jeder Hinweis durch dasselbe Kreuzverhör geschickt.",
     "title": "Mithilfe",
-    "subtitle": "Was auch die Pipeline nicht löst, geht an den Kanton zurück, aus dem es stammt. Ein Hinweis wird nie geglaubt, weil ihn ein Mensch geschickt hat: er wird zur Hypothese und stellt sich demselben Kreuzverhör, das unsere eigenen widerlegt hat.",
-    "publicPage": "Öffentliche Seite",
-    "stats": {
-      "published": "Offen für Hinweise",
-      "publishedHint": "öffentlich publizierte Aufnahmen",
-      "views": "Aufrufe",
-      "viewsHint": "seit der ersten Publikation",
-      "tips": "Hinweise erhalten",
-      "tipsHint": "alle mit Namen, keiner automatisch übernommen",
-      "corroborated": "Bestätigt",
-      "corroboratedHint": "haben das Kreuzverhör überstanden"
-    },
-    "loop": {
-      "title": "Was mit einem Hinweis geschieht",
-      "published": "Publiziert",
-      "publishedBody": "Ein Eintrag, bei dem sich die Pipeline enthalten hat — mit allem, was sie doch belegen konnte.",
-      "tip": "Hinweis",
-      "tipBody": "Jemand, der den Ort kennt, schreibt. Der Name begleitet die Aussage.",
-      "crossExamined": "Kreuzverhör",
-      "crossExaminedBody": "Der Kuratorik-Agent macht daraus eine Hypothese und rechnet nur die abhängigen Agenten neu.",
-      "settled": "Entschieden",
-      "settledBody": "Bestätigt, widerlegt oder mangels Beleg zurückgehalten — dieselben drei Ausgänge wie für die Maschine."
-    },
-    "openTitle": "Offen für Hinweise",
-    "openHint": "Jede Aufnahme nennt, was wir bereits wissen — niemand soll bei null anfangen müssen.",
-    "knownLabel": "Belegt",
-    "missingLabel": "Fehlt noch",
-    "viewsLabel": "{count} Aufrufe",
-    "publishedAgo": "vor {days} T publiziert",
-    "tipCount": "{count, plural, =0 {noch keine Hinweise} =1 {1 Hinweis} other {# Hinweise}}",
-    "cases": {
-      "farmstead": "Ein Talboden mit einem einzelnen Hof, dahinter ein Kirchturm, rechts ein Wasserfall. Welches Tal — und wessen Hof?",
-      "cutting": "Ein Bahneinschnitt unter einem Gewölbebogen, aufgenommen im Bau. Welche Linie, und wo daran?",
-      "summit": "Ein Gipfel aus der Luft, auf einem Vermessungsflug aufgenommen. Die Silhouette passt zu nichts im Gazetteer.",
-      "schoolhouse": "Der Ort ist gesichert. Jahr und Fotograf nicht — die Karte trägt kein Verlagsimpressum."
-    },
-    "tipsTitle": "Hinweise und was daraus wurde",
-    "tipsHint": "Auch die, die es nicht überstanden haben. Eine Seite, auf der jeder Beitrag angenommen wird, ist ein Briefkasten.",
-    "anonymous": "Anonym",
-    "hoursAgo": "vor {count} Std.",
-    "claimLabel": "Die Aussage",
-    "hypothesisLabel": "Wurde zur Hypothese",
-    "findingLabel": "Was das Kreuzverhör ergab",
-    "agentsLabel": "Neu gerechnet",
-    "rerunSeconds": "{seconds} s Teilneuberechnung",
-    "posteriorLabel": "Posterior",
-    "verdicts": {
-      "corroborated": "Bestätigt",
-      "refuted": "Widerlegt",
-      "checking": "Im Kreuzverhör",
-      "insufficient": "Zurückgehalten — Beleg fehlt"
-    },
-    "tips": {
-      "grandfathersBarn": {
-        "claim": "Das ist das Heimetli meines Grossvaters, an der Strasse ins Hinterthal. Die Scheune ist 1961 abgebrannt und nie wieder aufgebaut worden.",
-        "hypothesis": "Das Gebäude ist ein Ständerbau-Hof im hinteren Muotatal, aufgenommen vor 1961.",
-        "finding": "Dachneigung, Klebdach und der Turm dahinter decken sich mit dem Pfarrurbar; der Horizont aus der vorgeschlagenen Position korreliert mit 0,91. Der Brand von 1961 steht im kantonalen Brandkataster — darum steht dort heute nichts mehr."
-      },
-      "wrongSummit": {
-        "claim": "Das ist der Chaiserstock von Norden. Ich bin hundertmal droben gewesen.",
-        "hypothesis": "Der Gipfel ist der Chaiserstock, aus nördlicher Richtung gesehen.",
-        "finding": "Widerlegt. Aus jeder nördlichen Blickrichtung nachgerechnet, korreliert die Chaiserstock-Silhouette mit 0,31 gegen die Aufnahme. Den Grat links im Bild gibt es an diesem Massiv nicht."
-      },
-      "rigiCutting": {
-        "claim": "Das sieht aus wie der Einschnitt unterhalb der Rigi-Talbahn, vor der Verbreiterung.",
-        "hypothesis": "Der Einschnitt liegt an der Arth-Rigi-Talbahn, aufgenommen vor der Verbreiterung.",
-        "finding": ""
-      },
-      "aroundNineteenFive": {
-        "claim": "Ich glaube, das ist um 1905.",
-        "hypothesis": "Die Karte entstand um 1905.",
-        "finding": "Zurückgehalten. Plausibel, aber es wurde nichts genannt, worauf eine Datierung ruhen könnte — und eine Aussage ohne Beleg wird nicht geschrieben, nach derselben Regel wie die Aussagen der Pipeline. Ein Poststempel oder ein Verlagsimpressum würde es klären."
-      }
+    "subtitle": "Fotos, bei denen Kundige mithelfen können.",
+    "empty": {
+      "title": "Noch keine offenen Fragen",
+      "body": "Hier erscheinen Fotos, die das System nicht bestimmen konnte, damit Kundige mithelfen können.",
+      "cta": "Zur Prüfliste"
     }
   },
   "theater": {
-    "metaTitle": "{run} — ZEITZEUGE",
-    "metaDescription": "Eine Untersuchung, abspielbar: achtzehn Agenten, die Belege, die sie schrieben, und der Einwand, der die Antwort bewegte.",
-    "title": "Agenten-Theater",
-    "subtitle": "Eine Untersuchung, abspielbar. Achtzehn Agenten aus sechs Modellfamilien, die Belege, die jeder schrieb, und die zwei Momente, in denen sich die Antwort wirklich bewegte.",
-    "runMeta": "Lauf {run} · {signature} · Modus {mode}",
-    "openRecord": "Fallakte öffnen",
-    "stats": {
-      "elapsed": "Verstrichen",
-      "agents": "Agenten fertig",
-      "evidence": "Belegzeilen",
-      "cost": "Kosten"
-    },
-    "transport": {
-      "play": "Abspielen",
-      "pause": "Anhalten",
-      "restart": "Von vorn abspielen",
-      "speed": "Tempo",
-      "scrub": "Position im Lauf",
-      "live": "Wird abgespielt",
-      "ended": "Lauf beendet"
-    },
-    "graphTitle": "Die Pipeline",
-    "graphHint": "Agenten innerhalb einer Stufe laufen parallel — darum sind es 94 Sekunden und nicht achtzehnmal zwanzig.",
-    "states": {
-      "pending": "wartet",
-      "running": "läuft",
-      "done": "fertig"
-    },
-    "feedTitle": "Belegjournal",
-    "feedHint": "Geschrieben, während es geschah. Nichts wird nachträglich ergänzt.",
-    "waiting": "Der Lauf hat noch nicht begonnen.",
-    "kinds": {
-      "note": "Notiz",
-      "evidence": "Beleg",
-      "objection": "Einwand",
-      "abstain": "Enthaltung",
-      "verdict": "Urteil"
-    },
-    "hypothesesTitle": "Hypothesen",
-    "hypothesesHint": "Priors aus dem Bestandsgedächtnis, bewegt von jeder Zeile im Journal. Eine Konfidenz, die nur steigt, ist kein Denken.",
-    "prior": "Prior",
-    "refuted": "geometrisch widerlegt",
-    "reducedMotion": "In Ihren Systemeinstellungen ist Bewegung reduziert, darum öffnet der Lauf am Ende. Der Schieberegler spielt ihn trotzdem ab.",
-    "events": {
-      "plateIndexed": "Platte mit 1200 dpi gescannt, Wahrnehmungs-Hash indexiert. Keine Dublette im Bestand.",
-      "horizonSegmented": "Himmel-Gelände-Grenze über 1280 Spalten segmentiert.",
-      "photochrom": "Farbschichtung und Rasterstruktur entsprechen dem Photochromverfahren.",
-      "twinPeak": "Zweigipfliges Felsmassiv am Horizont, rechter Gipfel höher, ausgeprägter Sattel dazwischen.",
-      "printCaption": "Im Bild eingedruckte Legende: «6319 P.Z. — BRUNNEN MIT MYTHEN».",
-      "noBuiltMatch": "Kein Gebäude im Bild lässt sich im Baukultur-Index auflösen. Nichts ausgegeben.",
-      "versoRead": "Verso von zwei unabhängigen Lesern erfasst. Eine Zeile weicht ab und wird markiert statt aufgelöst.",
-      "nearestNeighbours": "Vier nächste Nachbarn im Bestand, der nächste bei 0,91.",
-      "candidatePositions": "Drei Kandidatenpositionen innerhalb von 2 km. Noch keine bevorzugt.",
-      "quaiMap": "Die Uferlinie entspricht dem Zustand nach der Quai-Erweiterung — Siegfriedkarte, Revision 1893.",
-      "fourHypotheses": "Vier Hypothesen gereiht und an die adversarielle Stufe übergeben.",
-      "horizonMatch": "Horizont aus 2687540 / 1206310 LV95 nachgerechnet — Korrelation 0,941 über 1280 Spalten. Einsiedeln und Weggis überstehen die Geometrie nicht.",
-      "quaiObjection": "Einwand: die Promenade zeigt die Erweiterung von 1900 noch nicht. Entweder reicht die Spanne zu weit oder die Position stimmt nicht.",
-      "adjudicated": "Einwand gewürdigt, gegen die Geometrie aber nicht durchgedrungen. Ort mit 0,94 ausgegeben; Datierungsspanne auf 1893–1900 verengt und zur Prüfung markiert.",
-      "photographerAbstain": "Kein Signaturstempel, kein beschriftetes Verso, kein Treffer im Bestandsgedächtnis. Fotograf/in enthalten — ein Ergebnis, keine Lücke.",
-      "isadWritten": "ISAD(G)-Eintrag geschrieben. Sechs Felder, eine Enthaltung.",
-      "translated": "Eintrag nach Französisch und Englisch gespiegelt.",
-      "noFlags": "Keine lebenden Personen, keine erkennbaren Minderjährigen, keine Personendaten. Keine Publikationssperre.",
-      "evalCases": "Drei Regressionsfälle aus diesem Lauf in das Evaluationsset geschrieben."
+    "metaTitle": "Ablauf — ZEITZEUGE",
+    "metaDescription": "Der Ablauf einer Untersuchung.",
+    "title": "Ablauf einer Untersuchung",
+    "empty": {
+      "title": "Ablaufansicht noch nicht verfügbar",
+      "body": "Die Schritte einer Untersuchung sehen Sie im Katalogeintrag des Fotos.",
+      "cta": "Zu den Stapeln"
     }
   },
   "admin": {
     "metaTitle": "Administration — ZEITZEUGE",
     "metaDescription": "Modell-Routing, Entscheidungsschwellen, Schutzrichtlinien und Kostengrenzen.",
     "title": "Administration",
-    "subtitle": "Vier Einstellungen, die bestimmen, was die Pipeline kostet, was sie ungefragt ausgibt und was sie nicht publiziert. Jede zeigt die Zahl, die sie bewegt, bevor Sie sie übernehmen.",
-    "routing": {
-      "title": "Modell-Routing",
-      "desc": "Nicht jede Aufnahme braucht Opus. Der Router eskaliert nur bei Mehrdeutigkeit — die Kaskade unten ist Konfiguration, nicht Code.",
-      "emitAtFast": "Aus dem schnellen Durchgang ausgeben ab",
-      "emitAtFastHint": "Eine signierte, gestempelte Karte löst Haiku mit Textract in vier Sekunden. Höher gesetzt bleiben weniger Aufnahmen hier stehen.",
-      "emitAtStandard": "Aus dem Standarddurchgang ausgeben ab",
-      "emitAtStandardHint": "Volle Wahrnehmung mit Sonnet. Was darüber hinaus eskaliert, erhält die adversarielle Schleife und den Geländefalsifikator.",
-      "projection": "Hochrechnung auf dem Gold-Set",
-      "costPerImage": "Gemischt pro Aufnahme",
-      "flatCompare": "{ratio}× günstiger, als die tiefe Pipeline auf allem zu fahren ({flat} pro Aufnahme)",
-      "bindingsTitle": "Bindungen",
-      "bindingsHint": "Schweizer Scans verlassen die Schweiz nie; das schwerste Denken bleibt in der EU. Der Router macht daraus eine Konfigurationsentscheidung, keine architektonische.",
-      "headerStage": "Stufe",
-      "headerModel": "Modell",
-      "headerRegion": "Region",
-      "headerFallback": "Fällt zurück auf",
-      "stages": {
-        "fast": "Schneller Durchgang",
-        "standard": "Standard",
-        "deep": "Tiefe Prüfung",
-        "adversarial": "Adversariell"
-      }
-    },
-    "thresholds": {
-      "title": "Entscheidungsschwellen",
-      "desc": "Ab wo ein Eintrag keinen Menschen mehr braucht.",
-      "autoAccept": "Ungeprüft in den Katalog ab",
-      "autoAcceptHint": "Darunter wartet ein Eintrag in der Prüfliste. Tiefer bedeutet mehr Durchsatz, höher bedeutet weniger Risiko im Katalog.",
-      "abstention": "Enthaltung zulassen",
-      "abstentionHint": "Ein Feld ohne ausreichenden Beleg wird als Enthaltung ausgegeben statt geraten.",
-      "abstentionWarning": "Abgeschaltet beantwortet die Pipeline jedes Feld, ob die Belege es tragen oder nicht. Sämtliche Zahlen auf der Evaluationsseite wurden mit eingeschalteter Enthaltung gemessen."
-    },
-    "guardrails": {
-      "title": "Schutzrichtlinien",
-      "desc": "Bedrock Guardrails als Richtlinie in Konfigurationsform, mit Haiku für das archivische Urteil, das eine Richtlinie nicht ausdrücken kann.",
-      "failClosed": "Im Zweifel sperren",
-      "failClosedHint": "Kommt die Schutzprüfung zu keinem Urteil, wird der Eintrag zurückgehalten statt publiziert.",
-      "failClosedWarning": "Abgeschaltet wird ein Eintrag, den die Prüfung nicht beurteilen konnte, standardmässig publiziert. Nach dieser Einstellung fragt eine kantonale Datenschutzprüfung als Erstes.",
-      "headerPolicy": "Richtlinie",
-      "headerAction": "Bei Erkennung",
-      "actions": {
-        "hold": "Von Publikation sperren",
-        "flag": "Zur Prüfung markieren",
-        "allow": "Zulassen"
-      },
-      "locked": "gesperrt",
-      "lockedHint": "Diese zu lockern steht uns nicht zu.",
-      "policies": {
-        "minors": "Erkennbare Minderjährige",
-        "minorsDesc": "Ein erkennbares Kind im Bild. Unabhängig vom Alter des Eintrags gesperrt.",
-        "livingPersons": "Möglicherweise lebende Personen",
-        "livingPersonsDesc": "Ein erkennbares Gesicht, bei dem die Datierung eine lebende Person plausibel lässt.",
-        "pii": "Personendaten in der Transkription",
-        "piiDesc": "Namen, Adressen oder Geburtsdaten, von einem Verso gelesen.",
-        "sensitiveContent": "Sensible Inhalte",
-        "sensitiveContentDesc": "Medizinische, anstaltliche oder gewahrsamsbezogene Situationen.",
-        "faceRecognition": "Gesichtserkennung",
-        "faceRecognitionDesc": "Nur Detektion, nie Identifikation. Das System gleicht kein Gesicht gegen einen Index ab."
-      }
-    },
-    "costs": {
-      "title": "Kostengrenzen",
-      "desc": "Im Router durchgesetzt, nicht in einem Dashboard — eine Grenze, die nur warnt, ist keine Grenze.",
-      "budget": "Guthaben",
-      "spent": "Verbraucht",
-      "remaining": "Verbleibend",
-      "alarmAt": "Alarm auslösen bei",
-      "alarmHint": "Ein Abrechnungsalarm feuert bei 25, 50 und 75 % des Guthabens. Dieser hier hält zusätzlich neue Stapel an.",
-      "perRun": "Obergrenze pro Lauf",
-      "perRunHint": "Eine einzelne Untersuchung wird gestoppt und als unvollständig markiert, statt davonzulaufen.",
-      "daily": "Obergrenze pro Tag",
-      "dailyHint": "Über das ganze Archiv. Stapel reihen sich ein, statt zu scheitern, wenn sie erreicht ist."
+    "subtitle": "Einstellungen für das ganze Archiv.",
+    "empty": {
+      "title": "Administration noch nicht verfügbar",
+      "body": "Hier verwalten Sie später Schwellenwerte, Modellwahl und Kostengrenzen des Archivs."
     }
   },
   "about": {
@@ -2330,22 +1661,13 @@
       "generic": "Die API hat die Anfrage abgelehnt (Code: {code}).",
       "back": "Zu den Stapeln"
     },
-    "example": {
-      "label": "Beispieldaten",
-      "default": "Dieser Bereich zeigt ein Beispiel, nicht Ihr Archiv.",
-      "toReal": "Zu den echten Daten",
-      "toBatches": "Zu den Stapeln",
-      "editor": "Dieser Katalogeintrag ist ein ausgearbeitetes Beispiel. Echte Untersuchungen öffnen Sie über «Stapel».",
-      "queue": "Diese Prüfliste zeigt Beispielstücke. Die echten Fotos und ihr Fortschritt stehen unter «Stapel».",
-      "dashboard": "Die Übersicht unten zeigt Beispielzahlen. Echt sind der QC-Zähler oben und alles unter «Stapel»."
-    },
     "batches": {
       "metaTitle": "Stapel — ZEITZEUGE",
       "title": "Stapel",
       "subtitle": "Jeder Stapel ist eine Lieferung Fotos mit ihrer Untersuchung. Hier sehen Sie, was läuft, was fertig ist, und laden das Excel herunter.",
       "newBatch": "Fotos hochladen",
-      "emptyTitle": "Noch kein Stapel in diesem Archiv.",
-      "emptyBody": "Laden Sie Fotos hoch; sie erscheinen hier als Stapel mit dem Fortschritt jeder Untersuchung.",
+      "emptyTitle": "Noch keine Fotos hochgeladen",
+      "emptyBody": "Sobald Sie Fotos hochladen, erscheinen sie hier als Stapel, mit dem Fortschritt jeder Untersuchung.",
       "mirror": "Spiegel aus StASZ",
       "photos": "{count, plural, one {# Foto} other {# Fotos}}"
     },
@@ -2399,7 +1721,8 @@
       "review": "Prüfen",
       "export": "Excel exportieren",
       "exporting": "Excel wird erstellt …",
-      "exportFailed": "Export fehlgeschlagen (Code: {code})."
+      "exportFailed": "Export fehlgeschlagen (Code: {code}).",
+      "inBatch": "Stapel {label}"
     },
     "case": {
       "back": "Zum Stapel",
@@ -2469,9 +1792,6 @@
       "title": "Qualitätskontrolle · Stapel {batch}",
       "hint": "Wie viele Fotos ein Mensch angesehen hat, und wie oft er die Maschine überstimmt hat — je Feld.",
       "open": "Zum Stapel",
-      "example": "Noch kein echter Stapel in diesem Archiv; die Zahlen unten sind ein Beispiel.",
-      "exampleError": "Die echten QC-Zahlen sind gerade nicht abrufbar (Code: {code}); die Zahlen unten sind ein Beispiel.",
-      "exampleCta": "Fotos hochladen",
       "tiles": {
         "total": "Fotos",
         "processed": "verarbeitet",
@@ -2485,7 +1805,6 @@
       "overrideHint": "Korrigiert oder verworfen ÷ geprüft. «—» heisst: noch nicht gemessen, nicht 0 %.",
       "counterLabel": "QC-Zähler",
       "counterTitle": "QC Stapel {batch} · {total} Fotos",
-      "exampleTag": "Beispiel",
       "counterCta": "Zur QC"
     }
   }

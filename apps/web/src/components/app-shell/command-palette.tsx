@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { Search, CornerDownLeft } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { ALL_NAV } from "@/lib/data/nav";
-import { RECENT_RUNS } from "@/lib/data/dashboard";
 import { NAV_ICON } from "./nav-icons";
 import { cn } from "@/lib/cn";
 
@@ -14,13 +13,13 @@ interface Entry {
   label: string;
   meta?: string;
   href: string;
-  group: "screens" | "runs";
+  group: "screens";
   icon?: React.ReactNode;
 }
 
 /**
  * ⌘K search over the things this shell can actually reach: every screen in the
- * nav, and the recent runs. It navigates for real — a search box that looks
+ * nav. It navigates for real — a search box that looks
  * live and does nothing is worse than no search box.
  */
 export function CommandPalette() {
@@ -45,14 +44,7 @@ export function CommandPalette() {
         icon: <Icon aria-hidden className="size-4 text-muted-2" strokeWidth={1.9} />,
       };
     });
-    const runs: Entry[] = RECENT_RUNS.map((run) => ({
-      key: run.id,
-      label: run.signature,
-      meta: run.collection,
-      href: `/history`,
-      group: "runs",
-    }));
-    return [...screens, ...runs];
+    return screens;
   }, [tNav]);
 
   const results = useMemo(() => {
@@ -129,7 +121,6 @@ export function CommandPalette() {
 
   const groups: { id: Entry["group"]; label: string }[] = [
     { id: "screens", label: t("searchScreens") },
-    { id: "runs", label: t("searchRuns") },
   ];
 
   return (

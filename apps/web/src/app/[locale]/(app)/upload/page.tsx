@@ -21,8 +21,7 @@ export async function generateMetadata({
 /**
  * Whether the real path is open is decided here, not guessed in the browser:
  * the API must answer `GET /batches`, and the account must be allowed to write
- * (the demo guest is read-only). The example seed only appears for an archive
- * with no real batch yet.
+ * (the demo guest is read-only). The screen opens empty either way.
  */
 export default async function UploadPage({
   params,
@@ -40,7 +39,6 @@ export default async function UploadPage({
     <UploadScreen
       readOnly={user?.isGuest ?? true}
       apiProblem={apiProblem}
-      hasRealBatch={Boolean(batches?.ok && batches.data.length > 0)}
     />
   );
 }

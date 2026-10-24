@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Library } from "lucide-react";
 import { routing } from "@/i18n/routing";
-import { CollectionsScreen } from "@/components/collections/collections-screen";
+import { UnavailablePage } from "@/components/ui/empty-state";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -21,6 +22,7 @@ export async function generateMetadata({
   };
 }
 
+/** No data source for this screen yet: an honest empty state, not an example. */
 export default async function CollectionsPage({
   params,
 }: {
@@ -28,5 +30,19 @@ export default async function CollectionsPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <CollectionsScreen />;
+  const [t, tApp] = await Promise.all([
+    getTranslations({ locale, namespace: "collections" }),
+    getTranslations({ locale, namespace: "app" }),
+  ]);
+  return (
+    <UnavailablePage
+      heading={t("title")}
+      subtitle={t("subtitle")}
+      icon={Library}
+      tag={tApp("unavailable")}
+      title={t("empty.title")}
+      body={t("empty.body")}
+      action={{ href: "/batches", label: t("empty.cta") }}
+    />
+  );
 }

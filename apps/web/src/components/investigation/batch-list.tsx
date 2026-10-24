@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRight, Layers, UploadCloud } from "lucide-react";
+import { ArrowRight, UploadCloud } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Link } from "@/i18n/navigation";
 import type { BatchSummary } from "@/lib/api/investigation-types";
 import { ApiNotice } from "./api-notice";
@@ -35,11 +36,12 @@ export async function BatchList({ batches, error }: { batches: BatchSummary[]; e
 
       {batches.length === 0 ? (
         !error && (
-          <div className="flex flex-col items-center gap-3 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface-2/40 px-6 py-12 text-center">
-            <Layers aria-hidden className="size-6 text-muted-2" strokeWidth={1.8} />
-            <p className="font-medium text-foreground-strong">{t("emptyTitle")}</p>
-            <p className="max-w-[54ch] text-[0.8125rem] text-muted">{t("emptyBody")}</p>
-          </div>
+          <EmptyState
+            icon={UploadCloud}
+            title={t("emptyTitle")}
+            body={t("emptyBody")}
+            action={{ href: "/upload", label: t("newBatch") }}
+          />
         )
       ) : (
         <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface">

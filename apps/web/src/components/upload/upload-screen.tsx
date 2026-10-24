@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowRight, Loader2, Play, Trash2, Info, Layers, Sparkles, CloudUpload, FlaskConical } from "lucide-react";
+import { ArrowRight, Loader2, Trash2, Info, Layers, CloudUpload, Lock } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { Select } from "@/components/ui/select";
-import { COLLECTIONS, RUN_MODES, CATALOGUING_DEFAULTS } from "@/lib/data/settings";
 import { useUploadQueue } from "@/hooks/use-upload-queue";
-import { loadDemoScans } from "@/lib/upload/demo-seed";
+import { EmptyState } from "@/components/ui/empty-state";
 import { blockingIssues, issuesFor } from "@/lib/upload/validation";
 import { Dropzone } from "./dropzone";
 import { AssetRow } from "./asset-row";
@@ -20,36 +18,30 @@ import { FINISHED_RUN_STATUSES } from "@/lib/api/investigation-types";
 
 const LABEL = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
+/**
+ * Real files only: the screen opens on an empty drop zone, pairs recto and
+ * verso by filename, and sends each front straight to the archive's storage.
+ */
 export function UploadScreen({
   readOnly,
   apiProblem,
-  hasRealBatch,
 }: {
-  /** The demo guest may watch, never write. */
+  /** The demo guest may look, never write. */
   readOnly: boolean;
   /** Why the API could not be asked, if it could not. */
   apiProblem: string | null;
-  /** The archive already holds a real batch: no example seed then. */
-  hasRealBatch: boolean;
 }) {
   const t = useTranslations("upload");
-  const tModes = useTranslations("settings.cataloguing.modes");
   const locale = useLocale();
   const intl = locale === "de" ? "de-CH" : locale;
 
-  const q = useUploadQueue(CATALOGUING_DEFAULTS.defaultCollection);
-  const [mode, setMode] = useState<string>(CATALOGUING_DEFAULTS.mode);
-  const [seeded, setSeeded] = useState(false);
-  const seedStarted = useRef(false);
+  const q = useUploadQueue();
 
   // The real path: a batch label (default `prio1`) and the Prio-1 flag.
   const [label, setLabel] = useState("prio1");
   const [prio1, setPrio1] = useState(true);
   const [realRun, setRealRun] = useState<{ batchId: string; label: string; reused: boolean } | null>(null);
   const [realProblem, setRealProblem] = useState<string | null>(null);
-  const realOpen = !readOnly && apiProblem === null;
-  /** Real upload for the visitor's own files; the labelled example stays simulated. */
-  const real = realOpen && !seeded;
   const labelValid = LABEL.test(label);
 
   const live = useLiveBatch(realRun?.batchId ?? null);
@@ -71,23 +63,11 @@ export function UploadScreen({
 
   async function startReal() {
     setRealProblem(null);
-    const result = await q.startReal({ label, priority: prio1 ? 1 : null, mode });
+    const result = await q.startReal({ label, priority: prio1 ? 1 : null });
     if (result.ok) setRealRun(result);
     else setRealProblem(result.code);
   }
 
-  // Fill the queue with examples on first open so the screen shows its design
-  // straight away. Runs once, and never over anything the visitor added.
-  useEffect(() => {
-    if (seedStarted.current || hasRealBatch) return;
-    seedStarted.current = true;
-    loadDemoScans().then((files) => {
-      if (files.length === 0) return;
-      q.add(files);
-      setSeeded(true);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const blocking = blockingIssues(q.issues);
   const hasAssets = q.assets.length > 0;
   const allDone = hasAssets && q.assets.every((a) => a.status === "done");
@@ -95,7 +75,7 @@ export function UploadScreen({
   const failedCount = q.assets.filter((a) => a.status === "error").length;
   const versosHeld = q.assets.filter((a) => a.verso).length;
   const pending = q.assets.filter((a) => a.status === "queued" || a.status === "error").length;
-  const finishedReal = Boolean(real && realRun && pending === 0);
+  const finished = Boolean(realRun && pending === 0);
 
   const bytes = (n: number) => {
     const units = ["B", "kB", "MB", "GB"];
@@ -117,50 +97,41 @@ export function UploadScreen({
         <p className="max-w-[70ch] text-[0.875rem] text-muted">{t("subtitle")}</p>
       </header>
 
-      <Dropzone
-        onFiles={(files) => {
-          setSeeded(false);
-          q.add(files);
-        }}
-        busy={q.busy}
-        compact={hasAssets}
-      />
-
-      {apiProblem && (
-        <ApiNotice code={apiProblem} />
-      )}
-      {readOnly && apiProblem === null && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2/50 px-3.5 py-3">
-          <FlaskConical aria-hidden className="mt-px size-4 shrink-0 text-muted-2" strokeWidth={1.9} />
-          <p className="min-w-0 text-[0.75rem] leading-snug text-muted">{t("real.guest")}</p>
-        </div>
+      {readOnly ? (
+        <EmptyState
+          icon={Lock}
+          title={t("guest.title")}
+          body={t("guest.body")}
+          action={{ href: "/batches", label: t("guest.cta") }}
+        />
+      ) : (
+        <Dropzone onFiles={(files) => q.add(files)} busy={q.busy} compact={hasAssets} />
       )}
 
-      {seeded && hasAssets && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface-2/50 px-3.5 py-3">
-          <Sparkles aria-hidden className="size-4 shrink-0 text-muted-2" strokeWidth={1.9} />
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <p className="text-[0.8125rem] font-medium text-foreground">{t("demoTitle")}</p>
-            <p className="text-[0.75rem] leading-snug text-muted">{t("demoHint")}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              q.clear();
-              setSeeded(false);
-            }}
-            className="ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-[0.75rem] font-medium text-foreground transition-colors hover:border-refuted hover:text-refuted"
-          >
-            <Trash2 aria-hidden className="size-3.5" strokeWidth={1.9} />
-            {t("clearAll")}
-          </button>
-        </div>
+      {apiProblem && !readOnly && <ApiNotice code={apiProblem} />}
+
+      {!readOnly && !hasAssets && !q.busy && (
+        <section
+          aria-labelledby="upload-guide-heading"
+          className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-line bg-surface px-4 py-4 sm:px-5"
+        >
+          <h2 id="upload-guide-heading" className="flex items-center gap-2 text-[0.8125rem] font-medium text-foreground-strong">
+            <Info aria-hidden className="size-4 shrink-0 text-muted-2" strokeWidth={1.9} />
+            {t("guide.title")}
+          </h2>
+          <ul className="flex list-disc flex-col gap-1.5 pl-9 text-[0.8125rem] leading-relaxed text-muted marker:text-muted-2">
+            <li>{t("guide.what")}</li>
+            <li>{t("guide.storage")}</li>
+            <li>{t("guide.label")}</li>
+            <li>{t("guide.prio1")}</li>
+          </ul>
+        </section>
       )}
 
-      {real && hasAssets && (
+      {hasAssets && (
         <section
           aria-labelledby="real-upload-heading"
-          className="flex flex-col gap-3 rounded-xl border border-evidence/30 bg-evidence-soft/40 px-3.5 py-3.5 sm:px-4"
+          className="flex flex-col gap-3 rounded-xl border border-line bg-surface px-3.5 py-3.5 sm:px-4"
         >
           <div className="flex items-start gap-2.5">
             <CloudUpload aria-hidden className="mt-px size-4 shrink-0 text-evidence" strokeWidth={1.9} />
@@ -266,24 +237,9 @@ export function UploadScreen({
             </p>
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              <Select
-                label={t("collectionAll")}
-                hideLabel
-                className="w-[15rem]"
-                value=""
-                disabled={q.running}
-                onChange={(e) => e.target.value && q.applyCollectionToAll(e.target.value)}
-                options={[
-                  { value: "", label: t("collectionAll") },
-                  ...COLLECTIONS.map((c) => ({ value: c.id, label: c.name })),
-                ]}
-              />
               <button
                 type="button"
-                onClick={() => {
-                  q.clear();
-                  setSeeded(false);
-                }}
+                onClick={() => q.clear()}
                 disabled={q.running}
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[0.75rem] text-muted transition-colors hover:bg-refuted-soft hover:text-refuted disabled:opacity-50"
               >
@@ -300,7 +256,6 @@ export function UploadScreen({
                 asset={asset}
                 issues={issuesFor(q.issues, asset.id)}
                 locked={q.running || asset.status !== "queued"}
-                onChange={(patch) => q.update(asset.id, patch)}
                 onRemove={() => q.remove(asset.id)}
                 onUnpair={() => q.unpair(asset.id)}
                 onPairInto={(sourceId) => q.pairInto(sourceId, asset.id)}
@@ -308,14 +263,7 @@ export function UploadScreen({
             ))}
           </ul>
         </section>
-      ) : (
-        !q.busy && (
-          <p className="py-6 text-center text-[0.8125rem] text-muted">
-            <span className="block font-medium text-foreground">{t("emptyTitle")}</span>
-            {t("emptyHint")}
-          </p>
-        )
-      )}
+      ) : null}
 
       {hasAssets && (
         <div className="sticky bottom-4 z-20">
@@ -326,41 +274,19 @@ export function UploadScreen({
             </p>
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              {!allDone && !finishedReal && (
-                <Select
-                  label={t("modeLabel")}
-                  hideLabel
-                  className="w-[12rem]"
-                  value={mode}
-                  disabled={q.running}
-                  onChange={(e) => setMode(e.target.value)}
-                  options={RUN_MODES.map((m) => ({
-                    value: m.id,
-                    label: `${t("modeLabel")}: ${tModes(m.id)}`,
-                  }))}
-                />
-              )}
-
-              {!real && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[0.5625rem] uppercase tracking-[0.1em] text-muted">
-                  <FlaskConical aria-hidden className="size-3" strokeWidth={2} />
-                  {t("real.simulated")}
-                </span>
-              )}
-
-              {allDone || finishedReal ? (
+              {allDone || finished ? (
                 <Link
-                  href={realRun ? `/batches/${realRun.batchId}` : "/queue"}
+                  href={realRun ? `/batches/${realRun.batchId}` : "/batches"}
                   className="inline-flex h-10 items-center gap-2 rounded-lg bg-corroborated px-4 text-[0.8125rem] font-medium text-background"
                 >
-                  {realRun ? t("real.toBatch") : t("doneCta")}
+                  {t("real.toBatch")}
                   <ArrowRight aria-hidden className="size-3.5" strokeWidth={2} />
                 </Link>
               ) : (
                 <button
                   type="button"
-                  onClick={() => (real ? void startReal() : void q.start(mode))}
-                  disabled={q.running || blocking.length > 0 || (real && !labelValid)}
+                  onClick={() => void startReal()}
+                  disabled={q.running || blocking.length > 0 || !labelValid}
                   aria-busy={q.running}
                   title={blocking.length > 0 ? t("startBlocked") : undefined}
                   className={cn(
@@ -376,16 +302,10 @@ export function UploadScreen({
                     </>
                   ) : (
                     <>
-                      {real ? (
-                        <CloudUpload aria-hidden className="size-3.5" strokeWidth={2.2} />
-                      ) : (
-                        <Play aria-hidden className="size-3.5" strokeWidth={2.2} />
-                      )}
-                      {real
-                        ? failedCount > 0 && realRun
-                          ? t("real.retryCta", { count: failedCount })
-                          : t("real.startCta", { count: q.stats.assets })
-                        : t("startCta", { count: q.stats.assets })}
+                      <CloudUpload aria-hidden className="size-3.5" strokeWidth={2.2} />
+                      {failedCount > 0 && realRun
+                        ? t("real.retryCta", { count: failedCount })
+                        : t("real.startCta", { count: q.stats.assets })}
                     </>
                   )}
                 </button>

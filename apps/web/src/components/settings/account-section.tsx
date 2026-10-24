@@ -5,47 +5,27 @@ import { useTranslations } from "next-intl";
 import { ArrowRight, Trash2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Field } from "@/components/ui/field";
-import { PROFILE } from "@/lib/data/profile";
-import { useSettingsForm } from "@/hooks/use-settings-form";
-import { SettingCard, SettingRow } from "./setting-primitives";
-import { SaveBar } from "./save-bar";
+import { useSessionUser } from "@/components/auth/session-provider";
+import { SettingCard, SettingFact, SettingRow } from "./setting-primitives";
 
 export function AccountSection() {
   const t = useTranslations("settings.account");
   const tRoles = useTranslations("settings.archive.roles");
-  const form = useSettingsForm({ name: PROFILE.name, email: PROFILE.email });
+  const user = useSessionUser();
+  const role = tRoles.has(user.role) ? tRoles(user.role) : user.role;
 
   return (
     <>
+      {/* What the API holds for this account. Editing it here comes later. */}
       <SettingCard title={t("title")} description={t("desc")}>
-        <SettingRow label={t("nameLabel")} hint={t("nameHint")} stack>
-          <Field
-            label={t("nameLabel")}
-            hideLabel
-            value={form.values.name}
-            onChange={(e) => form.set("name", e.target.value)}
-            autoComplete="name"
-          />
-        </SettingRow>
-
-        <SettingRow label={t("emailLabel")} hint={t("emailHint")} stack>
-          <Field
-            label={t("emailLabel")}
-            hideLabel
-            type="email"
-            value={form.values.email}
-            onChange={(e) => form.set("email", e.target.value)}
-            autoComplete="email"
-          />
-        </SettingRow>
-
-        {/* Not editable here: roles are granted, not chosen. */}
+        <SettingFact label={t("nameLabel")} value={user.displayName} locked={false} />
+        <SettingFact label={t("emailLabel")} value={user.email} locked={false} />
         <SettingRow
           label={t("roleLabel")}
           hint={t("roleHint")}
           control={
             <span className="rounded-full bg-evidence-soft px-2.5 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-evidence">
-              {tRoles(PROFILE.role)}
+              {role}
             </span>
           }
         />
@@ -67,15 +47,7 @@ export function AccountSection() {
         </div>
       </SettingCard>
 
-      <DangerZone />
-
-      <SaveBar
-        dirty={form.dirty}
-        saving={form.saving}
-        saved={form.saved}
-        onSave={form.save}
-        onDiscard={form.discard}
-      />
+      {!user.isGuest && <DangerZone />}
     </>
   );
 }

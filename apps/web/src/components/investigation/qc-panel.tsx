@@ -3,26 +3,15 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { RANKED_FIELD_KEYS, type QcSummary } from "@/lib/api/investigation-types";
 import { cn } from "@/lib/cn";
-import { ExampleBanner } from "./example-banner";
 import { intlLocale } from "./labels";
 
 /**
  * The Prio-1 QC panel (§2.4): how many photographs a human has looked at, and
  * how often the human overrode the machine, per ranked field. Real data from
- * `GET /batches/{id}/qc`, or the example summary — labelled — when the archive
- * has no batch yet.
+ * `GET /batches/{id}/qc` only; the screens show an empty state when there is
+ * no batch.
  */
-export function QcPanel({
-  qc,
-  batchId,
-  example,
-  error,
-}: {
-  qc: QcSummary;
-  batchId: string | null;
-  example: boolean;
-  error?: string | null;
-}) {
+export function QcPanel({ qc, batchId }: { qc: QcSummary; batchId: string | null }) {
   const t = useTranslations("investigation.qcPanel");
   const tf = useTranslations("investigation.fields");
   const intl = intlLocale(useLocale());
@@ -53,7 +42,7 @@ export function QcPanel({
           </h2>
           <p className="max-w-[78ch] text-[0.75rem] leading-relaxed text-muted">{t("hint")}</p>
         </div>
-        {batchId && !example && (
+        {batchId && (
           <Link
             href={`/batches/${batchId}`}
             className="inline-flex h-8 items-center gap-1 rounded-lg border border-line-strong bg-surface px-2.5 text-[0.75rem] font-medium text-foreground transition-colors hover:border-evidence hover:text-evidence"
@@ -63,10 +52,6 @@ export function QcPanel({
           </Link>
         )}
       </div>
-
-      {example && (
-        <ExampleBanner message={error ? t("exampleError", { code: error }) : t("example")} href="/upload" cta={t("exampleCta")} />
-      )}
 
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[0.625rem] border border-line bg-line sm:grid-cols-3 xl:grid-cols-6">
         {tiles.map((tile) => (

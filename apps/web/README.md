@@ -157,15 +157,10 @@ npx eslint src
   a verso with no recto, wrong type, over 200 MB. Duplicates matter because the
   Signatur is the archive's identifier — two assets claiming one would collide
   in the catalogue, not in this queue.
-- The run mode really changes the run's duration. A select that changed nothing
-  would be the decorative control this codebase keeps refusing to ship.
-- **The queue seeds itself with example scans on open** (`demo-seed.ts`), so the
-  screen shows its design without demanding a drag-and-drop first. The seed uses
-  the real archive images renamed to scanner conventions, so pairing, sizes and
-  validation downstream are genuine. It is labelled as examples, clears in one
-  click, and is chosen to open in a *runnable* state — blocking cases are
-  reachable by dropping a file in, not by greeting every visitor with a disabled
-  primary action.
+- **No example data.** The screen opens on an empty drop zone with a short
+  guide; every file goes to the archive's own storage. The signed-in app shows
+  only what the API returns, and an honest empty state («Noch keine Fotos
+  hochgeladen», «Noch nicht verfügbar») where there is nothing yet.
 - Object URLs are tracked and revoked on removal and unmount.
 
 ## Review queue

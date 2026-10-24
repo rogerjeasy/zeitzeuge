@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { REVIEW_QUEUE } from "@/lib/data/dashboard";
 import type { NavItem } from "@/lib/data/nav";
 import { NAV_ICON } from "./nav-icons";
 import { cn } from "@/lib/cn";
@@ -37,7 +36,6 @@ export function SidebarNav({
       {items.map((item) => {
         const Icon = NAV_ICON[item.icon];
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const badge = item.badge === "queue" ? REVIEW_QUEUE.waiting : undefined;
 
         return (
           <Link
@@ -69,19 +67,6 @@ export function SidebarNav({
             />
 
             {!collapsed && <span className="truncate">{t(item.id)}</span>}
-
-            {badge !== undefined && badge > 0 && (
-              <span
-                className={cn(
-                  "font-mono text-[0.625rem] tabular-nums",
-                  collapsed
-                    ? "absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-review text-[0.5rem] text-background"
-                    : "ml-auto rounded-full bg-review-soft px-1.5 py-0.5 text-review",
-                )}
-              >
-                {badge}
-              </span>
-            )}
           </Link>
         );
       })}

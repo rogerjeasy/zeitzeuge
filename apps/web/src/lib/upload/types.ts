@@ -24,8 +24,8 @@ export interface QueuedAsset {
   /** Why these two were put together, for display. */
   pairedBy?: string;
   pairMarkers?: { recto?: string; verso?: string };
+  /** The reference the row will carry: the filename without its extension. */
   signature: string;
-  collection: string;
   status: AssetStatus;
   /** 0–100 while uploading. */
   progress: number;
