@@ -25,6 +25,7 @@
 </p>
 
 <p align="center">
+  <strong><a href="https://github.com/rogerjeasy/zeitzeuge/releases/download/demo-video/ZEITZEUGE-demo.mp4">Watch the demo (1:30)</a></strong> ·
   <strong><a href="https://d8ic8dbboqgce.cloudfront.net/de">Open the live app</a></strong> ·
   «Demo starten» opens an archive of your own, no account needed ·
   <a href="docs/architecture.md">Architecture</a> ·
@@ -33,6 +34,10 @@
 </p>
 
 > **Zentral Hack 2026** · Challenge «KI-Bilderkennung für historische Fotos» · Staatsarchiv des Kantons Schwyz
+
+<p align="center">
+  <a href="https://github.com/rogerjeasy/zeitzeuge/releases/download/demo-video/ZEITZEUGE-demo.mp4"><img src="docs/media/demo-poster.jpg" alt="Watch the 90-second demo: Start demo without an account, a ZIP upload of Prio-1 photos, the live run, the review screen with confidence and evidence, the cost report and the Excel export." width="760"></a>
+</p>
 
 ---
 
