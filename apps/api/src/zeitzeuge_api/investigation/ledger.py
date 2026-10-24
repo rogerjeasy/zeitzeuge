@@ -367,7 +367,8 @@ class LedgerWriter:
     async def failed(self, session: AsyncSession, stage: str, error: str) -> None:
         run = await session.get(Run, self.ctx.run_id)
         asset = await session.get(Asset, self.ctx.asset.id)
-        if run is not None:
+        if run is not None and run.status is not RunStatus.CANCELLED:
+            # A withdrawal is the stronger statement; a failure never replaces it.
             run.status = RunStatus.FAILED
             run.error = {"stage": stage, "detail": error[:2000]}
             run.finished_at = datetime.now(UTC)

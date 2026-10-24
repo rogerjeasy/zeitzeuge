@@ -111,10 +111,17 @@ class Deps:
 async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: Deps) -> None:
     tenant = TenantContext(org_id=org_id, role="pipeline")
     async with db.session(tenant) as session:
-        run = await session.get(Run, run_id)
+        # Locked, so a withdrawal cannot land between this check and the update.
+        run = await session.scalar(select(Run).where(Run.id == run_id).with_for_update())
         if run is None:
             raise LookupError(f"run {run_id} not visible to tenant {org_id}")
         asset = await session.get(Asset, run.asset_id)
+        if run.status is RunStatus.CANCELLED or (asset is not None and asset.deleted_at):
+            log.info("investigation.cancelled", run_id=str(run_id), before="start")
+            if run.status is not RunStatus.CANCELLED:
+                run.status = RunStatus.CANCELLED
+                run.finished_at = datetime.now(UTC)
+            return
         master = await session.scalar(
             select(AssetFile).where(
                 AssetFile.asset_id == run.asset_id,
@@ -197,8 +204,13 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
 
 
 async def _cancelled(session: Any, run_id: uuid.UUID) -> bool:
-    """A withdrawal cancels the run; the pipeline stops at the next stage boundary."""
-    status = await session.scalar(select(Run.status).where(Run.id == run_id))
+    """A withdrawal cancels the run; the pipeline stops at the next stage boundary.
+
+    The row is locked for the rest of the caller's transaction, so a withdrawal
+    arriving now waits until the stage (or the record) is written and then sees
+    a run it can still cancel, instead of being overwritten by it.
+    """
+    status = await session.scalar(select(Run.status).where(Run.id == run_id).with_for_update())
     return status is RunStatus.CANCELLED
 
 

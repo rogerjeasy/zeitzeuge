@@ -282,6 +282,9 @@ class InvestigationService:
         asset = await session.get(Asset, asset_id)
         if asset is None:
             raise errors.NotFoundError("No such photograph.")
+        batch_of = await session.get(UploadBatch, asset.batch_id) if asset.batch_id else None
+        if asset.deleted_at is not None or (batch_of is not None and batch_of.deleted_at):
+            raise errors.ConflictError("This photograph has been withdrawn; restore it first.")
         master = await self._master(session, asset.id)
         if asset.status in {AssetStatus.UPLOADED, AssetStatus.ANALYSING, AssetStatus.DONE}:
             run = await self._latest_run(session, asset.id)
@@ -712,6 +715,9 @@ class InvestigationService:
         record = await session.get(CatalogueRecord, record_id)
         if record is None:
             raise errors.NotFoundError("No such record.")
+        owner = await session.get(Asset, record.asset_id)
+        if owner is not None and owner.deleted_at is not None:
+            raise errors.ConflictError("This photograph has been withdrawn; restore it first.")
         if if_match is not None and if_match != record.current_version:
             raise errors.ConflictError(
                 "The record changed since you opened it. Reload and review again.",

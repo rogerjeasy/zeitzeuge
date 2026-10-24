@@ -188,3 +188,39 @@ async def test_only_archivists_withdraw_but_reviewers_may_rerun(
     )
     assert rerun.status_code == 200
     assert rerun.json()["results"][0]["detail"] == "running"  # still queued from the upload
+
+
+async def test_a_withdrawn_photo_cannot_be_committed_reviewed_or_accepted(
+    investigation, client, as_user
+) -> None:
+    await _set_role(investigation, as_user["email"], UserRole.ARCHIVIST)
+    _batch_id, (first, _second) = await _batch_with_two(client)
+    await _machine_run(investigation, first["run_id"])
+    case = (await client.get(f"/api/v1/assets/{first['asset_id']}/case")).json()
+    await client.request("DELETE", f"/api/v1/assets/{first['asset_id']}")
+
+    assert (await client.put(f"/api/v1/assets/{first['asset_id']}/commit")).status_code == 409
+    review = await client.patch(
+        f"/api/v1/records/{case['record_id']}/fields/locality", json={"action": "accept"}
+    )
+    assert review.status_code == 409
+    bulk = await client.post(
+        "/api/v1/assets/bulk", json={"action": "accept", "asset_ids": [first["asset_id"]]}
+    )
+    assert bulk.json()["results"][0]["detail"] == "withdrawn"
+
+
+async def test_an_operator_does_not_decide_on_fields(investigation, client, as_user) -> None:
+    _batch_id, (first, _second) = await _batch_with_two(client)
+    await _machine_run(investigation, first["run_id"])
+    case = (await client.get(f"/api/v1/assets/{first['asset_id']}/case")).json()
+    await _set_role(investigation, as_user["email"], UserRole.OPERATOR)
+
+    bulk = await client.post(
+        "/api/v1/assets/bulk", json={"action": "accept", "asset_ids": [first["asset_id"]]}
+    )
+    assert bulk.status_code == 403
+    review = await client.patch(
+        f"/api/v1/records/{case['record_id']}/fields/locality", json={"action": "accept"}
+    )
+    assert review.status_code == 403

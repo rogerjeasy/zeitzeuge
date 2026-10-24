@@ -18,6 +18,7 @@ from fastapi.responses import StreamingResponse
 
 from zeitzeuge_api.api.deps import CurrentIdentity, Identity, WriteIdentity, resolve_identity
 from zeitzeuge_api.core import errors
+from zeitzeuge_api.db.models.enums import UserRole
 from zeitzeuge_api.schemas import investigation as schemas
 from zeitzeuge_api.services.investigation_service import InvestigationService
 from zeitzeuge_api.services.mirror import mirror_batch
@@ -175,6 +176,7 @@ async def review_field(
     service: Service,
     if_match: Annotated[str | None, Header()] = None,
 ) -> schemas.CaseFile:
+    _adjudicator(identity)
     version = int(if_match.strip('"')) if if_match and if_match.strip('"').isdigit() else None
     return await service.review_field(
         identity.session,
@@ -187,6 +189,17 @@ async def review_field(
 
 
 # --- batch management (batch-management note §3) -------------------------------
+
+
+_ADJUDICATORS = {UserRole.ADMIN, UserRole.ARCHIVIST, UserRole.REVIEWER}
+"""May decide on metadata. An operator runs the scanner and the batches and does
+not adjudicate (`UserRole.OPERATOR`), so accepting and correcting exclude it."""
+
+
+def _adjudicator(identity: Identity) -> Identity:
+    if identity.user.role not in _ADJUDICATORS:
+        raise errors.ForbiddenError("Only a reviewer, archivist or admin may decide on fields.")
+    return identity
 
 
 def _approver(identity: Identity) -> Identity:
@@ -238,6 +251,8 @@ async def bulk_assets(
 ) -> schemas.BulkResult:
     if body.action in {"delete", "restore"}:
         _approver(identity)
+    elif body.action == "accept":
+        _adjudicator(identity)
     return await service.bulk(
         identity.session,
         user=identity.user,
