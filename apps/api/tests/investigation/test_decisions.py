@@ -169,3 +169,22 @@ async def test_a_building_named_with_and_without_its_generic_word_is_one_hypothe
     (building,) = [h for h in ctx.ledger.hypotheses if h.field == "building"]
     assert building.value == "Hotel du Lac Seehof"
     assert len(building.supporting) == 3
+
+
+def test_places_compare_by_their_name_tokens() -> None:
+    from zeitzeuge_api.investigation.stages.grounding import _same_place
+
+    assert _same_place("Küssnacht", "Küssnacht am Rigi")
+    assert _same_place("Küssnacht (SZ)", "Küssnacht am Rigi")
+    assert not _same_place("Weggis", "Küssnacht am Rigi")
+    assert not _same_place("", "Schwyz")
+
+
+def test_only_verified_agreement_of_both_families_fixes_the_town() -> None:
+    from zeitzeuge_api.investigation.stages.grounding import agreed_places
+
+    ctx = _ctx()
+    _add(ctx, "locality", "Küssnacht am Rigi", SourceClass.OPEN_RESEARCH, 0.9, families_agreeing=2)
+    _add(ctx, "locality", "Lauerz", SourceClass.OPEN_RESEARCH, 0.6, families_agreeing=1)
+    _add(ctx, "locality", "Weggis", SourceClass.GEODATA_LAYER, 0.9)
+    assert agreed_places(ctx) == ["Küssnacht am Rigi"]
