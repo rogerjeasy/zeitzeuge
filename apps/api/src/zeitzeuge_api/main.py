@@ -31,7 +31,7 @@ from zeitzeuge_api import __version__
 from zeitzeuge_api.api.deps import get_context
 from zeitzeuge_api.api.router import api_router
 from zeitzeuge_api.api.v1 import health
-from zeitzeuge_api.core import errors
+from zeitzeuge_api.core import errors, tempdir
 from zeitzeuge_api.core.config import Settings, get_settings
 from zeitzeuge_api.core.logging import configure_logging, get_logger
 from zeitzeuge_api.core.security import JWKSCache, TokenVerifier
@@ -226,6 +226,15 @@ async def _openai_key(secrets: SecretsResolver, settings: Settings) -> str:
         return ""
 
 
+_FILESYSTEM_ERRORS = (
+    FileNotFoundError,
+    PermissionError,
+    IsADirectoryError,
+    NotADirectoryError,
+    FileExistsError,
+)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # The settings `create_app` was given, not a fresh read. Calling
@@ -241,6 +250,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         region=settings.region,
         pool=bool(settings.cognito_user_pool_id),
     )
+    tempdir.choose()  # before anything spills to disk (openpyxl, the lookup cache)
     try:
         await build_state(app, settings)
     except Exception as exc:
@@ -363,6 +373,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(SQLAlchemyError)
     @app.exception_handler(OSError)
     async def _database(request: Request, exc: Exception) -> JSONResponse:
+        if isinstance(exc, _FILESYSTEM_ERRORS):
+            # A file the process could not write is a bug or a mis-set container,
+            # not a database outage: report it as one, with its traceback.
+            log.exception("error.filesystem", error=type(exc).__name__)
+            return problem(request, errors.AppError())
         # A refused connection or an exhausted pool is not "an unexpected
         # error": it is a dependency being down, it is worth retrying, and it
         # should read that way in the client and in the log. asyncpg raises

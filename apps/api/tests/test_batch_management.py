@@ -15,7 +15,7 @@ import pytest
 from openpyxl import load_workbook
 from sqlalchemy import select
 from tests.conftest import BUCKET, REGION
-from tests.test_investigation_api import _machine_run, investigation  # noqa: F401
+from tests.test_investigation_api import _machine_run, investigation  # noqa: F401  (fixture)
 
 from zeitzeuge_api.db.models import Run, User
 from zeitzeuge_api.db.models.enums import RunStatus, UserRole

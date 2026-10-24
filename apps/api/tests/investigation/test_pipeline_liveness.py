@@ -1,3 +1,4 @@
+# ruff: noqa: F811  (pytest fixtures imported from test_investigation_api)
 """A slow stage keeps its run alive; a run given up for lost stops writing."""
 
 
@@ -11,6 +12,7 @@ import boto3
 from PIL import Image
 from sqlalchemy import select
 from tests.conftest import BUCKET, REGION
+from tests.test_investigation_api import investigation  # noqa: F401  (pytest fixture)
 
 from zeitzeuge_api.db.models import CatalogueRecord, Run
 from zeitzeuge_api.db.models.enums import AgentId, RunStatus
