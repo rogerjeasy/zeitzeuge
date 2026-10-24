@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZEITZEUGE architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Source of docs/architecture/architecture-{light,dark}.png — render.sh draws both.
+   Every box names something in apps/, infra/ or a live dependency; nothing here is aspirational. */
+:root{--bg:#fbfaf7;--panel:#ffffff;--ink:#0d1b2a;--muted:#5b6b7b;--line:#d9dee4;--soft:#f1f4f7;
+  --aws:#ff9900;--model:#2a78d6;--code:#1baf7a;--ext:#8a6d3b;--warn:#c2410c;--chip:#eef3f8}
+@media (prefers-color-scheme: dark){:root{--bg:#0b1320;--panel:#111c2b;--ink:#e8eef5;--muted:#9fb0c2;--line:#26384c;--soft:#0f1a28;
+  --model:#5fa3f0;--code:#3ccf96;--ext:#d6b98c;--chip:#162436}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;width:1600px;padding:36px 40px 40px}
+h1{font:600 30px/1.1 Fraunces,serif;letter-spacing:-.02em;margin:0}
+.sub{color:var(--muted);font-size:15px;margin-top:6px}
+.mono{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.row{display:grid;grid-template-columns:230px 40px 300px 40px 410px 40px 460px;align-items:stretch;margin-top:26px}
+.arrow{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px}
+.col{display:flex;flex-direction:column;gap:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.box h3{margin:0 0 4px;font-size:15px;font-weight:600}
+.box p{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.box .k{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+.group{border:1.5px dashed var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px;position:relative}
+.group > .mono{margin-bottom:2px}
+.aws{border-color:color-mix(in srgb,var(--aws) 55%,transparent)}
+.tag{display:inline-block;font:500 10.5px/1 "JetBrains Mono",monospace;padding:4px 7px;border-radius:6px;margin:6px 4px 0 0;background:var(--chip);color:var(--ink)}
+.tag.m{background:color-mix(in srgb,var(--model) 16%,transparent);color:var(--model)}
+.tag.c{background:color-mix(in srgb,var(--code) 16%,transparent);color:var(--code)}
+.tag.e{background:color-mix(in srgb,var(--ext) 16%,transparent);color:var(--ext)}
+.right{display:flex;flex-direction:column;gap:12px}
+.pipeline{margin-top:28px;border:1px solid var(--line);border-radius:18px;background:var(--panel);padding:18px 20px}
+.stages{display:grid;grid-template-columns:repeat(11,1fr);gap:8px;margin-top:12px}
+.st{border-radius:12px;padding:10px 9px;border:1px solid var(--line);background:var(--soft);min-height:96px;display:flex;flex-direction:column;gap:5px}
+.st b{font-size:13px} .st span{font-size:11.5px;color:var(--muted);line-height:1.35}
+.st.m{border-color:color-mix(in srgb,var(--model) 55%,transparent)} .st.c{border-color:color-mix(in srgb,var(--code) 55%,transparent)}
+.st .n{font:500 10.5px "JetBrains Mono",monospace;color:var(--muted)}
+.legend{display:flex;gap:18px;margin-top:14px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.foot{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:18px}
+.rule{font-size:13px;line-height:1.5}
+.rule code{font-family:"JetBrains Mono",monospace;font-size:12px;background:var(--chip);padding:2px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<h1>ZEITZEUGE — architecture</h1>
+<div class="sub">AWS eu-central-2 (Zurich) · one Terraform environment · models propose, code decides · every emitted field cites evidence</div>
+
+<div class="row">
+  <div class="col">
+    <div class="mono">People</div>
+    <div class="box"><h3>Archivist</h3><p>Uploads, follows runs live, reviews field by field, exports Excel.</p><span class="tag">de · fr · en</span></div>
+    <div class="box"><h3>Visitor / jury</h3><p>«Start demo»: a private archive with full rights, no form. «View as guest»: read-only.</p></div>
+    <div class="box"><h3>Integrations</h3><p>API keys per archive, scoped and audited.</p></div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="group aws">
+    <div class="mono">Edge</div>
+    <div class="box"><h3>CloudFront + WAF</h3><p>TLS, managed rules, caching of static assets.</p></div>
+    <div class="box"><h3>VPC origin → internal ALB</h3><p>No public load balancer. <span class="k">/*</span> → web, <span class="k">/api/*</span> → api.</p></div>
+    <div class="box"><h3>Cognito</h3><p>Credentials and MFA live here; the API stores no password.</p></div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="group aws">
+    <div class="mono">ECS Fargate · private subnets</div>
+    <div class="box"><h3>web · Next.js 16</h3><p>React 19, server actions only. Tokens sit in HttpOnly cookies; browser code never sees them.</p></div>
+    <div class="box"><h3>api · FastAPI</h3><p>Pydantic 2, SQLAlchemy 2 async, Alembic. Identity, tenancy, batches, review, Excel, live event stream.</p></div>
+    <div class="box"><h3>Investigation worker</h3><p>In the API task. Claims queued runs from Aurora (<span class="k">SKIP LOCKED</span>), runs the eleven stages, commits the evidence ledger stage by stage. A pacer per model, back-off, fallbacks.</p><span class="tag c">SSRF-guarded fetch</span><span class="tag c">circuit breakers</span></div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="right">
+    <div class="group aws">
+      <div class="mono">Data</div>
+      <div class="box"><h3>Aurora PostgreSQL 16</h3><p>Row-level security forced on every tenant table. Append-only evidence ledger, versioned records, audit log.</p></div>
+      <div class="box"><h3>S3 · KMS</h3><p>Originals and access copies via presigned, size- and type-bounded uploads; exports.</p></div>
+      <div class="box"><h3>DynamoDB · Secrets Manager</h3><p>Rate limits per IP and action · model and public-tool keys.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="row" style="margin-top:18px">
+  <div class="group" style="grid-column:1 / 4">
+    <div class="mono">Delivery &amp; operations</div>
+    <div class="box"><h3>GitHub Actions over OIDC</h3><p>No long-lived AWS keys. CI gates every push; deploys build <span class="k">:sha</span> images to ECR, run migrations as one-off ECS tasks inside the VPC, roll the service, smoke-test through CloudFront.</p></div>
+    <div class="box"><h3>Terraform · 17 modules</h3><p>Network, edge, compute, data, auth, Bedrock, observability, budgets. Planned in CI, applied by a person.</p></div>
+    <div class="box"><h3>CloudWatch · budgets · audit</h3><p>Logs, alarms, a cost ledger per model call, an audit row per human decision.</p></div>
+  </div>
+  <div></div>
+  <div class="group">
+    <div class="mono">Models</div>
+    <div class="box"><h3>Amazon Bedrock · EU profiles</h3><p>Claude Opus 4.6 (perceive, adjudicate; falls back to 4.5) · Sonnet 4.6 (compare, extract) · Haiku 4.5 (fallback). Guardrail and invocation logging.</p><span class="tag m">eu.*</span></div>
+    <div class="box"><h3>Cross-family</h3><p>GPT-6.1 Sol red team (Bedrock <span class="k">global.*</span>) · GPT-5.5 web search · Gemini with Google Search — asked independently.</p></div>
+  </div>
+  <div class="arrow">↔</div>
+  <div class="group">
+    <div class="mono">Evidence sources · cached, rate-limited, costed</div>
+    <div class="box"><h3>Official geodata</h3><p>swisstopo GeoAdmin, swissBOUNDARIES3D, swissNAMES3D, building register GWR, Kanton Schwyz heritage inventory (KSI WFS).</p><span class="tag e">register</span></div>
+    <div class="box"><h3>Archives &amp; open data</h3><p>Staatsarchiv Schwyz catalogue (scopeArchiv), Wikidata, Wikimedia Commons, OpenStreetMap.</p></div>
+    <div class="box"><h3>Google</h3><p>Cloud Vision (OCR, web, landmarks), Lens via SerpApi, Places photos, Street View (official panoramas only).</p></div>
+  </div>
+</div>
+
+<div class="pipeline">
+  <div class="mono">The investigation of one photograph · 11 stages · Research and Sighting start in the background at Intake</div>
+  <div class="stages">
+    <div class="st c"><span class="n">01</span><b>Intake</b><span>SHA-256, EXIF date, camera, GPS as a hypothesis</span></div>
+    <div class="st m"><span class="n">02</span><b>Perception</b><span>One careful look: candidates only, strength capped</span></div>
+    <div class="st m"><span class="n">03</span><b>Research</b><span>GPT and Gemini search; every cited page is fetched and checked</span></div>
+    <div class="st m"><span class="n">04</span><b>Sighting</b><span>The same view on the web: Vision, Lens</span></div>
+    <div class="st c"><span class="n">05</span><b>Grounding</b><span>Every name resolved in the registers</span></div>
+    <div class="st m"><span class="n">06</span><b>Reference</b><span>Compare with the candidate's own pictures</span></div>
+    <div class="st c"><span class="n">07</span><b>Resolve</b><span>Point → Ortschaft, Gemeinde, Strasse</span></div>
+    <div class="st c"><span class="n">08</span><b>Hypothesise</b><span>Group evidence per value; noisy-OR</span></div>
+    <div class="st m"><span class="n">09</span><b>Check</b><span>Another model family tries to break it</span></div>
+    <div class="st m"><span class="n">10</span><b>Adjudicate</b><span>Picks and cites; citations verified; rule sets the number</span></div>
+    <div class="st c"><span class="n">11</span><b>Produce</b><span>Versioned record, Excel row</span></div>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--code)"></span>deterministic code</span>
+    <span><span class="dot" style="background:var(--model)"></span>model reads, proposes or objects — never sets a confidence</span>
+    <span><span class="dot" style="background:var(--aws)"></span>AWS managed service</span>
+  </div>
+  <div class="foot" style="grid-template-columns:1fr 1fr">
+    <div class="rule"><b>Confidence</b> = <code>1 − Π(1 − weight<sub>class</sub> · strength)</code> over independent source classes, × <code>(1 − severity)</code> per upheld objection.</div>
+    <div class="rule"><b>≥ 0.90</b> übernahmefähig · <b>≥ 0.50</b> Prüfbedarf · <b>&lt; 0.50</b> left empty with its reason. Ten copies of one page count once.</div>
+  </div>
+</div>
+</body>
+</html>
