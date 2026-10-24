@@ -154,7 +154,7 @@ async def test_a_model_that_stays_busy_falls_back_for_this_call_only(monkeypatch
     monkeypatch.setattr(models, "_BACKOFF_SECONDS", (0.0, 0.0))
     fake = ThrottlingBedrock(busy=None)
     client = ModelClient(client=fake)
-    reply = await client.ask(Task.COMPARE, Challenge, system="s", prompt="p")
+    reply = await client.ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
     assert reply.model_id == SONNET.model_id
     # Busy is not refused: the next call asks Opus again.
     assert OPUS.model_id not in client._refused
