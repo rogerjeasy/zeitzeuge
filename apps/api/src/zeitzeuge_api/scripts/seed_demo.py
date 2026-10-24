@@ -211,6 +211,10 @@ async def _seed_staatsarchiv(session: Any) -> None:
         session.add(organization)
         await session.flush()
         log.info("seed.organization_created", slug=STASZ_SLUG)
+    elif organization.isil != "CH-000015-0":
+        # Not the archive this seed created: never hand its members the Staatsarchiv.
+        log.error("seed.stasz_slug_squatted", org_id=str(organization.id))
+        return
 
     members = [m.strip().lower() for m in os.environ.get("ZZ_STASZ_MEMBERS", "").split(",")]
     for email in filter(None, members):

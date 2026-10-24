@@ -68,6 +68,9 @@ PUBLIC_MAIL_DOMAINS = frozenset(
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
+RESERVED_SLUGS = frozenset({"stasz", "demo", "demo-staatsarchiv-schwyz"})
+
+
 def _slugify(value: str) -> str:
     base = value.lower()
     for source, target in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
@@ -228,7 +231,9 @@ class AuthService:
         slug = base
         for attempt in range(2, 12):
             taken = await session.scalar(select(Organization.id).where(Organization.slug == slug))
-            if taken is None:
+            # The seed's archives (`stasz`, `demo`) carry privileges — publishing
+            # into the guest's view — so sign-up can never claim their slugs.
+            if taken is None and slug not in RESERVED_SLUGS:
                 return slug
             slug = f"{base}-{attempt}"
         return f"{base}-{secrets.token_hex(3)}"
