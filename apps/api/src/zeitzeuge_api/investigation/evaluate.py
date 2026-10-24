@@ -136,8 +136,12 @@ def _rgb(cell: object) -> str:
     return str(fill.fgColor.rgb)
 
 
-def read_labels(path: Path | IO[bytes]) -> dict[str, dict[str, str]]:
+def read_labels(path: Path | IO[bytes], max_rows: int | None = None) -> dict[str, dict[str, str]]:
+    # openpyxl parses with defusedxml when it is installed (it is a dependency),
+    # so entity-expansion tricks in an uploaded workbook are refused.
     sheet = load_workbook(path).worksheets[0]
+    if max_rows is not None and sheet.max_row > max_rows:
+        raise ValueError(f"The sheet has more than {max_rows} rows.")
     header = [c.value for c in sheet[1]]
     missing = [c for c in ("Dateiname", *(column for column, _ in FIELDS)) if c not in header]
     if missing:

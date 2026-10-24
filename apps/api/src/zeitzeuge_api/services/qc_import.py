@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import io
 import uuid
+import zipfile
 from typing import Any
 
 from sqlalchemy import select
@@ -36,6 +37,26 @@ from zeitzeuge_api.schemas import investigation as schemas
 from zeitzeuge_api.services.investigation_service import InvestigationService
 
 MAX_BYTES = 5 * 1024 * 1024
+MAX_UNPACKED = 40 * 1024 * 1024
+"""An .xlsx is a zip: a 5 MB upload could inflate to gigabytes inside openpyxl."""
+MAX_PARTS = 300
+MAX_RATIO = 200
+MAX_ROWS = 5_000
+
+
+def _check_archive(workbook: bytes) -> None:
+    """Refuse a decompression bomb before openpyxl inflates it."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(workbook)) as archive:
+            parts = archive.infolist()
+    except zipfile.BadZipFile as exc:
+        raise errors.ValidationError("This file is not a readable .xlsx workbook.") from exc
+    unpacked = sum(p.file_size for p in parts)
+    packed = sum(p.compress_size for p in parts) or 1
+    if len(parts) > MAX_PARTS or unpacked > MAX_UNPACKED or unpacked / packed > MAX_RATIO:
+        raise errors.ValidationError("This workbook is too large to import.")
+
+
 COLUMN_TO_FIELD = {
     "Ortschaft": "locality",
     "Gemeinde": "municipality",
@@ -51,8 +72,9 @@ async def parse(workbook: bytes) -> tuple[dict[str, dict[str, str]], dict[str, s
         raise errors.ValidationError("The upload is empty.")
     if len(workbook) > MAX_BYTES:
         raise errors.ValidationError("The workbook is larger than 5 MB.")
+    _check_archive(workbook)
     try:
-        labels = await asyncio.to_thread(read_labels, io.BytesIO(workbook))
+        labels = await asyncio.to_thread(read_labels, io.BytesIO(workbook), MAX_ROWS)
     except ValueError as exc:
         raise errors.ValidationError(str(exc)) from exc
     except Exception as exc:  # openpyxl raises a zoo of types for a non-workbook

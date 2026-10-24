@@ -510,3 +510,15 @@ async def test_a_file_that_is_not_a_results_sheet_is_refused(
     batch_id, _ = await _batch_with_two(client)
     bad = await client.post(f"/api/v1/batches/{batch_id}/qc-import", content=b"not a workbook")
     assert bad.status_code == 422
+
+
+async def test_a_zip_bomb_is_refused_before_parsing(investigation, client, as_user) -> None:
+    import zipfile
+
+    batch_id, _ = await _batch_with_two(client)
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("xl/worksheets/sheet1.xml", b"\0" * (4 * 1024 * 1024))
+    bomb = await client.post(f"/api/v1/batches/{batch_id}/qc-import", content=out.getvalue())
+    assert bomb.status_code == 422
+    assert "too large" in bomb.json()["detail"]
