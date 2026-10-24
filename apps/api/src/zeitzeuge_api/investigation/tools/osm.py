@@ -13,9 +13,19 @@ are SPATIAL with their distance.
 
 from __future__ import annotations
 
+import json
+import time
 from typing import Any
 
-from zeitzeuge_api.investigation.tools.base import HttpTool, MatchKind, ToolHit, ToolUnavailable
+import httpx
+
+from zeitzeuge_api.investigation.tools.base import (
+    HttpTool,
+    MatchKind,
+    ToolCache,
+    ToolHit,
+    ToolUnavailable,
+)
 from zeitzeuge_api.investigation.tools.geo import distance_m, lv95_to_wgs84, wgs84_to_lv95
 from zeitzeuge_api.investigation.tools.text import name_match
 
@@ -28,6 +38,8 @@ MIRRORS = (
 """The main instance refuses connections under load; the same query and the
 same ODbL data are served by public mirrors, tried in order."""
 SOURCE = "OpenStreetMap-Mitwirkende (ODbL), via Overpass API"
+QUERY_SECONDS = 15.0
+PAUSE_SECONDS = 600.0
 
 # Keys whose value says what a named feature *is*, in order of preference.
 KIND_KEYS = ("amenity", "tourism", "healthcare", "historic", "leisure", "shop", "office")
@@ -111,17 +123,42 @@ def _ql_regex(text: str) -> str:
 class Overpass(HttpTool):
     """Named OSM features around a point, or by name."""
 
+    _paused_until: float = 0.0
+    """Process-wide: when every mirror failed, Overpass is skipped for a while."""
+
     async def _run(self, query: str) -> list[dict[str, Any]]:
-        failure: ToolUnavailable | None = None
+        """One short attempt per mirror; if all fail, pause OSM for every run.
+
+        On prod the public instances failed repeatedly; three mirrors, three
+        attempts and 40 s each made one query cost up to six minutes and grounding
+        averaged over nine minutes per photo. KSI, Wikidata, Places and GWR cover
+        what OSM adds, so a slow OSM is skipped rather than waited for.
+        """
+        key = ToolCache.key("POST", OVERPASS_URL, None, json.dumps({"data": query}))
+        cached = self._cache.get(key)
+        if cached is not None:
+            return list(cached.get("elements", []))
+        if time.monotonic() < Overpass._paused_until:
+            raise ToolUnavailable("OpenStreetMap pausiert nach Ausfall (10 min)")
+        failure = "no mirror answered"
         for url in MIRRORS:
             try:
-                data = await self.post_form_json(url, {"data": query}, validate=_check_remark)
-            except ToolUnavailable as exc:
-                failure = exc
+                response = await self._client.post(
+                    url,
+                    data={"data": query},
+                    headers={"User-Agent": self.USER_AGENT},
+                    timeout=QUERY_SECONDS,
+                )
+                response.raise_for_status()
+                data = response.json()
+                _check_remark(data)
+            except (httpx.HTTPError, ValueError, ToolUnavailable) as exc:
+                failure = f"{url}: {type(exc).__name__}"
                 continue
+            self._cache.put(key, data)
             return list(data.get("elements", []))
-        assert failure is not None
-        raise failure
+        Overpass._paused_until = time.monotonic() + PAUSE_SECONDS
+        raise ToolUnavailable(failure)
 
     async def named_features_near(
         self, e: float, n: float, *, radius_m: float = 400
