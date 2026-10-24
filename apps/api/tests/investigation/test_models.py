@@ -74,3 +74,51 @@ async def test_one_rejected_request_does_not_demote_the_next() -> None:
     second = await client.ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
     assert first.model_id == SONNET.model_id
     assert second.model_id == OPUS.model_id
+
+
+class FakeOpenAI:
+    def __init__(self, status: int = 200) -> None:
+        self.status = status
+        self.bodies: list[dict[str, Any]] = []
+
+    async def post(self, url: str, **kwargs: Any):
+        json = kwargs["json"]
+        import httpx
+
+        self.bodies.append(json)
+        payload = (
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "tool_calls": [
+                                {"function": {"name": "answer", "arguments": '{"items": []}'}}
+                            ]
+                        }
+                    }
+                ],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 20},
+            }
+            if self.status == 200
+            else {"error": {"code": "rate_limit_exceeded", "message": "echo of the prompt"}}
+        )
+        return httpx.Response(self.status, json=payload, request=httpx.Request("POST", url))
+
+
+async def test_the_red_team_is_openai_when_a_key_is_present() -> None:
+    http = FakeOpenAI()
+    client = ModelClient(client=FakeBedrock(set()), openai_key="sk-test", http=http)  # type: ignore[arg-type]
+    reply = await client.ask(Task.CHALLENGE, Challenge, system="s", prompt="p", images=[b"x"])
+    assert reply.model_id == "openai/gpt-6.1-sol"
+    assert reply.family == "openai" and reply.region == "external"
+    assert reply.same_family_fallback is False
+    assert http.bodies[0]["tool_choice"]["function"]["name"] == "answer"
+    assert http.bodies[0]["messages"][1]["content"][0]["image_url"]["url"].startswith("data:image/")
+
+
+async def test_an_openai_failure_falls_back_and_says_so() -> None:
+    fake = FakeBedrock(set())
+    client = ModelClient(client=fake, openai_key="sk-test", http=FakeOpenAI(429))  # type: ignore[arg-type]
+    reply = await client.ask(Task.CHALLENGE, Challenge, system="s", prompt="p")
+    assert reply.model_id == HAIKU.model_id
+    assert reply.same_family_fallback is True

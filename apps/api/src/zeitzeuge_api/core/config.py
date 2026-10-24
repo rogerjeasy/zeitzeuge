@@ -17,7 +17,7 @@ import json
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import AliasChoices, Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 Environment = Literal["local", "dev", "prod"]
@@ -109,6 +109,13 @@ class Settings(BaseSettings):
     worker_concurrency: int = 4
     tool_cache_dir: str = ""
     """Directory for the lookup cache; empty = in-memory only."""
+    openai_api_key: str = Field(
+        default="", validation_alias=AliasChoices("ZZ_OPENAI_API_KEY", "OPENAI_API_KEY")
+    )
+    """Local development: the key itself, from `.env`. Never set in AWS."""
+    openai_key_ref: str = ""
+    """In AWS: a reference such as `secretsmanager://…/external/api-keys#openai`.
+    Empty means the conventional `{project}/{env}/external/api-keys#openai`."""
 
     # --- Key-value (infra/modules/keyvalue) -------------------------------
     rate_limit_table: str = ""

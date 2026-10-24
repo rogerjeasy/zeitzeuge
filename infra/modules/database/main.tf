@@ -142,6 +142,12 @@ resource "aws_rds_cluster_instance" "writer" {
 resource "random_password" "app" {
   length  = 40
   special = false # safe inside a DSN without escaping, 238 bits of entropy
+
+  # Bump `app_password_generation` to rotate: a new value is generated, written
+  # to the secret, and the next deploy's migrate re-syncs the role to it.
+  keepers = {
+    generation = var.app_password_generation
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "app" {

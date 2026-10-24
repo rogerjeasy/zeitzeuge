@@ -88,3 +88,9 @@ variable "log_retention_days" {
   type    = number
   default = 30
 }
+
+variable "app_password_generation" {
+  description = "Rotation counter for the application role's password. Increment to rotate."
+  type        = number
+  default     = 1
+}

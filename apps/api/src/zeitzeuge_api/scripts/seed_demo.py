@@ -78,13 +78,19 @@ async def _ensure_cognito_user(
 
     # Permanent, so the account never meets a NEW_PASSWORD_REQUIRED challenge
     # in front of a judge.
-    await call(
-        cognito.admin_set_user_password,
-        UserPoolId=pool_id,
-        Username=email,
-        Password=password,
-        Permanent=True,
-    )
+    try:
+        await call(
+            cognito.admin_set_user_password,
+            UserPoolId=pool_id,
+            Username=email,
+            Password=password,
+            Permanent=True,
+        )
+    except cognito.exceptions.PasswordHistoryPolicyViolationException:
+        # Every deploy runs the seed; from the second one on, the guest already
+        # holds exactly this password and the pool's history policy refuses to
+        # «change» it to itself. That is the state we wanted.
+        log.info("seed.guest_password_unchanged", email=email)
 
     try:
         await call(

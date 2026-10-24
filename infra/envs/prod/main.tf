@@ -86,6 +86,9 @@ module "database" {
   min_capacity        = var.db_min_capacity
   max_capacity        = var.db_max_capacity
   deletion_protection = var.deletion_protection
+
+  # 2: rotated after the first value appeared in a failed migrate's log (2026-10-24).
+  app_password_generation = 2
 }
 
 module "keyvalue" {

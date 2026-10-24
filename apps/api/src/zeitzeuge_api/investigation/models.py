@@ -20,6 +20,7 @@ validation error, then the stage fails and the worker records it.
 
 from __future__ import annotations
 
+import base64
 import io
 import json
 import os
@@ -30,12 +31,16 @@ from typing import Any, TypeVar
 
 import anyio
 import boto3
+import httpx
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from PIL import Image
 from pydantic import BaseModel, ValidationError
 
+from zeitzeuge_api.core.logging import get_logger
+
 T = TypeVar("T", bound=BaseModel)
+log = get_logger(__name__)
 
 
 class Task(StrEnum):
@@ -61,6 +66,10 @@ OPUS = Binding("eu.anthropic.claude-opus-4-6-v1", "claude-opus", 5.0, 25.0)
 SONNET = Binding("eu.anthropic.claude-sonnet-4-6", "claude-sonnet", 3.0, 15.0)
 HAIKU = Binding("eu.anthropic.claude-haiku-4-5-20251001-v1:0", "claude-haiku", 1.0, 5.0)
 OPENAI = Binding("global.openai.gpt-6.1-sol", "openai", 2.5, 10.0)
+OPENAI_DIRECT = Binding("gpt-6.1-sol", "openai", 2.5, 10.0)
+"""The same model through OpenAI's own API: Bedrock does not offer OpenAI models to
+this account, the brief allows public tools, and OpenAI is the event's sponsor."""
+OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
 _FAMILIES = {
     "anthropic.claude-opus": "claude-opus",
@@ -98,6 +107,10 @@ def _family_of(model_id: str) -> str:
         if marker in model_id:
             return family
     return "other"
+
+
+def _overridden() -> set[Task]:
+    return {task for task in Task if os.environ.get(f"ZZ_MODEL_{task.upper()}")}
 
 
 def bindings_from_env() -> dict[Task, Binding]:
@@ -146,8 +159,14 @@ class ModelClient:
         region: str = "eu-central-2",
         bindings: dict[Task, Binding] | None = None,
         client: Any | None = None,
+        openai_key: str = "",
+        http: httpx.AsyncClient | None = None,
     ) -> None:
         self.bindings = bindings or bindings_from_env()
+        self._openai_key = openai_key
+        self._http = http
+        if openai_key and Task.CHALLENGE not in _overridden():
+            self.bindings[Task.CHALLENGE] = OPENAI_DIRECT
         self._refused: dict[str, float] = {}
         """model id → when it was last refused; skipped for a while instead of re-asked."""
         self._client = client or boto3.session.Session(region_name=region).client(
@@ -167,6 +186,18 @@ class ModelClient:
     ) -> Reply[T]:
         binding = self.bindings[task]
         fallback = FALLBACKS.get(task)
+        if binding is OPENAI_DIRECT:
+            if self._openai_key:
+                try:
+                    return await self._ask_openai(
+                        binding, contract, system, prompt, images or [], max_tokens
+                    )
+                except (httpx.HTTPError, ValueError, KeyError, ModelError) as exc:
+                    log.warning("models.openai_failed", error=str(exc)[:300])
+            if fallback is None:
+                raise ModelError("OpenAI unavailable and no fallback")
+            reply = await self._ask(fallback, contract, system, prompt, images or [], max_tokens)
+            return Reply(**{**_as_dict(reply), "same_family_fallback": True})
         refused_at = self._refused.get(binding.model_id)
         if refused_at is None or time.monotonic() - refused_at > _REFUSAL_TTL_SECONDS:
             try:
@@ -187,6 +218,83 @@ class ModelClient:
         except (ClientError, BotoCoreError) as exc:
             raise ModelError(f"{fallback.model_id}: {exc}") from exc
         return Reply(**{**_as_dict(reply), "same_family_fallback": task is Task.CHALLENGE})
+
+    async def _ask_openai(
+        self,
+        binding: Binding,
+        contract: type[T],
+        system: str,
+        prompt: str,
+        images: list[bytes],
+        max_tokens: int,
+    ) -> Reply[T]:
+        """Chat Completions with one forced function call, the same contract as Converse."""
+        content: list[dict[str, Any]] = [
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64," + base64.b64encode(i).decode()},
+            }
+            for i in images
+        ]
+        content.append({"type": "text", "text": prompt})
+        body = {
+            "model": binding.model_id,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": content},
+            ],
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "answer",
+                        "description": "Return the answer. This is the only way to reply.",
+                        "parameters": contract.model_json_schema(),
+                    },
+                }
+            ],
+            "tool_choice": {"type": "function", "function": {"name": "answer"}},
+            "max_completion_tokens": max_tokens * 4,
+        }
+        started = time.monotonic()
+        http = self._http or httpx.AsyncClient()
+        try:
+            response = await http.post(
+                OPENAI_URL,
+                json=body,
+                headers={"Authorization": f"Bearer {self._openai_key}"},
+                timeout=180,
+            )
+        finally:
+            if self._http is None:
+                await http.aclose()
+        if response.status_code >= 400:
+            # The body may echo the request; keep only the status and the error code.
+            code = response.json().get("error", {}).get("code") if response.content else None
+            raise ModelError(f"{binding.model_id}: HTTP {response.status_code} {code or ''}")
+        payload = response.json()
+        call_ = payload["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"]
+        try:
+            data = contract.model_validate(json.loads(call_))
+        except (ValidationError, ValueError) as exc:
+            raise ModelError(f"{binding.model_id}: reply did not fit {contract.__name__}") from exc
+        usage = payload.get("usage", {})
+        tokens_in = int(usage.get("prompt_tokens", 0))
+        tokens_out = int(usage.get("completion_tokens", 0))
+        return Reply(
+            data=data,
+            model_id=f"openai/{binding.model_id}",
+            family=binding.family,
+            region="external",
+            input_tokens=tokens_in,
+            output_tokens=tokens_out,
+            cost_usd=round(
+                (tokens_in * binding.input_usd_per_mtok + tokens_out * binding.output_usd_per_mtok)
+                / 1_000_000,
+                6,
+            ),
+            latency_ms=int((time.monotonic() - started) * 1000),
+        )
 
     async def _ask(
         self,

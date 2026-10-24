@@ -191,7 +191,9 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
             worker = InvestigationWorker(
                 database,
                 Deps(
-                    models=ModelClient(region=settings.region),
+                    models=ModelClient(
+                        region=settings.region, openai_key=await _openai_key(secrets, settings)
+                    ),
                     tools=toolbox,
                     images=S3ImageStore(clients.s3),
                     code_version=__version__,
@@ -203,6 +205,20 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
             app.state.worker_task = asyncio.create_task(worker.run_forever())
 
     await jwks.warm()
+
+
+async def _openai_key(secrets: SecretsResolver, settings: Settings) -> str:
+    """The red team's OpenAI key; empty (labelled same-family fallback) if unavailable."""
+    if settings.openai_api_key:
+        return settings.openai_api_key
+    reference = settings.openai_key_ref or (
+        f"secretsmanager://{settings.project}/{settings.env}/external/api-keys#openai"
+    )
+    try:
+        return await secrets.resolve(reference)
+    except Exception as exc:  # a missing key must not take the API down
+        log.warning("startup.openai_key_unavailable", error=type(exc).__name__)
+        return ""
 
 
 @asynccontextmanager
