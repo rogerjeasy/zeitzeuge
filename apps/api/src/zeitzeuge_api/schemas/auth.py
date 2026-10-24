@@ -158,9 +158,7 @@ class SessionTokens(Schema):
     refresh_token: str | None = None
     token_type: str = "Bearer"
     expires_in: int
-    session_id: str = Field(
-        description="Identifies this sign-in. Send it back as `X-ZZ-Session`."
-    )
+    session_id: str = Field(description="Identifies this sign-in. Send it back as `X-ZZ-Session`.")
 
 
 class ChallengeResponse(Schema):

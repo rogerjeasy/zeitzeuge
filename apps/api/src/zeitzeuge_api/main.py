@@ -326,9 +326,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         context = get_context(request)
         return JSONResponse(
             status_code=error.status_code,
-            content=error.to_problem(
-                instance=str(request.url.path), request_id=context.request_id
-            ),
+            content=error.to_problem(instance=str(request.url.path), request_id=context.request_id),
             headers={**error.headers, "Content-Type": "application/problem+json"},
         )
 

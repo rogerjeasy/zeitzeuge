@@ -212,9 +212,7 @@ def require_roles(*roles: UserRole) -> Callable[[Identity], Identity]:
 
     def _guard(identity: CurrentIdentity) -> Identity:
         if identity.user.role not in allowed:
-            raise errors.ForbiddenError(
-                "This account does not hold a role permitted to do that."
-            )
+            raise errors.ForbiddenError("This account does not hold a role permitted to do that.")
         return identity
 
     return _guard

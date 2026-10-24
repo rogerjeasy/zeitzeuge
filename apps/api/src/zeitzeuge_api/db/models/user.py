@@ -97,9 +97,7 @@ class User(Base, TimestampMixin):
         "metadata", JSONDict, nullable=False, default=dict
     )
 
-    organization: Mapped[Organization] = relationship(
-        back_populates="users", lazy="joined"
-    )
+    organization: Mapped[Organization] = relationship(back_populates="users", lazy="joined")
     preferences: Mapped[UserPreferences | None] = relationship(
         back_populates="user", uselist=False, lazy="joined", cascade="all, delete-orphan"
     )

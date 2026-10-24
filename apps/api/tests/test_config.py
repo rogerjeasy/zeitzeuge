@@ -75,7 +75,9 @@ def test_jwks_comes_from_the_emulator_when_one_is_configured(monkeypatch) -> Non
     monkeypatch.setenv("ZZ_COGNITO_USER_POOL_ID", "eu-central-2_abc")
     monkeypatch.setenv("ZZ_AWS_ENDPOINT_URL", "http://localhost:5001/")
     settings = Settings(_env_file=None)
-    assert settings.cognito_jwks_url == "http://localhost:5001/eu-central-2_abc/.well-known/jwks.json"
+    assert (
+        settings.cognito_jwks_url == "http://localhost:5001/eu-central-2_abc/.well-known/jwks.json"
+    )
     # The issuer is what moto writes into `iss`, which is AWS's form either way.
     assert settings.cognito_issuer.startswith("https://cognito-idp.eu-central-2.amazonaws.com/")
     assert settings.cognito_jwks_headers == {

@@ -1,7 +1,6 @@
 # ruff: noqa: F811  (pytest fixtures imported from test_investigation_api)
 """A slow stage keeps its run alive; a run given up for lost stops writing."""
 
-
 from __future__ import annotations
 
 import asyncio

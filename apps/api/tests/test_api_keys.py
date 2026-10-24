@@ -82,9 +82,7 @@ async def test_a_key_cannot_mint_another_key(as_user, client, app) -> None:
 
     async def _as_api_key():
         async with database.session(TenantContext.bootstrap()) as session:
-            user = await session.scalar(
-                sa_select(User).where(User.email == as_user["email"])
-            )
+            user = await session.scalar(sa_select(User).where(User.email == as_user["email"]))
             organization = await session.get(Organization, user.org_id)
             yield Identity(
                 principal=Principal(

@@ -154,9 +154,7 @@ async def confirm_email_change(
     response_model=list[schemas.SessionOut],
     summary="Devices currently signed in",
 )
-async def list_sessions(
-    identity: CurrentIdentity, service: Service
-) -> list[schemas.SessionOut]:
+async def list_sessions(identity: CurrentIdentity, service: Service) -> list[schemas.SessionOut]:
     return await service.list_sessions(
         identity.session, user=identity.user, context=identity.context
     )

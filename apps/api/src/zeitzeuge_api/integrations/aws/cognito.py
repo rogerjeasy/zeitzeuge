@@ -206,9 +206,9 @@ class CognitoIdentityProvider:
     @staticmethod
     def _outcome(response: dict[str, Any]) -> AuthOutcome:
         if "AuthenticationResult" in response:
-            return AuthOutcome(tokens=CognitoIdentityProvider._bundle(
-                response["AuthenticationResult"]
-            ))
+            return AuthOutcome(
+                tokens=CognitoIdentityProvider._bundle(response["AuthenticationResult"])
+            )
         return AuthOutcome(
             challenge_name=response.get("ChallengeName"),
             challenge_session=response.get("Session"),
@@ -287,9 +287,7 @@ class CognitoIdentityProvider:
             "UserPoolId": self._pool,
             "ClientId": self._client_id,
             "AuthFlow": "ADMIN_USER_PASSWORD_AUTH",
-            "AuthParameters": self._auth_params(
-                email, {"USERNAME": email, "PASSWORD": password}
-            ),
+            "AuthParameters": self._auth_params(email, {"USERNAME": email, "PASSWORD": password}),
             **self._context_data(context),
         }
         with _translate("admin_initiate_auth"):
@@ -310,15 +308,11 @@ class CognitoIdentityProvider:
             "ClientId": self._client_id,
             "ChallengeName": challenge_name,
             "Session": session,
-            "ChallengeResponses": self._auth_params(
-                username, {"USERNAME": username, **responses}
-            ),
+            "ChallengeResponses": self._auth_params(username, {"USERNAME": username, **responses}),
             **self._context_data(context),
         }
         with _translate("admin_respond_to_auth_challenge"):
-            response = await call(
-                self._clients.cognito.admin_respond_to_auth_challenge, **params
-            )
+            response = await call(self._clients.cognito.admin_respond_to_auth_challenge, **params)
         return self._outcome(response)
 
     async def refresh(self, *, refresh_token: str, username: str) -> TokenBundle:
@@ -333,9 +327,7 @@ class CognitoIdentityProvider:
             "UserPoolId": self._pool,
             "ClientId": self._client_id,
             "AuthFlow": "REFRESH_TOKEN_AUTH",
-            "AuthParameters": self._auth_params(
-                username, {"REFRESH_TOKEN": refresh_token}
-            ),
+            "AuthParameters": self._auth_params(username, {"REFRESH_TOKEN": refresh_token}),
         }
         with _translate("refresh"):
             response = await call(self._clients.cognito.admin_initiate_auth, **params)
@@ -367,9 +359,7 @@ class CognitoIdentityProvider:
         with _translate("forgot_password"):
             await call(self._clients.cognito.forgot_password, **params)
 
-    async def confirm_forgot_password(
-        self, *, email: str, code: str, new_password: str
-    ) -> None:
+    async def confirm_forgot_password(self, *, email: str, code: str, new_password: str) -> None:
         params = self._with_secret(
             email,
             {

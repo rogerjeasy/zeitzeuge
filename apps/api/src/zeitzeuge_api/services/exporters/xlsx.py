@@ -50,10 +50,17 @@ from zeitzeuge_api.investigation.confidence import (
     MODEL_STRENGTH_CAP,
     OPEN_WEB_PAGE,
     REFERENCE_TITLE_MATCH,
+    REGISTER_EXISTENCE,
+    RESEARCH_AGREEMENT,
+    RESEARCH_UNVERIFIED,
+    RESEARCH_VERIFIED,
     REVIEW_AT,
     SOURCE_CLASS_DE,
     WEIGHTS,
+    ReverseMatch,
     Support,
+    research_strength,
+    reverse_image_strength,
     score,
     strength_for_match,
 )
@@ -158,6 +165,14 @@ _SOURCE_CLASS_SCOPE: Mapping[SourceClass, str] = {
     SourceClass.REFERENCE_IMAGE: (
         "Vergleichsbilder desselben Motivs: Katalog des Staatsarchivs (ohne die Serie "
         "SG.CIV.17, damit die Lösung nicht aus dem eigenen Bestand stammt), Wikimedia Commons."
+    ),
+    SourceClass.REVERSE_IMAGE: (
+        "Dasselbe oder ein fast gleiches Bild auf einer Webseite, deren Titel oder Adresse den "
+        "Namen nennt (Google Cloud Vision Websuche, Google Lens)."
+    ),
+    SourceClass.OPEN_RESEARCH: (
+        "Recherche zweier unabhängiger KI-Modellfamilien mit Websuche (OpenAI GPT-5.5, Google "
+        "Gemini). Sie schlagen Werte vor; jede genannte Quelle wird von uns abgerufen und geprüft."
     ),
     SourceClass.OPEN_WEB: "Webseiten, Wikipedia, Wikidata.",
     SourceClass.TERRAIN_GEOMETRY: "Abgleich der Horizontlinie mit dem Geländemodell (noch nicht "
@@ -546,6 +561,12 @@ def _write_methode(
             strength_for_match(MatchKind.FUZZY),
         ),
         (
+            "Name im Verzeichnis (nur Existenz)",
+            "Der Name kommt in einem amtlichen Verzeichnis vor. Das zeigt, dass es ihn gibt, "
+            "nicht, dass das Foto ihn zeigt.",
+            REGISTER_EXISTENCE,
+        ),
+        (
             "Räumliche Abfrage",
             "Welche Ortschaft oder Gemeinde liegt an diesem Punkt?",
             strength_for_match(MatchKind.SPATIAL),
@@ -556,6 +577,37 @@ def _write_methode(
             REFERENCE_TITLE_MATCH,
         ),
         ("Webseite", "Je Seite; mehrere Seiten bleiben eine Quellenart.", OPEN_WEB_PAGE),
+        (
+            "Bild im Web, volle Übereinstimmung",
+            "Dasselbe Bild auf einer Seite, deren Titel oder Adresse den Namen nennt.",
+            reverse_image_strength(ReverseMatch.FULL),
+        ),
+        (
+            "Bild im Web, teilweise Übereinstimmung",
+            "Ein Ausschnitt oder eine Bearbeitung desselben Bildes, Seite nennt den Namen.",
+            reverse_image_strength(ReverseMatch.PARTIAL),
+        ),
+        (
+            "Bild im Web, nur ähnlich",
+            "Ein ähnliches Bild oder eine Bezeichnung der Bildsuche nennt den Namen.",
+            reverse_image_strength(ReverseMatch.SIMILAR),
+        ),
+        (
+            "KI-Recherche, Quelle geprüft",
+            "Eine Modellfamilie nennt den Wert; eine ihrer Quellen enthält ihn tatsächlich.",
+            RESEARCH_VERIFIED,
+        ),
+        (
+            "KI-Recherche, Quelle nicht bestätigt",
+            "Keine der genannten Quellen enthält den Wert.",
+            RESEARCH_UNVERIFIED,
+        ),
+        (
+            "KI-Recherche, zwei Familien einig",
+            "Beide Modellfamilien nennen unabhängig denselben Wert, mindestens eine Quelle "
+            "geprüft.",
+            RESEARCH_AGREEMENT,
+        ),
         (
             "Aussage eines Modells (höchstens)",
             "Was ein Sprachmodell im Bild sieht oder liest.",
@@ -637,14 +689,21 @@ def _write_methode(
 
 def _examples() -> list[tuple[str, list[Support]]]:
     exact = strength_for_match(MatchKind.EXACT)
+    agreed = research_strength(verified=True, families_agreeing=2, any_verified=True)
     geodata = Support(SourceClass.GEODATA_LAYER, exact)
+    exists = Support(SourceClass.GEODATA_LAYER, REGISTER_EXISTENCE)
     reference = Support(SourceClass.REFERENCE_IMAGE, REFERENCE_TITLE_MATCH)
     text = Support(SourceClass.TEXT_IN_IMAGE, MODEL_STRENGTH_CAP)
     visual = Support(SourceClass.VISUAL, MODEL_STRENGTH_CAP)
+    research = Support(SourceClass.OPEN_RESEARCH, agreed)
+    online = Support(SourceClass.REVERSE_IMAGE, reverse_image_strength(ReverseMatch.PARTIAL))
     return [
         ("Beispiel: nur ein Modell", [visual]),
-        ("Beispiel: Geodaten + Referenzbild", [geodata, reference]),
-        ("Beispiel: + Schrift im Bild", [geodata, reference, text]),
+        ("Beispiel: KI-Recherche (zwei Familien einig), allein", [research]),
+        ("Beispiel: + Name im Verzeichnis + Bildmodell", [research, exists, visual]),
+        ("Beispiel: Schrift im Bild + Verzeichnis am Ort + Recherche", [text, geodata, research]),
+        ("Beispiel: Bild im Web + Recherche + Bildmodell", [online, research, visual]),
+        ("Beispiel: + Referenzbild", [online, research, visual, reference]),
     ]
 
 

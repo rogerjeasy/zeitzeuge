@@ -239,9 +239,7 @@ async def batch(app) -> dict[str, Any]:
             extent_unit=ExtentUnit.PHOTOGRAPHS,
         )
         session.add(fonds)
-        upload = UploadBatch(
-            id=uuid.uuid4(), org_id=org.id, source=BatchSource.ZIP, label="prio1"
-        )
+        upload = UploadBatch(id=uuid.uuid4(), org_id=org.id, source=BatchSource.ZIP, label="prio1")
         session.add(upload)
         await session.flush()
         b = _Builder(session, org, fonds, upload)
@@ -265,7 +263,7 @@ async def batch(app) -> dict[str, Any]:
             run_a, "ev_002", SourceClass.REFERENCE_IMAGE, source="Wikimedia Commons",
             source_uri="javascript:alert(1)", model_id="eu.anthropic.claude-opus-5-5",
         )  # fmt: skip
-        web = b.evidence(run_a, "ev_003", SourceClass.OPEN_WEB, source="=HYPERLINK(\"x\")")
+        web = b.evidence(run_a, "ev_003", SourceClass.OPEN_WEB, source='=HYPERLINK("x")')
         record_a = CatalogueRecord(
             id=uuid.uuid4(), org_id=org.id, asset_id=a.id, fonds_id=fonds.id, current_version=1
         )

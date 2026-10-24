@@ -15,6 +15,13 @@ one web page are one source, and a contradiction has to cost something
     raw ≥ 0.50  → emit_with_review  («Prüfbedarf»)
     otherwise   → abstain           («bewusst leer gelassen»)
 
+**Find, then prove** (identification-upgrade note §2, ADR-19): a register
+*name lookup* proves only that a name exists (`REGISTER_EXISTENCE`); a model
+with live web search may propose a value (`open_research`), but a field reaches
+the acceptance line only with evidence that ties this photograph to the value —
+a sign, the same picture online (`reverse_image`), a matching reference photo
+or Street View frame, geometry, or a human.
+
 There is no calibration map yet (no gold set by the deadline, design note D6),
 so `confidence = raw` and the Methode sheet says so. Strengths are not free
 either: a tool's match kind maps to a fixed strength, and anything a model
@@ -29,6 +36,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 
 from zeitzeuge_api.db.models.enums import AbstainReason, FieldDecisionKind, SourceClass
 from zeitzeuge_api.investigation.tools.base import MatchKind
@@ -39,6 +47,8 @@ WEIGHTS: Mapping[SourceClass, float] = {
     SourceClass.TEXT_IN_IMAGE: 0.5,
     SourceClass.GEODATA_LAYER: 0.7,
     SourceClass.REFERENCE_IMAGE: 0.6,
+    SourceClass.REVERSE_IMAGE: 0.8,
+    SourceClass.OPEN_RESEARCH: 0.5,
     SourceClass.OPEN_WEB: 0.4,
     SourceClass.TERRAIN_GEOMETRY: 0.9,
     SourceClass.STREET_LEVEL: 0.5,
@@ -57,6 +67,22 @@ REFERENCE_TITLE_MATCH = 0.8
 """A reference photo whose title names the same object."""
 OPEN_WEB_PAGE = 0.6
 
+REGISTER_EXISTENCE = 0.35
+"""A register knows the *name* («Schwyz» is in swissNAMES3D): it exists, it is spelled
+so, it lies there. That is not evidence the photograph shows it, so it is weak."""
+
+REVERSE_FULL_MATCH = 0.95
+REVERSE_PARTIAL_MATCH = 0.8
+REVERSE_SIMILAR = 0.5
+LANDMARK_CAP = 0.85
+"""A landmark detector's own score, capped: it names famous places, not this photo's."""
+
+RESEARCH_VERIFIED = 0.6
+"""One model family names the value and a page it cites, fetched by us, contains it."""
+RESEARCH_UNVERIFIED = 0.3
+RESEARCH_AGREEMENT = 0.9
+"""Two independent families name the same value and at least one is verified."""
+
 _MATCH_STRENGTH: Mapping[MatchKind, float] = {
     MatchKind.EXACT: 1.0,
     MatchKind.NORMALISED: 0.85,
@@ -70,6 +96,8 @@ SOURCE_CLASS_DE: Mapping[SourceClass, str] = {
     SourceClass.TEXT_IN_IMAGE: "Schrift im Bild",
     SourceClass.GEODATA_LAYER: "Geodaten",
     SourceClass.REFERENCE_IMAGE: "Referenzbild",
+    SourceClass.REVERSE_IMAGE: "Bild im Web",
+    SourceClass.OPEN_RESEARCH: "KI-Recherche",
     SourceClass.OPEN_WEB: "Web",
     SourceClass.TERRAIN_GEOMETRY: "Geländemodell",
     SourceClass.STREET_LEVEL: "Strassenansicht",
@@ -106,8 +134,39 @@ class Scored:
     """«3 Quellenarten bestätigen (Geodaten, Referenzbild, Schrift im Bild) · 0 Einwände»."""
 
 
+class ReverseMatch(StrEnum):
+    """How closely a web page's picture matches the photograph."""
+
+    FULL = "full"
+    PARTIAL = "partial"
+    SIMILAR = "similar"
+
+
+_REVERSE_STRENGTH: Mapping[ReverseMatch, float] = {
+    ReverseMatch.FULL: REVERSE_FULL_MATCH,
+    ReverseMatch.PARTIAL: REVERSE_PARTIAL_MATCH,
+    ReverseMatch.SIMILAR: REVERSE_SIMILAR,
+}
+
+
 def strength_for_match(match: MatchKind) -> float:
     return _MATCH_STRENGTH[match]
+
+
+def reverse_image_strength(match: ReverseMatch) -> float:
+    """A page whose picture matches and whose title or URL names the value."""
+    return _REVERSE_STRENGTH[match]
+
+
+def landmark_strength(detector_score: float) -> float:
+    return max(0.0, min(LANDMARK_CAP, detector_score))
+
+
+def research_strength(*, verified: bool, families_agreeing: int, any_verified: bool) -> float:
+    """One research family's claim. Agreement counts only when someone's source checks out."""
+    if families_agreeing >= 2 and any_verified:
+        return RESEARCH_AGREEMENT
+    return RESEARCH_VERIFIED if verified else RESEARCH_UNVERIFIED
 
 
 def model_strength(stated: float) -> float:

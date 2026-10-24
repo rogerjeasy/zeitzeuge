@@ -65,9 +65,7 @@ class ApiKeyService:
 
         secret = secrets.token_urlsafe(_SECRET_BYTES)
         token = f"{KEY_PREFIX}{secret}"
-        expires_at = (
-            _now() + timedelta(days=data.expires_in_days) if data.expires_in_days else None
-        )
+        expires_at = _now() + timedelta(days=data.expires_in_days) if data.expires_in_days else None
 
         row = ApiKey(
             org_id=user.org_id,
@@ -106,9 +104,7 @@ class ApiKeyService:
             secret=token,
         )
 
-    async def list_for_user(
-        self, session: AsyncSession, *, user: User
-    ) -> list[schemas.ApiKeyOut]:
+    async def list_for_user(self, session: AsyncSession, *, user: User) -> list[schemas.ApiKeyOut]:
         rows = await session.scalars(
             select(ApiKey)
             .where(ApiKey.user_id == user.id, ApiKey.revoked_at.is_(None))

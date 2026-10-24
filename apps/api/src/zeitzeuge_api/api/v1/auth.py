@@ -122,9 +122,7 @@ async def logout(
     identity: CurrentIdentity,
     service: Service,
 ) -> None:
-    await service.logout(
-        identity.session, user=identity.user, data=body, context=identity.context
-    )
+    await service.logout(identity.session, user=identity.user, data=body, context=identity.context)
 
 
 @router.post(
@@ -189,9 +187,7 @@ async def begin_totp(
     identity: CurrentIdentity,
     service: Service,
 ) -> schemas.TotpEnrolmentResponse:
-    return await service.begin_totp(
-        access_token=identity.require_user_token(), user=identity.user
-    )
+    return await service.begin_totp(access_token=identity.require_user_token(), user=identity.user)
 
 
 @router.post(
@@ -224,9 +220,7 @@ async def disable_totp(
     identity: CurrentIdentity,
     service: Service,
 ) -> None:
-    await service.disable_totp(
-        identity.session, user=identity.user, context=identity.context
-    )
+    await service.disable_totp(identity.session, user=identity.user, context=identity.context)
 
 
 @router.post(

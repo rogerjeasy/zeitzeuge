@@ -149,9 +149,7 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def cognito_issuer(self) -> str:
-        return (
-            f"https://cognito-idp.{self.region}.amazonaws.com/{self.cognito_user_pool_id}"
-        )
+        return f"https://cognito-idp.{self.region}.amazonaws.com/{self.cognito_user_pool_id}"
 
     @computed_field  # type: ignore[prop-decorator]
     @property

@@ -1671,7 +1671,7 @@ offen       : record in_review with ≥ 1 ranked field still abstain and not fil
 | `invocation_status` | pending, running, succeeded, failed, skipped, reused | new |
 | `run_event_kind` | note, evidence, objection, abstain, verdict, state, cost, error | `theater.ts` |
 | `evidence_kind` | visual, textual, geometric, external, archival, human | proposal / `record.ts` |
-| `evidence_source_class` | exif, visual, text_in_image, geodata_layer, reference_image, reverse_image, open_research, open_web, terrain_geometry, street_level, archival, human | the confidence rule (I-14); `reverse_image` and `open_research` added by migration `0006` ([identification upgrade](superpowers/specs/2026-10-24-identification-upgrade.md)) |
+| `evidence_source_class` | exif, visual, text_in_image, geodata_layer, reference_image, reverse_image, open_research, open_web, terrain_geometry, street_level, archival, human | the confidence rule (I-14); `reverse_image` and `open_research` added by the ([identification upgrade](superpowers/specs/2026-10-24-identification-upgrade.md)) |
 | `hypothesis_kind` | place, building, street, feature, date, subject, photographer | Appendix B + the five ranked fields |
 | `hypothesis_status` | open, refuted, surviving, selected, rejected | new |
 | `hypothesis_origin` | synthesiser, exif, reference_match, steer, tip | new |

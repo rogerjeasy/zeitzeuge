@@ -84,9 +84,7 @@ async def test_id_token_is_not_an_authorisation(verifier, rsa_keys) -> None:
 async def test_expired_token(verifier, rsa_keys) -> None:
     past = int(time.time()) - 7200
     with pytest.raises(TokenExpiredError):
-        await verifier.verify(
-            make_token(rsa_keys, iat=past, exp=past + 60), expected_use="access"
-        )
+        await verifier.verify(make_token(rsa_keys, iat=past, exp=past + 60), expected_use="access")
 
 
 async def test_another_pools_token(verifier, rsa_keys) -> None:
@@ -97,16 +95,12 @@ async def test_another_pools_token(verifier, rsa_keys) -> None:
 
 async def test_another_clients_token(verifier, rsa_keys) -> None:
     with pytest.raises(UnauthenticatedError):
-        await verifier.verify(
-            make_token(rsa_keys, client_id="someone-else"), expected_use="access"
-        )
+        await verifier.verify(make_token(rsa_keys, client_id="someone-else"), expected_use="access")
 
 
 async def test_unsigned_token_is_refused(verifier, rsa_keys) -> None:
     """`alg: none` is the oldest trick there is."""
-    claims = jwt.decode(
-        make_token(rsa_keys), options={"verify_signature": False}
-    )
+    claims = jwt.decode(make_token(rsa_keys), options={"verify_signature": False})
     forged = jwt.encode(claims, key="", algorithm="none")
     with pytest.raises(UnauthenticatedError):
         await verifier.verify(forged, expected_use="access")
@@ -123,9 +117,7 @@ async def test_unknown_key(verifier, rsa_keys) -> None:
         await verifier.verify(token, expected_use="access")
 
 
-@pytest.mark.parametrize(
-    "header", ["", "Basic YTpi", "Bearer", "Bearer    ", "token abc.def"]
-)
+@pytest.mark.parametrize("header", ["", "Basic YTpi", "Bearer", "Bearer    ", "token abc.def"])
 async def test_only_a_bearer_credential_is_accepted(client, header) -> None:
     """Anything that is not `Authorization: Bearer <token>` is unauthenticated."""
     response = await client.get("/api/v1/users/me", headers={"Authorization": header})

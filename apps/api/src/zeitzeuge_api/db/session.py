@@ -129,9 +129,7 @@ def create_engine(dsn: str, settings: Settings) -> AsyncEngine:
 class Database:
     def __init__(self, engine: AsyncEngine) -> None:
         self.engine = engine
-        self.sessionmaker = async_sessionmaker(
-            engine, expire_on_commit=False, autoflush=False
-        )
+        self.sessionmaker = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
 
     @asynccontextmanager
     async def session(self, tenant: TenantContext = ANONYMOUS) -> AsyncIterator[AsyncSession]:

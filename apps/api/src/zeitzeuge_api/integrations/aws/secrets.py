@@ -83,9 +83,7 @@ class SecretsResolver:
                 return str(payload)
 
             name = reference[len(SSM_SCHEME) :]
-            response = await call(
-                self._clients.ssm.get_parameter, Name=name, WithDecryption=True
-            )
+            response = await call(self._clients.ssm.get_parameter, Name=name, WithDecryption=True)
             return str(response["Parameter"]["Value"])
         except (ClientError, BotoCoreError, KeyError, json.JSONDecodeError) as exc:
             # The reference is safe to log; the value never is.

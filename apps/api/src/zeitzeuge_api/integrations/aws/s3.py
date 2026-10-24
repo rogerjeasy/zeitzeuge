@@ -113,9 +113,7 @@ class AvatarStorage:
             fields["x-amz-server-side-encryption"] = "aws:kms"
             fields["x-amz-server-side-encryption-aws-kms-key-id"] = self._kms_key_id
             conditions.append({"x-amz-server-side-encryption": "aws:kms"})
-            conditions.append(
-                {"x-amz-server-side-encryption-aws-kms-key-id": self._kms_key_id}
-            )
+            conditions.append({"x-amz-server-side-encryption-aws-kms-key-id": self._kms_key_id})
 
         try:
             presigned = self._clients.s3.generate_presigned_post(

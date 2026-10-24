@@ -131,9 +131,7 @@ class AvatarUploadRequest(Schema):
 
 class AvatarUploadTicket(Schema):
     upload_url: str
-    fields: dict[str, str] = Field(
-        description="POST these as multipart form fields, `file` last."
-    )
+    fields: dict[str, str] = Field(description="POST these as multipart form fields, `file` last.")
     key: str
     expires_in: int
     max_bytes: int

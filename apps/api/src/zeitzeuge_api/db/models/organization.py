@@ -50,9 +50,7 @@ class Organization(Base, TimestampMixin):
 
     settings: Mapped[dict[str, Any]] = mapped_column(JSONDict, nullable=False, default=dict)
 
-    users: Mapped[list[User]] = relationship(
-        back_populates="organization", lazy="raise"
-    )
+    users: Mapped[list[User]] = relationship(back_populates="organization", lazy="raise")
 
     __table_args__ = (Index("ix_organizations_kind_canton", "kind", "canton"),)
 

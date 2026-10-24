@@ -132,7 +132,7 @@ The formula is unchanged — `raw = 1 − Π_c (1 − w_c · s_c)` over distinct
 
 ### 5.1 Source classes and strengths
 
-Two classes are added (`ALTER TYPE evidence_source_class ADD VALUE`, migration `0006`):
+Two classes are added. No migration is needed: `evidence_items.source_class` is a `varchar(32)` without a CHECK (`native_enum=False`, 0003), so the Python enum is the only gate:
 
 | Class | Weight | Strength — assigned by rule, never by a model |
 |---|---|---|
@@ -211,7 +211,7 @@ Wall time: Research (≈ 30–90 s) overlaps Perception; the comparison stage ad
 
 ## 10. Build order (each step ends runnable)
 
-1. Migration `0006` (two enum values) + `confidence.py` weights/strengths + exporter Methode table + web labels for the two classes. Unit tests first.
+1. The two enum values + `confidence.py` weights/strengths + exporter Methode table (the web shows the label the API sends, so it needs no change). Unit tests first.
 2. Grounding fixes that need no new key: existence strength, no canton filter, `Ausserhalb_SZ` from the point, Resolve from any identifying witness (fixes .58).
 3. Research stage with GPT-5.5 + `page.verify`; Gemini behind its key. Live check on .3, .58, .378, .159, .139.
 4. KSI + Wikidata gazetteers; GWR designation search.

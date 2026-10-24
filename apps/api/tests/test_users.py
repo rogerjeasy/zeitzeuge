@@ -37,10 +37,7 @@ async def test_update_profile(as_user, client, app) -> None:
     assert response.json()["initials"] == "DB"
 
     async with app.state.database.session(TenantContext.bootstrap()) as session:
-        actions = [
-            row.action
-            for row in await session.scalars(select(AuditLog))
-        ]
+        actions = [row.action for row in await session.scalars(select(AuditLog))]
     assert "user.profile_updated" in actions
 
 
@@ -213,9 +210,7 @@ async def test_sessions_lists_the_current_device(as_user, client) -> None:
 
 async def test_revoking_an_unknown_session_is_a_404_not_a_403(as_user, client) -> None:
     """A caller must not learn that someone else's session id exists."""
-    response = await client.delete(
-        "/api/v1/users/me/sessions/00000000-0000-0000-0000-000000000000"
-    )
+    response = await client.delete("/api/v1/users/me/sessions/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
     malformed = await client.delete("/api/v1/users/me/sessions/not-a-uuid")
     assert malformed.status_code == 404

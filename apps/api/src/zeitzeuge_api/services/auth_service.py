@@ -58,10 +58,26 @@ log = get_logger(__name__)
 # at one of these never joins an existing tenant.
 PUBLIC_MAIL_DOMAINS = frozenset(
     {
-        "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com",
-        "yahoo.com", "icloud.com", "me.com", "gmx.ch", "gmx.net", "gmx.de",
-        "bluewin.ch", "hispeed.ch", "sunrise.ch", "protonmail.com", "proton.me",
-        "posteo.de", "mailbox.org", "web.de", "t-online.de",
+        "gmail.com",
+        "googlemail.com",
+        "outlook.com",
+        "hotmail.com",
+        "live.com",
+        "yahoo.com",
+        "icloud.com",
+        "me.com",
+        "gmx.ch",
+        "gmx.net",
+        "gmx.de",
+        "bluewin.ch",
+        "hispeed.ch",
+        "sunrise.ch",
+        "protonmail.com",
+        "proton.me",
+        "posteo.de",
+        "mailbox.org",
+        "web.de",
+        "t-online.de",
     }
 )
 
@@ -785,9 +801,7 @@ class AuthService:
         tokens = await self._finalise_login(
             session, tokens=outcome.tokens, username=self._guest_username, context=context
         )
-        user = await session.scalar(
-            select(User).where(User.email == self._guest_username.lower())
-        )
+        user = await session.scalar(select(User).where(User.email == self._guest_username.lower()))
         if user is None:  # pragma: no cover - _finalise_login always syncs one
             raise errors.ConfigurationError("The demo account is not provisioned.")
 

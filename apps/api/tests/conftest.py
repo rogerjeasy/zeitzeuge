@@ -86,9 +86,7 @@ def aws_resources(aws) -> dict[str, str]:
         cognito.create_group(GroupName=group, UserPoolId=pool_id)
 
     s3 = boto3.client("s3", region_name=REGION)
-    s3.create_bucket(
-        Bucket=BUCKET, CreateBucketConfiguration={"LocationConstraint": REGION}
-    )
+    s3.create_bucket(Bucket=BUCKET, CreateBucketConfiguration={"LocationConstraint": REGION})
 
     dynamodb = boto3.client("dynamodb", region_name=REGION)
     dynamodb.create_table(
@@ -278,9 +276,7 @@ async def as_user(app, client, signed_in):
 
     async def _override():
         async with database.session(TenantContext.bootstrap()) as session:
-            user = await session.scalar(
-                select(User).where(User.email == signed_in["email"])
-            )
+            user = await session.scalar(select(User).where(User.email == signed_in["email"]))
             assert user is not None
             organization = await session.get(Organization, user.org_id)
             assert organization is not None
