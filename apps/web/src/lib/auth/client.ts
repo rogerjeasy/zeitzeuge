@@ -13,6 +13,7 @@ import {
   signInAction,
   signOutAction,
   signUpAction,
+  startDemoAction,
   verifyEmailAction,
 } from "./actions";
 import { NEXT_PARAM, safeNextPath } from "./routes";
@@ -41,5 +42,6 @@ export const auth: AuthProvider = {
   resendVerification: resendVerificationAction,
   requestPasswordReset: requestPasswordResetAction,
   continueAsGuest: continueAsGuestAction,
+  startDemo: startDemoAction,
   signOut: signOutAction,
 };

@@ -1,8 +1,8 @@
 import { useTranslations } from "next-intl";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { Button } from "@/components/ui/button";
 import { CONTEXT } from "@/lib/data/about";
+import { DemoEntry } from "@/components/auth/demo-entry";
 
 const FACTS = [
   { key: "contextEvent", value: CONTEXT.event },
@@ -54,10 +54,10 @@ export function AboutContext() {
             {t("ctaBody")}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-2.5">
-            <Button as={Link} href="/auth/signup">
+            <DemoEntry>
               {t("ctaPrimary")}
               <ArrowRight aria-hidden className="size-4" strokeWidth={2} />
-            </Button>
+            </DemoEntry>
             <Link
               href="/runs/run_01JBQ7"
               className="inline-flex h-11 items-center gap-2 rounded-xl border border-ink-panel-line px-4 text-sm font-medium text-ink-panel-body transition-colors hover:border-evidence hover:text-ink-panel-fg"

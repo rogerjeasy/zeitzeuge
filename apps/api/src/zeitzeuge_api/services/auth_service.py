@@ -772,6 +772,96 @@ class AuthService:
     # The demo path
     # ------------------------------------------------------------------
 
+    async def start_demo_session(
+        self,
+        session: AsyncSession,
+        context: RequestContext,
+    ) -> tuple[schemas.GuestSessionResponse, uuid.UUID]:
+        """«Start demo»: a private archive and an archivist account, no form, no wall.
+
+        Every visitor gets an archive of their own (`kind = demo`, flagged
+        `sandbox`), so they can upload, investigate, review, correct, export and
+        remove — and row-level security keeps every one of those actions inside
+        that archive: nobody else's data is visible or reachable. The account is
+        a real Cognito user signed in through the same flow as everyone else.
+        Spending is bounded per visitor (`_demo_guard`) and per IP (five demo
+        archives an hour). Returns the session and the new archive's id, which
+        the API fills with a copy of the Prio-1 results.
+        """
+        await self._limiter.check(
+            action="demo",
+            identifier=context.ip_address or "anonymous",
+            limit=ratelimit.DEMO,
+        )
+        token = secrets.token_hex(5)
+        organization = Organization(
+            slug=f"demo-{token}",
+            name=f"Demo-Archiv {token[:4].upper()}",
+            kind=OrganizationKind.DEMO,
+            canton="SZ",
+            is_demo=False,
+            settings={"sandbox": True, "started_at": _now().isoformat()},
+        )
+        session.add(organization)
+        await session.flush()
+
+        email = f"demo-{token}@{DEMO_EMAIL_DOMAIN}"
+        password = _demo_password()
+        role = UserRole.ARCHIVIST
+        sub = await self._cognito.create_confirmed_user(
+            email=email,
+            password=password,
+            attributes={
+                "locale": "de",
+                "name": "Demo-Gast",
+                "custom:tenant_id": str(organization.id),
+                "custom:role": str(role),
+            },
+        )
+        user = User(
+            org_id=organization.id,
+            cognito_sub=sub,
+            cognito_username=email,
+            email=email,
+            email_verified=True,
+            full_name="Demo-Gast",
+            locale="de",
+            role=role,
+            status=UserStatus.ACTIVE,
+            terms_accepted_at=_now(),
+        )
+        user.preferences = UserPreferences()
+        session.add(user)
+        await session.flush()
+
+        outcome = await self._cognito.authenticate(
+            email=email,
+            password=password,
+            context=AuthContext(
+                ip_address=context.ip_address,
+                user_agent=context.user_agent,
+                server_path="/api/v1/auth/demo",
+            ),
+        )
+        if outcome.is_challenge or outcome.tokens is None:
+            raise errors.ConfigurationError("The demo account requires an interactive step.")
+        tokens = await self._finalise_login(
+            session, tokens=outcome.tokens, username=email, context=context
+        )
+        await audit.record(
+            session,
+            action=AuditAction.DEMO_SESSION_STARTED,
+            context=context,
+            org_id=organization.id,
+            actor_user_id=user.id,
+            details={"organization": organization.slug},
+        )
+        log.info("auth.demo_started", org=organization.slug)
+        return (
+            schemas.GuestSessionResponse(tokens=tokens, organization_id=str(organization.id)),
+            organization.id,
+        )
+
     async def start_guest_session(
         self,
         session: AsyncSession,
@@ -813,6 +903,15 @@ class AuthService:
             actor_user_id=user.id,
         )
         return schemas.GuestSessionResponse(tokens=tokens, organization_id=str(user.org_id))
+
+
+DEMO_EMAIL_DOMAIN = "demo.zeitzeuge.invalid"
+"""Reserved by RFC 6761: no visitor account can ever receive or send mail."""
+
+
+def _demo_password() -> str:
+    # Upper, lower, digit and symbol guaranteed, then 32 random URL-safe characters.
+    return "Zz9!" + secrets.token_urlsafe(32)
 
 
 def _is_uuid(value: str) -> bool:

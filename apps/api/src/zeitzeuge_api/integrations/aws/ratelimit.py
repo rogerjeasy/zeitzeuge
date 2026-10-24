@@ -42,6 +42,8 @@ class Limit:
 # The policy, in one place so it can be read at a glance in review.
 LOGIN = Limit(attempts=10, window_seconds=300)
 REGISTER = Limit(attempts=5, window_seconds=3600)
+DEMO = Limit(attempts=5, window_seconds=3600)
+"""«Start demo» archives per IP and hour: each one can spend model calls."""
 PASSWORD_RESET = Limit(attempts=5, window_seconds=3600)
 VERIFICATION_RESEND = Limit(attempts=5, window_seconds=3600)
 AVATAR_UPLOAD = Limit(attempts=20, window_seconds=3600)

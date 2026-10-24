@@ -198,6 +198,15 @@ class UnsupportedMediaTypeError(AppError):
     detail = "That file type is not accepted."
 
 
+class DemoLimitError(AppError):
+    """A demo archive has reached what a visitor may spend in it."""
+
+    status_code = 409
+    code = "demo_limit"
+    title = "Demo limit reached"
+    detail = "This demo archive has reached its limit."
+
+
 class RateLimitedError(AppError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     code = "rate_limited"

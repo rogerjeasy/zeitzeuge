@@ -12,9 +12,12 @@ answer for a registered and an unregistered address.
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from zeitzeuge_api.api.deps import (
@@ -24,9 +27,14 @@ from zeitzeuge_api.api.deps import (
     get_context,
 )
 from zeitzeuge_api.core.context import RequestContext
+from zeitzeuge_api.core.logging import get_logger
+from zeitzeuge_api.db.session import Database
 from zeitzeuge_api.schemas import auth as schemas
 from zeitzeuge_api.schemas.common import Message
 from zeitzeuge_api.services.auth_service import AuthService
+from zeitzeuge_api.services.mirror import seed_sandbox
+
+log = get_logger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -221,6 +229,40 @@ async def disable_totp(
     service: Service,
 ) -> None:
     await service.disable_totp(identity.session, user=identity.user, context=identity.context)
+
+
+@router.post(
+    "/demo",
+    response_model=schemas.GuestSessionResponse,
+    summary="«Start demo»: a private archive with full rights, no account form",
+)
+async def demo_session(
+    request: Request,
+    session: Session,
+    service: Service,
+    context: Context,
+) -> schemas.GuestSessionResponse:
+    response, org_id = await service.start_demo_session(session, context)
+    await session.commit()  # the copy below opens its own tenant-scoped transactions
+    # Wait a little for the Prio-1 copy so the dashboard opens full; if Aurora
+    # is slow the copy finishes in the background and the page fills on reload.
+    task = asyncio.create_task(_seed(request.app.state.database, org_id))
+    _SEEDING.add(task)
+    task.add_done_callback(_SEEDING.discard)
+    with contextlib.suppress(TimeoutError):
+        await asyncio.wait_for(asyncio.shield(task), timeout=SEED_WAIT_SECONDS)
+    return response
+
+
+SEED_WAIT_SECONDS = 12.0
+_SEEDING: set[asyncio.Task[None]] = set()
+
+
+async def _seed(database: Database, org_id: uuid.UUID) -> None:
+    try:
+        await seed_sandbox(database, target_id=org_id)
+    except Exception as exc:  # the demo still opens, empty and fully usable
+        log.warning("auth.demo_seed_failed", error=str(exc), org=str(org_id))
 
 
 @router.post(

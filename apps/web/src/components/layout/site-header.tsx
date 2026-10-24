@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/ui/wordmark";
 import { ThemeToggle } from "./theme-toggle";
 import { LocaleSwitcher } from "./locale-switcher";
 import { cn } from "@/lib/cn";
+import { DemoEntry } from "@/components/auth/demo-entry";
 
 const NAV = [
   { href: "/#problem", key: "problem", route: false },
@@ -86,15 +86,10 @@ export function SiteHeader() {
             {t("signIn")}
           </Link>
 
-          <Button
-            as={Link}
-            href="/auth/signup"
-            size="sm"
-            className="hidden shrink-0 whitespace-nowrap lg:inline-flex"
-          >
+          <DemoEntry size="sm" className="hidden shrink-0 whitespace-nowrap lg:inline-flex">
             {t("demo")}
             <ArrowRight className="size-3.5" strokeWidth={2} />
-          </Button>
+          </DemoEntry>
 
           <button
             type="button"
@@ -154,15 +149,10 @@ export function SiteHeader() {
           >
             {t("signIn")}
           </Link>
-          <Button
-            as={Link}
-            href="/auth/signup"
-            className="mt-3 w-full"
-            onClick={() => setOpen(false)}
-          >
+          <DemoEntry className="mt-3 w-full" onEntered={() => setOpen(false)}>
             {t("demo")}
             <ArrowRight className="size-4" strokeWidth={2} />
-          </Button>
+          </DemoEntry>
         </nav>
       </div>
     </header>

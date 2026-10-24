@@ -30,7 +30,7 @@
     "motto": "«We cross-examine the photograph.»",
     "primaryCta": "Start demo",
     "secondaryCta": "View as guest",
-    "ctaNote": "No account needed — the guest view opens a prepared collection.",
+    "ctaNote": "No account needed. «Start demo» opens an archive of your own with full rights; «View as guest» opens the prepared collection.",
     "metrics": {
       "described": "images catalogued",
       "minutesSaved": "avg. time saved per image",
@@ -500,7 +500,8 @@
       "sentTo": "Sent to",
       "confirmPasswordLabel": "Confirm password",
       "confirmPasswordPlaceholder": "Type the password again",
-      "passwordsMatch": "The passwords match."
+      "passwordsMatch": "The passwords match.",
+      "demoPreparing": "Preparing your demo archive …"
     },
     "login": {
       "metaTitle": "Sign in — ZEITZEUGE",
@@ -1711,12 +1712,13 @@
     "errors": {
       "unauthenticated": "Your session has expired. Reload the page or sign in again.",
       "token_expired": "Your session has expired. Reload the page or sign in again.",
-      "forbidden": "This account is read-only (guest access). Sign in with an archive account to upload and review.",
+      "forbidden": "This account is read-only (guest access). Use «Start demo» on the home page for an archive of your own with full rights, or sign in with an archive account.",
       "network": "The investigation API cannot be reached right now.",
       "not_found": "Not found — or not visible in this archive.",
       "version_conflict": "Someone changed this record in the meantime. The current version has been reloaded; please make your decision again.",
       "generic": "The API declined the request (code: {code}).",
-      "back": "To the batches"
+      "back": "To the batches",
+      "demo_limit": "This demo archive has reached its limit: up to 10 photos of your own in total and 5 investigations at a time. Wait for the running investigations to finish."
     },
     "batches": {
       "metaTitle": "Batches — ZEITZEUGE",

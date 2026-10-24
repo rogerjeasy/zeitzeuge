@@ -30,7 +30,7 @@
     "motto": "«Nous interrogeons l'image.»",
     "primaryCta": "Lancer la démo",
     "secondaryCta": "Voir en tant qu'invité",
-    "ctaNote": "Aucun compte requis — la vue invité ouvre un fonds préparé.",
+    "ctaNote": "Aucun compte requis. «Lancer la démo» ouvre une archive à vous, avec tous les droits ; «Voir en tant qu'invité» ouvre la collection préparée.",
     "metrics": {
       "described": "images cataloguées",
       "minutesSaved": "temps moyen gagné par image",
@@ -500,7 +500,8 @@
       "sentTo": "Envoyé à",
       "confirmPasswordLabel": "Confirmer le mot de passe",
       "confirmPasswordPlaceholder": "Saisissez à nouveau le mot de passe",
-      "passwordsMatch": "Les mots de passe correspondent."
+      "passwordsMatch": "Les mots de passe correspondent.",
+      "demoPreparing": "Préparation de votre archive de démo …"
     },
     "login": {
       "metaTitle": "Se connecter — ZEITZEUGE",
@@ -1711,12 +1712,13 @@
     "errors": {
       "unauthenticated": "La session a expiré. Rechargez la page ou reconnectez-vous.",
       "token_expired": "La session a expiré. Rechargez la page ou reconnectez-vous.",
-      "forbidden": "Ce compte est en lecture seule (accès invité). Connectez-vous avec un compte d’archives pour téléverser et vérifier.",
+      "forbidden": "Ce compte est en lecture seule (accès invité). «Lancer la démo» sur la page d'accueil ouvre une archive à vous, avec tous les droits ; ou connectez-vous avec un compte d'archive.",
       "network": "L’API d’examen est injoignable pour le moment.",
       "not_found": "Introuvable — ou non visible dans ces archives.",
       "version_conflict": "Quelqu’un a modifié cette notice entre-temps. La version actuelle a été rechargée ; veuillez reprendre votre décision.",
       "generic": "L’API a refusé la requête (code : {code}).",
-      "back": "Vers les lots"
+      "back": "Vers les lots",
+      "demo_limit": "Cette archive de démo a atteint sa limite : 10 photos à vous au total et 5 enquêtes à la fois. Attendez la fin des enquêtes en cours."
     },
     "batches": {
       "metaTitle": "Lots — ZEITZEUGE",

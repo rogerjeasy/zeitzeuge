@@ -89,6 +89,7 @@ class AuditAction(StrEnum):
     API_KEY_CREATED = "api_key.created"
     API_KEY_REVOKED = "api_key.revoked"
     GUEST_SESSION_STARTED = "guest.session_started"
+    DEMO_SESSION_STARTED = "demo.session_started"
     BATCH_CREATED = "batch.created"
     BATCH_EXPORTED = "batch.exported"
     BATCH_MIRRORED = "batch.mirrored"

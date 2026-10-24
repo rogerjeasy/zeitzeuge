@@ -1,11 +1,10 @@
 import { useTranslations } from "next-intl";
 import { ArrowRight, Play } from "lucide-react";
-import { Link } from "@/i18n/navigation";
-import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { AGENT_COUNT, FAMILY_COUNT } from "@/lib/data/agents";
 import { FalsificationViewer } from "./falsification-viewer";
 import { HeroMetrics } from "./hero-metrics";
+import { DemoEntry } from "@/components/auth/demo-entry";
 
 export function Hero() {
   const t = useTranslations("hero");
@@ -50,20 +49,14 @@ export function Hero() {
 
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button as={Link} href="/auth/signup" size="lg" className="w-full sm:w-auto">
+              <DemoEntry size="lg" className="w-full sm:w-auto">
                 <Play className="size-4" strokeWidth={2.2} />
                 {t("primaryCta")}
-              </Button>
-              <Button
-                as={Link}
-                href="/auth/login"
-                variant="secondary"
-                size="lg"
-                className="w-full sm:w-auto"
-              >
+              </DemoEntry>
+              <DemoEntry mode="guest" variant="secondary" size="lg" className="w-full sm:w-auto">
                 {t("secondaryCta")}
                 <ArrowRight className="size-4" strokeWidth={2} />
-              </Button>
+              </DemoEntry>
             </div>
             <p className="text-xs leading-snug text-muted-2">{t("ctaNote")}</p>
           </div>

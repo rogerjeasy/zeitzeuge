@@ -120,6 +120,26 @@ export async function continueAsGuestAction(): Promise<AuthResult> {
   return OK;
 }
 
+export async function startDemoAction(): Promise<AuthResult> {
+  // The visitor's own archive with an archivist's rights: no form, no wall.
+  // Like the guest, it never outlives the browser session.
+  const jar = await cookies();
+  const from = await caller();
+  const accessToken = readAccessToken(jar);
+  if (accessToken) {
+    // Already inside (a second click, a return to the home page): keep that
+    // archive and its uploads rather than opening another. Only the read-only
+    // guest is swapped for a demo archive of their own.
+    const me = await authApi.me(accessToken, readSession(jar)?.sessionId, from);
+    if (me.ok && me.data.role !== "guest") return OK;
+  }
+  clearSession(jar);
+  const result = await authApi.demo(from);
+  if (!result.ok) return { ok: false, code: authErrorFromProblem(result.problem) };
+  await startSession(result.data.tokens, false);
+  return OK;
+}
+
 export async function signOutAction(): Promise<AuthResult> {
   const jar = await cookies();
   const accessToken = readAccessToken(jar);

@@ -11,6 +11,7 @@ const KNOWN = new Set([
   "network",
   "not_found",
   "version_conflict",
+  "demo_limit",
 ]);
 
 /** An API problem, in words. Unknown codes are shown as they are, never hidden. */

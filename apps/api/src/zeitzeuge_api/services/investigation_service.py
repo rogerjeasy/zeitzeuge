@@ -199,6 +199,8 @@ class InvestigationService:
             a.external_ref: a
             for a in await session.scalars(select(Asset).where(Asset.batch_id == batch.id))
         }
+        new_files = sum(1 for item in data.files if item.filename not in existing)
+        await self._demo_guard(session, user.org_id, new_photos=new_files)
         out: list[schemas.RegisteredFile] = []
         for item in data.files:
             asset = existing.get(item.filename)
@@ -336,6 +338,7 @@ class InvestigationService:
         latest = await self._latest_run(session, asset.id)
         if latest is not None and latest.status in {RunStatus.QUEUED, RunStatus.RUNNING}:
             raise errors.ConflictError("This photograph is already being investigated.")
+        await self._demo_guard(session, user.org_id, new_runs=1)
         run = Run(
             id=uuid.uuid4(),
             org_id=user.org_id,
@@ -1628,6 +1631,48 @@ class InvestigationService:
         await session.flush()
         return fonds
 
+    async def _demo_guard(
+        self, session: AsyncSession, org_id: uuid.UUID, *, new_photos: int = 0, new_runs: int = 0
+    ) -> None:
+        """What a visitor may spend in a demo archive («Start demo», one per visitor).
+
+        Own uploads (not the mirrored Prio-1 copy) are capped at `DEMO_UPLOAD_CAP`,
+        and at most `DEMO_ACTIVE_RUNS` investigations may be queued or running at
+        once, which bounds re-runs of the mirrored photos too. Real archives are
+        never limited here.
+        """
+        org = await session.get(Organization, org_id)
+        if org is None or not (org.settings or {}).get("sandbox"):
+            return
+        if new_photos:
+            own = await session.scalar(
+                select(func.count())
+                .select_from(Asset)
+                .join(UploadBatch, UploadBatch.id == Asset.batch_id)
+                .where(
+                    # Withdrawn photos count too: deleting must not buy more runs.
+                    Asset.org_id == org_id,
+                    UploadBatch.mirrored_from_id.is_(None),
+                )
+            )
+            if (own or 0) + new_photos > DEMO_UPLOAD_CAP:
+                raise errors.DemoLimitError(
+                    f"A demo archive takes up to {DEMO_UPLOAD_CAP} photos of your own.",
+                    extra={"limit": DEMO_UPLOAD_CAP, "kind": "photos"},
+                )
+        if new_runs:
+            active = await session.scalar(
+                select(func.count())
+                .select_from(Run)
+                .where(Run.org_id == org_id, Run.status.in_([RunStatus.QUEUED, RunStatus.RUNNING]))
+            )
+            if (active or 0) + new_runs > DEMO_ACTIVE_RUNS:
+                raise errors.DemoLimitError(
+                    f"A demo archive runs up to {DEMO_ACTIVE_RUNS} investigations at once; "
+                    "wait for one to finish.",
+                    extra={"limit": DEMO_ACTIVE_RUNS, "kind": "runs"},
+                )
+
     async def _batch(self, session: AsyncSession, batch_id: uuid.UUID) -> UploadBatch:
         batch = await session.get(UploadBatch, batch_id)
         if batch is None:
@@ -1718,6 +1763,11 @@ class InvestigationService:
                 out[review.record_id].append(review)
         return out
 
+
+DEMO_UPLOAD_CAP = 10
+"""Photos of their own a visitor may add to a demo archive."""
+DEMO_ACTIVE_RUNS = 5
+"""Investigations queued or running at once in a demo archive."""
 
 WORK_ACTIONS = frozenset(
     {

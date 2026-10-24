@@ -54,6 +54,11 @@ export const authApi = {
     return apiRequest<GuestResponse>("/auth/guest", { caller });
   },
 
+  /** «Start demo»: a fresh private archive and its archivist. Waits for the Prio-1 copy. */
+  demo(caller: CallerHeaders) {
+    return apiRequest<GuestResponse>("/auth/demo", { caller, timeoutMs: 30_000 });
+  },
+
   refresh(body: { refresh_token: string; session_id: string }, caller: CallerHeaders) {
     return apiRequest<TokenBundle>("/auth/refresh", { body, caller });
   },

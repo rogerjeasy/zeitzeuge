@@ -64,8 +64,18 @@ administer an archive of their own; only these may put rows in front of the
 judges' guest login."""
 
 
+def _is_sandbox(org: Organization) -> bool:
+    """A «Start demo» visitor's own archive (`AuthService.start_demo_session`)."""
+    return bool((org.settings or {}).get("sandbox"))
+
+
 async def mirror_batch(
-    db: Database, *, source_org: uuid.UUID, batch_id: uuid.UUID, target_slug: str = DEMO_SLUG
+    db: Database,
+    *,
+    source_org: uuid.UUID,
+    batch_id: uuid.UUID,
+    target_slug: str = DEMO_SLUG,
+    target_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     async with db.session(TenantContext.bootstrap()) as session:
         source = await session.get(Organization, source_org)
@@ -73,9 +83,15 @@ async def mirror_batch(
         expected = MIRROR_SOURCES.get(source.slug) if source is not None else None
         if source is None or expected is None or source.isil != expected:
             raise errors.ForbiddenError("This archive may not publish into the demo archive.")
-        target = await session.scalar(select(Organization).where(Organization.slug == target_slug))
-        if target is None or not target.is_demo:
-            raise errors.ForbiddenError("A mirror can only be written into the demo archive.")
+        target = (
+            await session.get(Organization, target_id)
+            if target_id is not None
+            else await session.scalar(select(Organization).where(Organization.slug == target_slug))
+        )
+        # The guests' shared demo archive, or one visitor's sandbox. Sign-up
+        # can produce neither flag, so no ordinary archive can be written into.
+        if target is None or not (target.is_demo or _is_sandbox(target)):
+            raise errors.ForbiddenError("A mirror can only be written into a demo archive.")
         target_org = target.id
     if target_org == source_org:
         raise errors.InvalidRequestError("This batch already lives in the demo archive.")
@@ -332,3 +348,45 @@ async def mirror_batch(
         "records": len(records),
         "evidence": len(evidence),
     }
+
+
+async def seed_sandbox(db: Database, *, target_id: uuid.UUID) -> dict[str, Any] | None:
+    """Fill a fresh «Start demo» archive with the curated Prio-1 results.
+
+    The source is whatever the Staatsarchiv last published to the guests' demo
+    archive (its QC decision, not ours); failing that, its most recent batch.
+    Returns None when there is nothing to copy, so a demo still opens — empty,
+    and fully usable — on a database without the Staatsarchiv's work.
+    """
+    async with db.session(TenantContext.bootstrap()) as session:
+        sources = list(
+            await session.scalars(
+                select(Organization).where(Organization.slug.in_(list(MIRROR_SOURCES)))
+            )
+        )
+        source = next((o for o in sources if o.isil == MIRROR_SOURCES.get(o.slug)), None)
+        demo = await session.scalar(select(Organization).where(Organization.slug == DEMO_SLUG))
+        source_org, demo_org = (source.id if source else None), (demo.id if demo else None)
+    if source_org is None:
+        return None
+
+    batch_id: uuid.UUID | None = None
+    if demo_org is not None:
+        async with db.session(TenantContext(org_id=demo_org, role="mirror")) as s:
+            batch_id = await s.scalar(
+                select(UploadBatch.mirrored_from_id)
+                .where(UploadBatch.mirrored_from_id.is_not(None), UploadBatch.deleted_at.is_(None))
+                .order_by(UploadBatch.mirrored_at.desc())
+                .limit(1)
+            )
+    if batch_id is None:
+        async with db.session(TenantContext(org_id=source_org, role="mirror")) as s:
+            batch_id = await s.scalar(
+                select(UploadBatch.id)
+                .where(UploadBatch.deleted_at.is_(None), UploadBatch.mirrored_from_id.is_(None))
+                .order_by(UploadBatch.created_at.desc())
+                .limit(1)
+            )
+    if batch_id is None:
+        return None
+    return await mirror_batch(db, source_org=source_org, batch_id=batch_id, target_id=target_id)

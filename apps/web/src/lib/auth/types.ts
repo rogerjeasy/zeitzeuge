@@ -44,6 +44,7 @@ export interface AuthProvider {
   resendVerification(input: { email: string }): Promise<AuthResult>;
   requestPasswordReset(input: { email: string }): Promise<AuthResult>;
   continueAsGuest(): Promise<AuthResult>;
+  startDemo(): Promise<AuthResult>;
   signOut(): Promise<AuthResult>;
 }
 

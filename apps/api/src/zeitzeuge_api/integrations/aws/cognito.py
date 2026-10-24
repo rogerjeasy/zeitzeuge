@@ -261,6 +261,49 @@ class CognitoIdentityProvider:
                 raise
         return str(response["UserSub"])
 
+    async def create_confirmed_user(
+        self, *, email: str, password: str, attributes: dict[str, str]
+    ) -> str:
+        """An account that can sign in at once: the «Start demo» visitor. Returns the `sub`.
+
+        AdminCreateUser with no invitation (`SUPPRESS`) and the address marked
+        verified (it is a reserved `.invalid` address nobody can receive mail at),
+        then a permanent password, so the next step is an ordinary sign-in through
+        the same flow as every other user.
+        """
+        params: dict[str, Any] = {
+            "UserPoolId": self._pool,
+            "Username": email,
+            "MessageAction": "SUPPRESS",
+            "UserAttributes": [
+                {"Name": name, "Value": value}
+                for name, value in {"email": email, "email_verified": "true", **attributes}.items()
+                if value
+            ],
+        }
+        with _translate("admin_create_user"):
+            response = await call(self._clients.cognito.admin_create_user, **params)
+        try:
+            with _translate("admin_set_user_password"):
+                await call(
+                    self._clients.cognito.admin_set_user_password,
+                    UserPoolId=self._pool,
+                    Username=email,
+                    Password=password,
+                    Permanent=True,
+                )
+        except errors.AppError:
+            try:
+                await self.delete_user(username=email)
+            except errors.AppError:
+                log.error("cognito.demo_user_orphaned", reason="compensation failed")
+            raise
+        created = response.get("User", {}).get("Attributes", [])
+        sub = next((a["Value"] for a in created if a["Name"] == "sub"), None)
+        if not sub:
+            sub = (await self.get_user(username=email)).sub
+        return str(sub)
+
     async def resend_confirmation_code(self, *, email: str) -> None:
         params = self._with_secret(email, {"ClientId": self._client_id, "Username": email})
         with _translate("resend_confirmation_code"):

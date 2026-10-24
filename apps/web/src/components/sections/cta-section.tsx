@@ -1,11 +1,11 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { ArrowRight, Play } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Reveal } from "@/components/ui/reveal";
 import { GALLERY } from "@/lib/data/archive";
+import { DemoEntry } from "@/components/auth/demo-entry";
 
 export function CtaSection() {
   const t = useTranslations("cta");
@@ -56,15 +56,13 @@ export function CtaSection() {
           </p>
 
           <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button
-              as={Link}
-              href="/auth/signup"
+            <DemoEntry
               size="lg"
               className="w-full bg-ink-panel-fg text-ink-panel hover:bg-white sm:w-auto"
             >
               <Play className="size-4" strokeWidth={2.2} />
               {t("primaryCta")}
-            </Button>
+            </DemoEntry>
             <Button
               as="a"
               href="#demo"

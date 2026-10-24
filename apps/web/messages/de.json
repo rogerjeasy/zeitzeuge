@@ -30,7 +30,7 @@
     "motto": "«Wir befragen das Bild.»",
     "primaryCta": "Demo starten",
     "secondaryCta": "Als Gast ansehen",
-    "ctaNote": "Kein Konto nötig — die Gastansicht öffnet einen vorbereiteten Bestand.",
+    "ctaNote": "Kein Konto nötig. «Demo starten» öffnet ein eigenes Archiv mit allen Rechten, «Als Gast ansehen» die vorbereitete Sammlung.",
     "metrics": {
       "described": "Bilder erschlossen",
       "minutesSaved": "Ø Zeit pro Bild gespart",
@@ -500,7 +500,8 @@
       "sentTo": "Gesendet an",
       "confirmPasswordLabel": "Passwort bestätigen",
       "confirmPasswordPlaceholder": "Passwort erneut eingeben",
-      "passwordsMatch": "Die Passwörter stimmen überein."
+      "passwordsMatch": "Die Passwörter stimmen überein.",
+      "demoPreparing": "Ihr Demo-Archiv wird eingerichtet …"
     },
     "login": {
       "metaTitle": "Anmelden — ZEITZEUGE",
@@ -1711,12 +1712,13 @@
     "errors": {
       "unauthenticated": "Die Sitzung ist abgelaufen. Bitte die Seite neu laden oder neu anmelden.",
       "token_expired": "Die Sitzung ist abgelaufen. Bitte die Seite neu laden oder neu anmelden.",
-      "forbidden": "Dieses Konto darf hier nur lesen (Gastzugang). Zum Hochladen und Prüfen mit einem Archivkonto anmelden.",
+      "forbidden": "Dieses Konto ist nur lesend (Gastzugang). «Demo starten» auf der Startseite öffnet ein eigenes Archiv mit allen Rechten; oder melden Sie sich mit einem Archivkonto an.",
       "network": "Die Untersuchungs-API ist gerade nicht erreichbar..",
       "not_found": "Nicht gefunden — oder in diesem Archiv nicht sichtbar.",
       "version_conflict": "Jemand hat diesen Eintrag inzwischen geändert. Die aktuelle Fassung wurde neu geladen; bitte Ihre Entscheidung noch einmal treffen.",
       "generic": "Die API hat die Anfrage abgelehnt (Code: {code}).",
-      "back": "Zu den Stapeln"
+      "back": "Zu den Stapeln",
+      "demo_limit": "Dieses Demo-Archiv hat sein Limit erreicht: insgesamt bis zu 10 eigene Fotos und 5 gleichzeitige Untersuchungen. Warten Sie, bis laufende Untersuchungen fertig sind."
     },
     "batches": {
       "metaTitle": "Stapel — ZEITZEUGE",
