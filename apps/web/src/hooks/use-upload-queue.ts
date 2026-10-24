@@ -101,7 +101,9 @@ export function useUploadQueue(defaultCollection: string) {
           pairedBy: group.recto && group.verso ? group.ruleId : undefined,
           pairMarkers: group.markers,
           // The archive names its own scans; the filename is the best first guess.
-          signature: stripExtension(group.base),
+          // `base` has already lost its extension: stripping again would cut
+          // «SG.CIV.17.3» to «SG.CIV.17» and make every Prio-1 file a duplicate.
+          signature: group.base,
           collection: defaultCollection,
           status: "queued",
           progress: 0,
