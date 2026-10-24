@@ -30,7 +30,7 @@ from zeitzeuge_api.investigation.names import feature_key, is_placeholder, massi
 from zeitzeuge_api.investigation.tools.base import MatchKind, ToolHit, ToolUnavailable
 from zeitzeuge_api.investigation.tools.geo import distance_m
 from zeitzeuge_api.investigation.tools.registers import names_match
-from zeitzeuge_api.investigation.tools.text import fold
+from zeitzeuge_api.investigation.tools.text import fold, tokens
 
 STAGE = "grounding"
 
@@ -245,7 +245,19 @@ async def run(ctx: RunContext) -> None:
             except ToolUnavailable as exc:
                 ctx.ledger.note(AgentId.HERITAGE, f"OpenStreetMap nicht erreichbar: {exc}")
         placed = False
-        for hit in _unique(hits)[:3]:
+        agreed = agreed_places(ctx)
+        kept_hits = []
+        for hit in _unique(hits):
+            town = str(hit.attrs.get("municipality") or "")
+            if agreed and town and not any(_same_place(town, place) for place in agreed):
+                ctx.ledger.note(
+                    AgentId.HERITAGE,
+                    f"«{hit.label}» liegt in {town}; beide Recherchen nennen "
+                    f"{' / '.join(agreed)} — nicht als Kandidat übernommen",
+                )
+                continue
+            kept_hits.append(hit)
+        for hit in kept_hits[:3]:
             item = ctx.ledger.add_from_hit(
                 hit,
                 kind=EvidenceKind.EXTERNAL,
@@ -362,6 +374,27 @@ async def _places(ctx: RunContext, query: str, near: tuple[float, float] | None)
         return []
 
 
+def agreed_places(ctx: RunContext) -> list[str]:
+    """Localities or municipalities both research families named, with a checked source."""
+    return list(
+        dict.fromkeys(
+            str(e.value)
+            for e in ctx.ledger.evidence
+            if e.source_class is SourceClass.OPEN_RESEARCH
+            and e.field in {"locality", "municipality"}
+            and e.value
+            and e.attrs.get("families_agreeing", 0) >= 2
+            and e.strength >= 0.9
+        )
+    )
+
+
+def _same_place(a: str, b: str) -> bool:
+    """«Küssnacht» ~ «Küssnacht am Rigi» ~ «Küssnacht (SZ)»: one is in the other's tokens."""
+    ta, tb = set(tokens(a)) - {"am", "sz", "bei", "im"}, set(tokens(b)) - {"am", "sz", "bei", "im"}
+    return bool(ta) and bool(tb) and (ta <= tb or tb <= ta)
+
+
 def _value_for(hit: ToolHit, proposed: str) -> str:
     """The archive's name for the building: a KSI entry's alias when it is what was proposed.
 
@@ -386,7 +419,7 @@ async def _ksi_near(ctx: RunContext, point: tuple[float, float]) -> list[ToolHit
     if ksi is None:
         return []
     try:
-        return list(await ksi.near(point[0], point[1], radius_m=2500, limit=12))
+        return list(await ksi.near(point[0], point[1], radius_m=1500, limit=25))
     except ToolUnavailable as exc:
         ctx.ledger.note(AgentId.HERITAGE, f"Schutzinventar nicht erreichbar: {exc}")
         return []
