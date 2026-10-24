@@ -224,3 +224,24 @@ Wall time: Research (≈ 30–90 s) overlaps Perception; the comparison stage ad
 - **Unit (no network):** the new strength rules and class weights (property tests: monotone, bounded, one class counted once, research agreement bonus only with a verified item); `page.verify` (folding, building needs locality, private-address refusal); KSI GML and inventory-sheet parsing on a recorded sample; the research contract's validation (null values, missing sources).
 - **Stage tests on recorded fixtures:** research replies and fetched pages for .3 and .58 recorded once.
 - **Live regression (`live` marker):** .3 must not emit «Spital Schwyz» as übernahmefähig; .58 must fill all of Ortschaft «Küssnacht», Gemeinde «Küssnacht», Gebäude, Strasse «Seeplatz 6»; .378 must name the Mythenhaus or leave the building open.
+
+## 12. As built (09:00) — what changed against §3–§5
+
+- **Concurrency without parallel stages.** The ledger commits each stage's delta positionally, so truly parallel stages would attribute evidence to the wrong invocation. Instead the slow external calls (both research families, Cloud Vision, Lens) start as background tasks right after Intake and run while Perception works; the Research and Sighting stages only collect them. Same wall-clock gain, ledger stays sequential. A withdrawn or failed run cancels the tasks.
+- **No migration.** `source_class` is a `varchar(32)` without a CHECK, so the two new classes needed none (§5.1 corrected).
+- **Building names group by their distinctive core** («Hotel du Lac Seehof» and OpenStreetMap's «du Lac Seehof» are one hypothesis), labelled by the majority of the evidence. On SG.CIV.17.58 the split had lost the building.
+- **A reference «same building» needs 0.7** (was 0.6). On SG.CIV.17.3 a 0.65 «same» against a decades-old hospital photo confirmed the wrong building.
+- **A «different building» verdict counts only for a picture of the candidate itself** (its register photo, Places photo, Street View frame, or a title naming it). Before, catalogue photos of unrelated houses counted against every candidate.
+- **Place words are never a building's name.** «Spital Schwyz» reduces to «schwyz» once generic words are dropped; a page or register entry about Schwyz does not name the Spital. The 30 municipalities and the main villages, lakes and peaks are excluded from the distinctive-core shortcut in `page.verify`, Sighting and register matching.
+- **KSI sheets come in two layouts** (older «Schwyz - Pfarrkirche St. Martin», newer «Küssnacht, Remise Rigigasse 23» with «Objekt-Adresse»); both are parsed. Names like «Haus Hauptplatz 3 (Hotel Wysses Rössli)» give the street and number and the alias the archive uses.
+- **TLS:** the canton's file server (data.geo.sz.ch) resets Python's default cipher list; the toolbox uses OpenSSL's DEFAULT list with full certificate verification. **User-Agent** carries the repository URL (Wikidata's robot policy).
+- **Security review of 95f5b77 and 6755778** (automated): every URL the pipeline did not choose (research citations, research and Lens images, search thumbnails) goes through `tools/fetch.guarded_get` — https only, all resolved addresses public, connection pinned to the checked address with the name as Host and SNI, redirects re-checked, bodies capped, types allow-listed. Page parsing runs on its own two-thread executor with a 15 s deadline and capped PDF decompression. Known limit: a timed-out parse thread cannot be killed; it can occupy only those two threads.
+- **Gemini on the canton project's billing:** the AI Studio key's prepaid credit is depleted; one Google Cloud key on the billed project with Vision, Places, Street View and the Gemini API serves both `GOOGLE_API_KEY` and `GEMINI_API_KEY`.
+
+### 12.1 Live runs (local CLI against Bedrock, OpenAI and the live registers)
+
+| Photo | P0 (04:37 export) | try 1 (08:10, GPT research only) |
+|---|---|---|
+| .58 | Gebäude «Hotel du Lac Seehof» 0.69, Strasse «Seeplatz 6» 0.56, Ortschaft/Gemeinde empty | Ortschaft «Küssnacht am Rigi» 0.87, Gemeinde «Küssnacht (SZ)» 0.87, Strasse «Seeplatz 6» 0.79; Gebäude lost to the name split (fixed since) |
+| .3 | Schwyz, Schwyz, Mythen | all five filled, Gebäude «Spital Schwyz» 0.78 and Strasse «Waldeggstrasse 10» **wrong** (brief: «Alterszentrum Acherhof», «Grundstrasse 32»); the 0.7 bar and current Places/Street View photos are the fix under test |
+| .378 | empty | Ortschaft and Gemeinde «Schwyz» 0.55; the Mythenhaus open |
