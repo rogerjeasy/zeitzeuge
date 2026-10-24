@@ -1,11 +1,18 @@
 "use server";
 
 import {
+  BULK_MAX,
+  REASON_MAX,
   investigationApi,
   isUuid,
   resolveAuth,
   type ApiAuth,
+  type BatchDeleteResult,
   type BatchOut,
+  type BatchRestoreResult,
+  type BulkAction,
+  type BulkRequest,
+  type BulkResult,
   type BatchSummary,
   type CaseFile,
   type CommitResponse,
@@ -44,8 +51,11 @@ async function call<T>(
   return { ok: false, status: result.problem.status, code: result.problem.code };
 }
 
-export async function listBatchesAction(): Promise<InvestigationResult<BatchSummary[]>> {
-  return call((a) => investigationApi.listBatches(a));
+export async function listBatchesAction(
+  opts: { includeDeleted?: boolean } = {},
+): Promise<InvestigationResult<BatchSummary[]>> {
+  const includeDeleted = opts?.includeDeleted === true;
+  return call((a) => investigationApi.listBatches(a, { includeDeleted }));
 }
 
 export async function createBatchAction(input: {
@@ -98,9 +108,77 @@ export async function rerunAction(assetId: string): Promise<InvestigationResult<
   return call((a) => investigationApi.rerun(a, assetId));
 }
 
-export async function getBatchAction(batchId: string): Promise<InvestigationResult<BatchOut>> {
+export async function getBatchAction(
+  batchId: string,
+  opts: { includeDeleted?: boolean } = {},
+): Promise<InvestigationResult<BatchOut>> {
   if (!isUuid(String(batchId))) return INVALID;
-  return call((a) => investigationApi.batch(a, batchId));
+  const includeDeleted = opts?.includeDeleted === true;
+  return call((a) => investigationApi.batch(a, batchId, { includeDeleted }));
+}
+
+/*
+ * Batch management (spec 2026-10-24-batch-management §3). «Löschen» is a
+ * withdrawal: the master stays under Object Lock, the ledger stays, and every
+ * one of these can be undone. Who may is the API's decision — withdraw and
+ * restore need `can_approve`, re-run and accept `can_write` — and a refusal
+ * comes back as `forbidden` like every other write.
+ */
+
+const BULK_ACTIONS: ReadonlySet<string> = new Set(["delete", "restore", "rerun", "accept"]);
+
+function cleanReason(reason: unknown): string | undefined {
+  const text = String(reason ?? "").trim().slice(0, REASON_MAX);
+  return text || undefined;
+}
+
+function cleanIds(ids: unknown): string[] | null {
+  if (!Array.isArray(ids)) return null;
+  const unique = [...new Set(ids.map(String))];
+  if (unique.length < 1 || unique.length > BULK_MAX || !unique.every(isUuid)) return null;
+  return unique;
+}
+
+export async function withdrawAssetAction(
+  assetId: string,
+  reason?: string | null,
+): Promise<InvestigationResult<BulkResult>> {
+  if (!isUuid(String(assetId))) return INVALID;
+  return call((a) => investigationApi.withdrawAsset(a, assetId, { reason: cleanReason(reason) }));
+}
+
+export async function restoreAssetAction(assetId: string): Promise<InvestigationResult<BulkResult>> {
+  if (!isUuid(String(assetId))) return INVALID;
+  return call((a) => investigationApi.restoreAsset(a, assetId));
+}
+
+export async function bulkAssetsAction(input: {
+  action: string;
+  assetIds: string[];
+  reason?: string | null;
+}): Promise<InvestigationResult<BulkResult>> {
+  if (!BULK_ACTIONS.has(String(input?.action))) return INVALID;
+  const assetIds = cleanIds(input?.assetIds);
+  if (!assetIds) return INVALID;
+  const body: BulkRequest = { action: input.action as BulkAction, asset_ids: assetIds };
+  const reason = input.action === "delete" ? cleanReason(input.reason) : undefined;
+  if (reason) body.reason = reason;
+  return call((a) => investigationApi.bulk(a, body));
+}
+
+export async function withdrawBatchAction(
+  batchId: string,
+  reason?: string | null,
+): Promise<InvestigationResult<BatchDeleteResult>> {
+  if (!isUuid(String(batchId))) return INVALID;
+  return call((a) => investigationApi.withdrawBatch(a, batchId, { reason: cleanReason(reason) }));
+}
+
+export async function restoreBatchAction(
+  batchId: string,
+): Promise<InvestigationResult<BatchRestoreResult>> {
+  if (!isUuid(String(batchId))) return INVALID;
+  return call((a) => investigationApi.restoreBatch(a, batchId));
 }
 
 export async function getCaseFileAction(assetId: string): Promise<InvestigationResult<CaseFile>> {

@@ -1,9 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, ExternalLink, ImageOff, RotateCw, Loader2, Info } from "lucide-react";
-import { Link } from "@/i18n/navigation";
+import {
+  ArrowLeft,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  ImageOff,
+  Info,
+  Keyboard,
+  Loader2,
+  Maximize2,
+  RotateCcw,
+  RotateCw,
+  Trash2,
+} from "lucide-react";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useSessionUser } from "@/components/auth/session-provider";
 import {
   FINISHED_RUN_STATUSES,
@@ -11,13 +25,26 @@ import {
   type CaseFile,
   type ReviewAction,
 } from "@/lib/api/investigation-types";
-import { getCaseFileAction, rerunAction, reviewFieldAction } from "@/lib/investigation/actions";
+import {
+  bulkAssetsAction,
+  getCaseFileAction,
+  rerunAction,
+  restoreAssetAction,
+  reviewFieldAction,
+} from "@/lib/investigation/actions";
+import { BULK_DETAILS } from "@/lib/investigation/bulk";
+import { capabilitiesFor } from "@/lib/investigation/permissions";
+import { originListHref, reviewHref, type ReviewNav } from "@/lib/investigation/review-nav";
+import { SHORTCUT_HELP, shortcutFor } from "@/lib/investigation/shortcuts";
+import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import { QcPill, StatusPill } from "./pills";
 import { StageTrack } from "./stage-track";
 import { ApiNotice } from "./api-notice";
-import { CaseFieldRow } from "./case-field-row";
+import { CaseFieldRow, type FieldRowHandle } from "./case-field-row";
 import { EvidenceCard } from "./evidence-card";
+import { PhotoLightbox } from "./photo-lightbox";
+import { SubjectMap } from "./subject-map";
 import { intlLocale, ARCHIVE_TZ } from "./labels";
 
 const POLL_MS = 15_000;
@@ -30,17 +57,34 @@ const POLL_MS = 15_000;
  * API, and every decision is written back as a new record version with
  * `If-Match`. A stale version is a 409: the screen reloads and says so rather
  * than overwriting someone else's review.
+ *
+ * Batch management (spec 2026-10-24 §4): previous / next within the list the
+ * archivist came from (`nav`, resolved on the server), the keyboard (J/K,
+ * A/C/R, ↑/↓, ?), «Alle offenen Felder übernehmen», the subject point on the
+ * swisstopo map, the photo full screen, and the banner for a withdrawn photo.
  */
-export function CaseScreen({ initial }: { initial: CaseFile }) {
+export function CaseScreen({ initial, nav = null }: { initial: CaseFile; nav?: ReviewNav | null }) {
   const t = useTranslations("investigation.case");
+  const tr = useTranslations("investigation.review");
+  const tm = useTranslations("investigation.manage");
   const locale = useLocale();
   const intl = intlLocale(locale);
   const user = useSessionUser();
+  const can = capabilitiesFor(user.role);
+  const router = useRouter();
 
   const [record, setRecord] = useState(initial);
   const [busyField, setBusyField] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ code: string } | { conflict: true } | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
   const [rerunning, setRerunning] = useState(false);
+  const [acceptingAll, setAcceptingAll] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
+  const rowRefs = useRef(new Map<string, FieldRowHandle>());
+  const withdrawn = Boolean(record.deleted_at);
 
   const running = record.run !== null && !FINISHED_RUN_STATUSES.has(record.run.status) && record.run.status !== "failed";
 
@@ -58,6 +102,25 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
     const byKey = new Map(record.fields.map((f) => [f.key, f]));
     return RANKED_FIELD_KEYS.map((key) => byKey.get(key)).filter((f) => f !== undefined);
   }, [record.fields]);
+
+  const subjectPoint = useMemo(() => record.fields.find((f) => f.key === "subject_point"), [record.fields]);
+  const openFields = ranked.filter((f) => f.decision !== "abstain" && f.value && f.review_action === null);
+
+  const prevHref = nav?.prevId ? reviewHref(nav.prevId, nav.origin, nav.filter) : null;
+  const nextHref = nav?.nextId ? reviewHref(nav.nextId, nav.origin, nav.filter) : null;
+
+  useEffect(() => {
+    if (nextHref) router.prefetch(nextHref);
+  }, [nextHref, router]);
+
+  // After a decision the rows remount (new version); keep the keyboard's place.
+  useEffect(() => {
+    if (focusIndex === null) return;
+    const field = ranked[focusIndex];
+    if (field) rowRefs.current.get(field.key)?.focus();
+    // Only on a new version, not on every focus move.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [record.version]);
 
   const evidenceById = useMemo(
     () => new Map(record.evidence.map((e) => [e.id, e])),
@@ -84,12 +147,92 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
     if (result.status === 409 || result.code === "version_conflict") {
       const fresh = await getCaseFileAction(record.asset_id);
       if (fresh.ok) setRecord(fresh.data);
-      setNotice({ conflict: true });
+      // A 409 on a withdrawn photo is not a conflict: the banner says what happened.
+      setNotice(fresh.ok && fresh.data.deleted_at ? null : { conflict: true });
       return false;
     }
     setNotice({ code: result.code });
     return false;
   }
+
+  async function acceptAll() {
+    setAcceptingAll(true);
+    setNotice(null);
+    setFlash(null);
+    const result = await bulkAssetsAction({ action: "accept", assetIds: [record.asset_id] });
+    if (result.ok) {
+      const item = result.data.results[0];
+      const fresh = await getCaseFileAction(record.asset_id);
+      if (fresh.ok) setRecord(fresh.data);
+      setFlash(
+        item?.ok
+          ? tr("acceptAllDone", { count: openFields.length })
+          : tm(`detail.${(BULK_DETAILS as readonly string[]).includes(String(item?.detail)) ? item!.detail : "other"}`, {
+              count: 1,
+            }),
+      );
+    } else {
+      setNotice({ code: result.code });
+    }
+    setAcceptingAll(false);
+  }
+
+  async function restore() {
+    setRestoring(true);
+    setNotice(null);
+    const result = await restoreAssetAction(record.asset_id);
+    if (result.ok) {
+      const fresh = await getCaseFileAction(record.asset_id);
+      if (fresh.ok) setRecord(fresh.data);
+      else setRecord((r) => ({ ...r, deleted_at: null, deletion_reason: null }));
+      setFlash(tm("result.restore", { ok: 1, n: 1 }));
+    } else {
+      setNotice({ code: result.code });
+    }
+    setRestoring(false);
+  }
+
+  function moveFocus(delta: number) {
+    if (ranked.length === 0) return;
+    const next =
+      focusIndex === null ? (delta > 0 ? 0 : ranked.length - 1) : Math.min(ranked.length - 1, Math.max(0, focusIndex + delta));
+    setFocusIndex(next);
+    rowRefs.current.get(ranked[next].key)?.focus();
+  }
+
+  // The review keyboard. Off while typing, while a dialog is open, and with modifiers.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || document.querySelector("dialog[open]")) return;
+      const el = event.target as HTMLElement | null;
+      const action = shortcutFor(event, el ? { tagName: el.tagName, isContentEditable: el.isContentEditable, type: (el as HTMLInputElement).type, role: el.getAttribute("role") } : null);
+      if (!action || action === "close") return;
+      if (action === "next" || action === "prev") {
+        const href = action === "next" ? nextHref : prevHref;
+        if (!href) return;
+        event.preventDefault();
+        router.push(href);
+        return;
+      }
+      if (action === "help") {
+        event.preventDefault();
+        setHelpOpen(true);
+        return;
+      }
+      if (ranked.length === 0) return;
+      event.preventDefault();
+      if (action === "fieldUp") return moveFocus(-1);
+      if (action === "fieldDown") return moveFocus(1);
+      // A / C / R act on the focused field; the first press only picks one.
+      if (focusIndex === null) return moveFocus(1);
+      const handle = rowRefs.current.get(ranked[focusIndex].key);
+      if (action === "accept") handle?.accept();
+      else if (action === "correct") handle?.startCorrect();
+      else if (action === "reject") handle?.startReject();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   async function rerun() {
     setRerunning(true);
@@ -113,18 +256,48 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
     : "—";
 
   const readOnly = user.isGuest;
-  const canReview = Boolean(record.record_id) && !readOnly;
+  // Accept / correct / reject: admin, archivist, reviewer — and never on a withdrawn photo.
+  const canReview = Boolean(record.record_id) && can.canReview && !withdrawn;
+  const backHref = nav ? originListHref(nav.origin, nav.filter) : record.batch_id ? `/batches/${record.batch_id}` : "/batches";
 
   return (
     <div className="mx-auto flex w-full max-w-[104rem] flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6">
       <header className="flex flex-col gap-3">
-        <Link
-          href={record.batch_id ? `/batches/${record.batch_id}` : "/batches"}
-          className="inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-[0.75rem] text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-3.5" strokeWidth={2} />
-          {t("back")}
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <Link
+            href={backHref}
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-[0.75rem] text-muted transition-colors hover:text-foreground"
+          >
+            <ArrowLeft aria-hidden className="size-3.5" strokeWidth={2} />
+            {nav?.origin.kind === "queue" ? tr("backToQueue") : t("back")}
+          </Link>
+          <nav aria-label={tr("navLabel")} className="flex flex-wrap items-center gap-1.5">
+            {nav && (
+              <>
+                <StepLink href={prevHref} label={tr("prev")} keys="K">
+                  <ChevronLeft aria-hidden className="size-4" strokeWidth={2} />
+                </StepLink>
+                <p className="min-w-[5.5rem] px-1 text-center font-mono text-[0.75rem] tabular-nums text-muted">
+                  {nav.position !== null
+                    ? tr("position", { n: nav.position, total: nav.total })
+                    : tr("notInList", { total: nav.total })}
+                </p>
+                <StepLink href={nextHref} label={tr("next")} keys="J" next>
+                  <ChevronRight aria-hidden className="size-4" strokeWidth={2} />
+                </StepLink>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              aria-keyshortcuts="?"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2.5 text-[0.75rem] text-muted transition-colors hover:border-evidence hover:text-evidence"
+            >
+              <Keyboard aria-hidden className="size-3.5" strokeWidth={2} />
+              {tr("shortcuts")}
+            </button>
+          </nav>
+        </div>
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="flex min-w-0 flex-col gap-1.5">
             <h1 className="break-all font-mono text-[clamp(1.0625rem,0.95rem+0.5vw,1.375rem)] font-medium leading-tight tracking-[-0.01em] text-foreground-strong">
@@ -145,12 +318,43 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
         </div>
       </header>
 
+      {withdrawn && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-refuted/35 bg-refuted-soft px-3.5 py-3"
+        >
+          <Trash2 aria-hidden className="size-4 shrink-0 text-refuted" strokeWidth={2} />
+          <p className="min-w-0 flex-[1_1_18rem] text-[0.8125rem] text-refuted">
+            <span className="font-semibold">{tr("withdrawnTitle")}</span>{" "}
+            {record.deleted_at && tm("withdrawnAt", { time: time(record.deleted_at) })}
+            {record.deletion_reason && <> · «{record.deletion_reason}»</>} {tm("masterKept", { count: 1 })}
+          </p>
+          {can.canApprove && (
+            <button
+              type="button"
+              onClick={() => void restore()}
+              disabled={restoring}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-foreground px-3 text-[0.75rem] font-medium text-background transition-colors hover:bg-foreground-strong disabled:opacity-60"
+            >
+              {restoring ? (
+                <Loader2 aria-hidden className="size-3.5 animate-spin" strokeWidth={2} />
+              ) : (
+                <RotateCcw aria-hidden className="size-3.5" strokeWidth={2} />
+              )}
+              {tm("restore")}
+            </button>
+          )}
+        </div>
+      )}
+      <p role="status" className={cn("text-[0.8125rem] text-corroborated", !flash && "sr-only")}>
+        {flash}
+      </p>
       {notice && "conflict" in notice && <ApiNotice code="version_conflict" />}
       {notice && "code" in notice && <ApiNotice code={notice.code} />}
-      {readOnly && (
+      {(readOnly || (!can.canReview && !withdrawn)) && (
         <p className="flex items-start gap-2 rounded-xl border border-line bg-surface-2/50 px-3.5 py-2.5 text-[0.75rem] text-muted">
           <Info aria-hidden className="mt-px size-4 shrink-0 text-muted-2" strokeWidth={1.9} />
-          {t("guestReadOnly")}
+          {readOnly ? t("guestReadOnly") : can.canWrite ? tr("operatorNoReview") : tr("readerNoReview")}
         </p>
       )}
 
@@ -162,18 +366,32 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
         */}
         <div className="flex min-w-0 flex-col gap-5 2xl:contents">
         {/* the photograph and what produced this record */}
-        <section className="flex min-w-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface 2xl:order-1 2xl:sticky 2xl:top-[4.5rem]">
+        <div className="flex min-w-0 flex-col gap-5 2xl:order-1">
+        <section className="flex min-w-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface">
           <div className="grid aspect-[4/3] place-items-center bg-surface-2">
             {record.preview_url ? (
-              // A presigned S3 URL that expires: not for the image optimiser.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={record.preview_url}
-                alt={t("photoAlt", { name: record.external_ref })}
-                loading="eager"
-                fetchPriority="high"
-                className="size-full object-contain"
-              />
+              <button
+                type="button"
+                onClick={() => setLightbox(true)}
+                aria-label={tr("enlarge", { name: record.external_ref })}
+                className="group relative size-full cursor-zoom-in"
+              >
+                {/* A presigned S3 URL that expires: not for the image optimiser. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={record.preview_url}
+                  alt={t("photoAlt", { name: record.external_ref })}
+                  loading="eager"
+                  fetchPriority="high"
+                  className={cn("size-full object-contain", withdrawn && "grayscale")}
+                />
+                <span
+                  aria-hidden
+                  className="absolute right-2.5 top-2.5 grid size-8 place-items-center rounded-lg bg-ink-panel/75 text-ink-panel-fg opacity-80 transition-opacity group-hover:opacity-100"
+                >
+                  <Maximize2 className="size-4" strokeWidth={2} />
+                </span>
+              </button>
             ) : (
               <span className="flex flex-col items-center gap-2 text-[0.75rem] text-muted-2">
                 <ImageOff aria-hidden className="size-6" strokeWidth={1.6} />
@@ -224,7 +442,7 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
           {record.run?.error && (
             <p className="border-t border-line px-4 py-2.5 text-[0.75rem] text-refuted">{record.run.error}</p>
           )}
-          {!readOnly && (
+          {can.canWrite && !withdrawn && (
             <div className="border-t border-line px-4 py-3">
               <button
                 type="button"
@@ -243,6 +461,8 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
             </div>
           )}
         </section>
+        <SubjectMap field={subjectPoint} />
+        </div>
 
         {/* the whole ledger: every evidence item and what the run did */}
         <section className="flex min-w-0 flex-col gap-5 2xl:order-3 2xl:sticky 2xl:top-[4.5rem]">
@@ -304,9 +524,26 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
           className="flex min-w-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface 2xl:order-2"
         >
           <header className="border-b border-line px-4 py-3">
-            <h2 id="case-fields-heading" className="font-display text-[1.0625rem] text-foreground-strong">
-              {t("fieldsTitle")}
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+              <h2 id="case-fields-heading" className="font-display text-[1.0625rem] text-foreground-strong">
+                {t("fieldsTitle")}
+              </h2>
+              {canReview && (
+                <button
+                  type="button"
+                  onClick={() => void acceptAll()}
+                  disabled={acceptingAll || busyField !== null || openFields.length === 0}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-corroborated/50 px-2.5 text-[0.75rem] font-medium text-corroborated transition-colors hover:bg-corroborated hover:text-background disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-corroborated"
+                >
+                  {acceptingAll ? (
+                    <Loader2 aria-hidden className="size-3.5 animate-spin" strokeWidth={2} />
+                  ) : (
+                    <CheckCheck aria-hidden className="size-3.5" strokeWidth={2.2} />
+                  )}
+                  {tr("acceptAll", { count: openFields.length })}
+                </button>
+              )}
+            </div>
             <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("fieldsHint")}</p>
           </header>
           {ranked.length === 0 ? (
@@ -315,9 +552,15 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
             </p>
           ) : (
             <ul className="flex flex-col divide-y divide-line">
-              {ranked.map((field) => (
+              {ranked.map((field, index) => (
                 <CaseFieldRow
                   key={`${field.key}-${record.version}`}
+                  ref={(handle) => {
+                    if (handle) rowRefs.current.set(field.key, handle);
+                    else rowRefs.current.delete(field.key);
+                  }}
+                  focused={focusIndex === index}
+                  onFocusRow={() => setFocusIndex(index)}
                   field={field}
                   evidence={field.evidence.map((id) => evidenceById.get(id)).filter((e) => e !== undefined)}
                   hypotheses={record.hypotheses.filter((h) => h.field === field.key)}
@@ -339,6 +582,86 @@ export function CaseScreen({ initial }: { initial: CaseFile }) {
       {!record.record_id && !running && (
         <p className={cn("text-center text-[0.8125rem] text-muted")}>{t("noRecordHint")}</p>
       )}
+
+      {record.preview_url && (
+        <PhotoLightbox
+          src={record.preview_url}
+          alt={t("photoAlt", { name: record.external_ref })}
+          open={lightbox}
+          onClose={() => setLightbox(false)}
+        />
+      )}
+
+      <Dialog
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        title={tr("helpTitle")}
+        description={<p>{tr("helpBody")}</p>}
+        footer={
+          <button
+            type="button"
+            onClick={() => setHelpOpen(false)}
+            className="inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-[0.8125rem] font-medium text-background transition-colors hover:bg-foreground-strong"
+          >
+            {tr("helpClose")}
+          </button>
+        }
+      >
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-[0.8125rem]">
+          {SHORTCUT_HELP.map((item) => (
+            <div key={item.id} className="contents">
+              <dt className="flex gap-1">
+                {item.keys.map((k) => (
+                  <kbd
+                    key={k}
+                    className="min-w-7 rounded-md border border-line-strong bg-surface-2 px-1.5 py-0.5 text-center font-mono text-[0.75rem] text-foreground-strong"
+                  >
+                    {k}
+                  </kbd>
+                ))}
+              </dt>
+              <dd className="text-foreground">{tr(`keys.${item.id}`)}</dd>
+            </div>
+          ))}
+        </dl>
+      </Dialog>
     </div>
+  );
+}
+
+function StepLink({
+  href,
+  label,
+  keys,
+  next = false,
+  children,
+}: {
+  href: string | null;
+  label: string;
+  keys: string;
+  next?: boolean;
+  children: React.ReactNode;
+}) {
+  const className =
+    "inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-[0.75rem] font-medium transition-colors";
+  if (!href) {
+    return (
+      <span aria-disabled="true" className={cn(className, "border-line text-muted-2")}>
+        {!next && children}
+        {label}
+        {next && children}
+      </span>
+    );
+  }
+  return (
+    <Link
+      href={href}
+      aria-keyshortcuts={keys}
+      className={cn(className, "border-line-strong bg-surface text-foreground hover:border-evidence hover:text-evidence")}
+    >
+      {!next && children}
+      {label}
+      {next && children}
+    </Link>
   );
 }

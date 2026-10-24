@@ -37,7 +37,8 @@ const REVIEWED = new Set(["geprüft", "korrigiert"]);
  * QC status is «offen», and nobody has confirmed or corrected it yet.
  */
 export function needsReview(asset: BatchAsset): boolean {
-  if (REVIEWED.has(asset.qc_status)) return false;
+  // A withdrawn photo is out of the review entirely (spec 2026-10-24 §1).
+  if (asset.deleted_at || REVIEWED.has(asset.qc_status)) return false;
   return asset.status_label === "Prüfbedarf" || asset.qc_status === "offen";
 }
 

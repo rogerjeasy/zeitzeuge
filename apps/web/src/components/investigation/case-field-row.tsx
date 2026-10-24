@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useImperativeHandle, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, ChevronDown, Loader2, MinusCircle, Pencil, ShieldAlert, X } from "lucide-react";
 import { ConfidenceMeter, DecisionPill } from "@/components/ui/confidence";
@@ -25,6 +25,14 @@ const REVIEW_ACTIONS: ReadonlySet<string> = new Set([
   "constraint_disabled",
 ]);
 
+/** What the review screen's keyboard can ask of a row (A / C / R, ↑ / ↓). */
+export type FieldRowHandle = {
+  focus: () => void;
+  accept: () => void;
+  startCorrect: () => void;
+  startReject: () => void;
+};
+
 /**
  * One of the five ranked fields, decided in place.
  *
@@ -42,6 +50,9 @@ export function CaseFieldRow({
   busy,
   disabled,
   onReview,
+  focused = false,
+  onFocusRow,
+  ref,
 }: {
   field: CaseField;
   evidence: EvidenceOut[];
@@ -51,6 +62,10 @@ export function CaseFieldRow({
   busy: boolean;
   disabled: boolean;
   onReview: (action: ReviewAction, value?: string, reason?: string) => Promise<boolean>;
+  /** The keyboard's current field: ringed, and the target of A / C / R. */
+  focused?: boolean;
+  onFocusRow?: () => void;
+  ref?: React.Ref<FieldRowHandle>;
 }) {
   const t = useTranslations("investigation");
   const tc = useTranslations("investigation.case");
@@ -71,6 +86,28 @@ export function CaseFieldRow({
     ? t(`fields.${field.key}`)
     : field.label;
   const reviewed = field.review_action !== null;
+  const rowRef = useRef<HTMLLIElement>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: () => {
+        rowRef.current?.focus({ preventScroll: true });
+        rowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      },
+      accept: () => {
+        if (canReview && !abstained && !disabled && mode === "idle") void submit("accept");
+      },
+      startCorrect: () => {
+        if (!canReview || disabled) return;
+        setDraft(field.value ?? "");
+        setMode("correct");
+      },
+      startReject: () => {
+        if (canReview && !abstained && !disabled) setMode("reject");
+      },
+    }),
+  );
 
   async function submit(action: ReviewAction) {
     const ok = await onReview(
@@ -86,8 +123,15 @@ export function CaseFieldRow({
 
   return (
     <li
+      ref={rowRef}
+      tabIndex={-1}
+      aria-label={label}
+      onFocus={(e) => {
+        if (e.target === e.currentTarget) onFocusRow?.();
+      }}
       className={cn(
-        "flex flex-col gap-2.5 px-3 py-3.5 sm:px-4",
+        "flex scroll-mt-24 flex-col gap-2.5 px-3 py-3.5 outline-none sm:px-4",
+        focused && "relative z-[1] shadow-[inset_3px_0_0_var(--evidence)] ring-2 ring-inset ring-evidence/40",
         field.review_action === "accepted_unchanged" && "bg-corroborated-soft/40",
         field.review_action === "rejected" && "bg-refuted-soft/35",
         (field.review_action === "edited" || field.review_action === "filled") && "bg-evidence-soft/40",

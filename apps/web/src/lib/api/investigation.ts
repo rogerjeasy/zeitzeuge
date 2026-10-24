@@ -5,8 +5,12 @@ import { authApi } from "@/lib/auth/api";
 import { readAccessToken, readSession, writeSession } from "@/lib/auth/session";
 import { apiRequest, callerFrom, type ApiResult, type CallerHeaders } from "./server";
 import type {
+  BatchDeleteResult,
   BatchOut,
+  BatchRestoreResult,
   BatchSummary,
+  BulkRequest,
+  BulkResult,
   CaseFile,
   CommitResponse,
   CreateBatchRequest,
@@ -14,6 +18,7 @@ import type {
   QcSummary,
   RegisterFilesRequest,
   RegisterFilesResponse,
+  WithdrawRequest,
 } from "./investigation-types";
 
 export * from "./investigation-types";
@@ -62,10 +67,12 @@ const auth = (a: ApiAuth) => ({
 });
 
 const id = (value: string) => encodeURIComponent(value);
+const deletedQuery = ({ includeDeleted }: { includeDeleted?: boolean }) =>
+  includeDeleted ? "?include_deleted=true" : "";
 
 export const investigationApi = {
-  listBatches(a: ApiAuth): Promise<ApiResult<BatchSummary[]>> {
-    return apiRequest("/batches", { method: "GET", ...auth(a) });
+  listBatches(a: ApiAuth, opts: { includeDeleted?: boolean } = {}): Promise<ApiResult<BatchSummary[]>> {
+    return apiRequest(`/batches${deletedQuery(opts)}`, { method: "GET", ...auth(a) });
   },
 
   createBatch(a: ApiAuth, body: CreateBatchRequest): Promise<ApiResult<BatchSummary>> {
@@ -93,8 +100,51 @@ export const investigationApi = {
     return apiRequest(`/assets/${id(assetId)}/rerun`, { method: "POST", ...auth(a) });
   },
 
-  batch(a: ApiAuth, batchId: string): Promise<ApiResult<BatchOut>> {
-    return apiRequest(`/batches/${id(batchId)}`, { method: "GET", timeoutMs: 20_000, ...auth(a) });
+  batch(
+    a: ApiAuth,
+    batchId: string,
+    opts: { includeDeleted?: boolean } = {},
+  ): Promise<ApiResult<BatchOut>> {
+    return apiRequest(`/batches/${id(batchId)}${deletedQuery(opts)}`, {
+      method: "GET",
+      timeoutMs: 20_000,
+      ...auth(a),
+    });
+  },
+
+  /** Withdraw one photo (`can_approve`). The master file stays in storage. */
+  withdrawAsset(a: ApiAuth, assetId: string, body: WithdrawRequest): Promise<ApiResult<BulkResult>> {
+    return apiRequest(`/assets/${id(assetId)}`, {
+      method: "DELETE",
+      body: body.reason ? body : undefined,
+      ...auth(a),
+    });
+  },
+
+  restoreAsset(a: ApiAuth, assetId: string): Promise<ApiResult<BulkResult>> {
+    return apiRequest(`/assets/${id(assetId)}/restore`, { method: "POST", ...auth(a) });
+  },
+
+  /** delete / restore (`can_approve`), rerun / accept (`can_write`), 1–600 photos. */
+  bulk(a: ApiAuth, body: BulkRequest): Promise<ApiResult<BulkResult>> {
+    return apiRequest("/assets/bulk", { method: "POST", body, timeoutMs: 60_000, ...auth(a) });
+  },
+
+  withdrawBatch(a: ApiAuth, batchId: string, body: WithdrawRequest): Promise<ApiResult<BatchDeleteResult>> {
+    return apiRequest(`/batches/${id(batchId)}`, {
+      method: "DELETE",
+      body: body.reason ? body : undefined,
+      timeoutMs: 30_000,
+      ...auth(a),
+    });
+  },
+
+  restoreBatch(a: ApiAuth, batchId: string): Promise<ApiResult<BatchRestoreResult>> {
+    return apiRequest(`/batches/${id(batchId)}/restore`, {
+      method: "POST",
+      timeoutMs: 30_000,
+      ...auth(a),
+    });
   },
 
   qc(a: ApiAuth, batchId: string): Promise<ApiResult<QcSummary>> {
@@ -124,7 +174,9 @@ export const investigationApi = {
 /** Paths the two proxy route handlers pass through byte for byte. */
 export const investigationPaths = {
   stream: (batchId: string) => `/batches/${id(batchId)}/stream`,
-  export: (batchId: string) => `/batches/${id(batchId)}/export?fmt=xlsx`,
+  /** With `assetIds`, only those (non-withdrawn) photos; the caller has validated them. */
+  export: (batchId: string, assetIds: readonly string[] = []) =>
+    `/batches/${id(batchId)}/export?fmt=xlsx${assetIds.length ? `&asset_ids=${assetIds.map(id).join(",")}` : ""}`,
 };
 
 /**

@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CheckCheck, UploadCloud } from "lucide-react";
-import { routing } from "@/i18n/routing";
-import { BatchAssetRow } from "@/components/investigation/batch-view";
+import { QueueView } from "@/components/investigation/queue-view";
 import { ApiNotice } from "@/components/investigation/api-notice";
 import { EmptyState } from "@/components/ui/empty-state";
 import { loadArchiveOverview, reviewItems } from "@/lib/investigation/overview";
-
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
-}
+import { QUEUE_DEFAULT_FILTER, parseFilter } from "@/lib/investigation/batch-filter";
 
 export async function generateMetadata({
   params,
@@ -27,21 +23,24 @@ export async function generateMetadata({
 
 /**
  * The review list: every photograph, across all batches, whose head record
- * says «Prüfbedarf» or whose QC status is «offen» — least certain first.
+ * says «Prüfbedarf» or whose QC status is «offen» — least certain first,
+ * unless the URL's filter says otherwise.
  */
 export default async function QueuePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const filter = parseFilter(await searchParams, QUEUE_DEFAULT_FILTER);
   const [overview, t] = await Promise.all([
     loadArchiveOverview(),
     getTranslations({ locale, namespace: "queue" }),
   ]);
   const items = overview.ok ? reviewItems(overview.batches) : [];
-  const batchCount = new Set(items.map((i) => i.batchId)).size;
 
   return (
     <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
@@ -69,23 +68,11 @@ export default async function QueuePage({
           action={{ href: "/batches", label: t("empty.cta") }}
         />
       ) : (
-        <section
-          aria-label={t("title")}
-          className="overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface"
-        >
-          <p className="border-b border-line bg-surface-2/50 px-4 py-2.5 text-[0.75rem] text-muted">
-            {t("count", { count: items.length, batches: batchCount })}
-          </p>
-          <ul className="flex flex-col divide-y divide-line">
-            {items.map((item) => (
-              <BatchAssetRow
-                key={item.asset.asset_id}
-                asset={item.asset}
-                batchLabel={item.batchLabel ?? undefined}
-              />
-            ))}
-          </ul>
-        </section>
+        <QueueView
+          heading={t("title")}
+          initialFilter={filter}
+          items={items}
+        />
       )}
     </div>
   );

@@ -14,7 +14,7 @@ export async function OverviewTiles({ batches }: { batches: BatchOut[] }) {
   const t = await getTranslations("dashboard.tiles");
   const intl = intlLocale(await getLocale());
   const nf = new Intl.NumberFormat(intl);
-  const sum = (key: keyof BatchOut["counts"]) => batches.reduce((n, b) => n + b.counts[key], 0);
+  const sum = (key: keyof BatchOut["counts"]) => batches.reduce((n, b) => n + (b.counts[key] ?? 0), 0);
 
   const tiles: { key: string; value: number; tone?: string }[] = [
     { key: "batches", value: batches.length },

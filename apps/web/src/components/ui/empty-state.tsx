@@ -23,6 +23,7 @@ export function EmptyState({
   secondary,
   size = "panel",
   className,
+  children,
 }: {
   icon: LucideIcon;
   title: string;
@@ -34,6 +35,8 @@ export function EmptyState({
   /** `panel` sits inside a page; `inline` is the compact form for a card. */
   size?: "panel" | "inline";
   className?: string;
+  /** A client-side next step (a button), rendered with the actions. */
+  children?: React.ReactNode;
 }) {
   const inline = size === "inline";
   return (
@@ -73,7 +76,7 @@ export function EmptyState({
         </p>
       </div>
 
-      {(action || secondary) && (
+      {(action || secondary || children) && (
         <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
           {action && (
             <Link
@@ -92,6 +95,7 @@ export function EmptyState({
               {secondary.label}
             </Link>
           )}
+          {children}
         </div>
       )}
     </div>

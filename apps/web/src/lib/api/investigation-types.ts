@@ -91,6 +91,12 @@ export type BatchAsset = {
   qc_status: QcStatus | string;
   fields: Record<string, FieldSummary>;
   preview_url: string | null;
+  /** Set when the photo is withdrawn («entfernt»); only listed with `include_deleted`. */
+  deleted_at?: string | null;
+  deletion_reason?: string | null;
+  /** Who withdrew it (the archivist's name), for the Papierkorb. */
+  deleted_by_name?: string | null;
+  captured_at?: string | null;
 };
 
 export type BatchCounts = {
@@ -103,6 +109,8 @@ export type BatchCounts = {
   accepted: number;
   review: number;
   undetermined: number;
+  /** Withdrawn photos in the batch, whatever `include_deleted` says. */
+  deleted?: number;
 };
 
 export type BatchOut = {
@@ -112,6 +120,7 @@ export type BatchOut = {
   created_at: string;
   mirrored_from: string | null;
   mirrored_at: string | null;
+  deleted_at?: string | null;
   counts: BatchCounts;
   assets: BatchAsset[];
 };
@@ -123,6 +132,7 @@ export type BatchSummary = {
   created_at: string;
   asset_count: number;
   mirrored_from: string | null;
+  deleted_at?: string | null;
 };
 
 export type EvidenceOut = {
@@ -219,6 +229,8 @@ export type CaseFile = {
   hypotheses: HypothesisOut[];
   objections: ObjectionOut[];
   events: RunEventOut[];
+  deleted_at?: string | null;
+  deletion_reason?: string | null;
 };
 
 export type ReviewAction = "accept" | "correct" | "reject";
@@ -240,6 +252,49 @@ export type QcSummary = {
   /** Per ranked field: overridden ÷ reviewed; null when nothing was reviewed. */
   overrideRate: Record<string, number | null>;
 };
+
+/**
+ * Batch management (spec 2026-10-24-batch-management §3). The new fields
+ * above are optional on purpose: an API that predates migration 0005 simply
+ * omits them, and every screen reads a missing `deleted_at` as «not withdrawn».
+ */
+export type BulkAction = "delete" | "restore" | "rerun" | "accept";
+
+/** Per-photo outcome; `detail` names why a photo was skipped. */
+export type BulkDetail =
+  | "already_withdrawn"
+  | "not_withdrawn"
+  | "not_found"
+  | "running"
+  | "withdrawn"
+  | "no_record"
+  | "nothing_to_accept";
+
+export type BulkItemResult = { asset_id: string; ok: boolean; detail: BulkDetail | string | null };
+
+export type BulkResult = {
+  action: BulkAction;
+  requested: number;
+  succeeded: number;
+  results: BulkItemResult[];
+};
+
+export type BulkRequest = { action: BulkAction; asset_ids: string[]; reason?: string };
+
+export type WithdrawRequest = { reason?: string };
+
+export type BatchDeleteResult = { batch_id: string; deleted_at: string; assets: number };
+export type BatchRestoreResult = { batch_id: string; assets: number };
+
+/** The contract's limits: 1–600 photos per bulk call, a reason of at most 500 characters. */
+export const BULK_MAX = 600;
+export const REASON_MAX = 500;
+/**
+ * A selection export travels as `?asset_ids=…` on a GET. CloudFront refuses a
+ * URL over 8 192 bytes, and 37 bytes per id leaves room for 200; a larger
+ * selection is exported as the whole batch or narrowed first.
+ */
+export const EXPORT_IDS_MAX = 200;
 
 /** What an action hands a client component: data, or a code to translate. */
 export type InvestigationResult<T> =

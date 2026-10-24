@@ -1,18 +1,30 @@
-import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRight, UploadCloud } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { Eye, EyeOff, UploadCloud } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Link } from "@/i18n/navigation";
 import type { BatchSummary } from "@/lib/api/investigation-types";
+import { cn } from "@/lib/cn";
 import { ApiNotice } from "./api-notice";
-import { BATCH_STATUS_KEYS, intlLocale, ARCHIVE_TZ } from "./labels";
+import { BatchTable } from "./batch-table";
 
-/** The archive's batches (`GET /batches`). Server-rendered; nothing here is simulated. */
-export async function BatchList({ batches, error }: { batches: BatchSummary[]; error?: string }) {
+/**
+ * The archive's batches (`GET /batches`). Server-rendered; nothing here is
+ * simulated. Archivists and admins also see «Entfernte Stapel anzeigen»
+ * (`?removed=1` → `include_deleted=true`) and the per-batch remove/restore.
+ */
+export async function BatchList({
+  batches,
+  error,
+  canApprove = false,
+  showRemoved = false,
+}: {
+  batches: BatchSummary[];
+  error?: string;
+  canApprove?: boolean;
+  showRemoved?: boolean;
+}) {
   const t = await getTranslations("investigation.batches");
-  const tb = await getTranslations("investigation.batch");
-  const intl = intlLocale(await getLocale());
-  const time = (iso: string) =>
-    new Intl.DateTimeFormat(intl, { dateStyle: "medium", timeStyle: "short", timeZone: ARCHIVE_TZ }).format(new Date(iso));
+  const tm = await getTranslations("investigation.manage");
 
   return (
     <div className="mx-auto flex w-full max-w-[72rem] flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -23,13 +35,33 @@ export async function BatchList({ batches, error }: { batches: BatchSummary[]; e
           </h1>
           <p className="max-w-[72ch] text-[0.875rem] text-muted">{t("subtitle")}</p>
         </div>
-        <Link
-          href="/upload"
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-4 text-[0.8125rem] font-medium text-background transition-colors hover:bg-foreground-strong"
-        >
-          <UploadCloud aria-hidden className="size-4" strokeWidth={2} />
-          {t("newBatch")}
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {canApprove && (
+            <Link
+              href={showRemoved ? "/batches" : "/batches?removed=1"}
+              className={cn(
+                "inline-flex h-10 items-center gap-2 rounded-lg border px-3.5 text-[0.8125rem] font-medium transition-colors",
+                showRemoved
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-line-strong bg-surface text-foreground hover:border-evidence hover:text-evidence",
+              )}
+            >
+              {showRemoved ? (
+                <EyeOff aria-hidden className="size-4" strokeWidth={2} />
+              ) : (
+                <Eye aria-hidden className="size-4" strokeWidth={2} />
+              )}
+              {showRemoved ? tm("hideRemoved") : tm("showRemoved")}
+            </Link>
+          )}
+          <Link
+            href="/upload"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-4 text-[0.8125rem] font-medium text-background transition-colors hover:bg-foreground-strong"
+          >
+            <UploadCloud aria-hidden className="size-4" strokeWidth={2} />
+            {t("newBatch")}
+          </Link>
+        </div>
       </header>
 
       {error && <ApiNotice code={error} />}
@@ -44,33 +76,7 @@ export async function BatchList({ batches, error }: { batches: BatchSummary[]; e
           />
         )
       ) : (
-        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface">
-          {batches.map((b) => (
-            <li key={b.id}>
-              <Link
-                href={`/batches/${b.id}`}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-4 py-3.5 transition-colors hover:bg-surface-2/60 sm:grid-cols-[minmax(0,1fr)_8rem_8rem_auto]"
-              >
-                <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate font-mono text-[0.875rem] font-medium text-foreground-strong">
-                    {b.label ?? tb("unlabelled")}
-                  </span>
-                  <span className="text-[0.75rem] text-muted">
-                    {tb("created", { time: time(b.created_at) })}
-                    {b.mirrored_from && <> · {t("mirror")}</>}
-                  </span>
-                </span>
-                <span className="hidden font-mono text-[0.75rem] tabular-nums text-foreground sm:block">
-                  {t("photos", { count: b.asset_count })}
-                </span>
-                <span className="hidden text-[0.75rem] text-muted sm:block">
-                  {BATCH_STATUS_KEYS.has(b.status) ? tb(`batchStatus.${b.status}`) : b.status}
-                </span>
-                <ArrowRight aria-hidden className="size-4 text-muted-2" strokeWidth={2} />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <BatchTable batches={batches} canApprove={canApprove} />
       )}
     </div>
   );

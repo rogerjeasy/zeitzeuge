@@ -19,8 +19,15 @@ const POLL_MS = 15_000;
  * the API says `live: false` (no notifier), the hook falls back to polling
  * every 15 s — and says which of the two it is doing, so the screen never
  * claims to be live when it is not.
+ *
+ * `includeDeleted` (the Papierkorb) asks for withdrawn photos too; switching
+ * it re-fetches at once, and every later refresh keeps asking the same way.
  */
-export function useLiveBatch(batchId: string | null, initial: BatchOut | null = null) {
+export function useLiveBatch(
+  batchId: string | null,
+  initial: BatchOut | null = null,
+  { includeDeleted = false }: { includeDeleted?: boolean } = {},
+) {
   const [batch, setBatch] = useState<BatchOut | null>(initial);
   const [mode, setMode] = useState<LiveMode>(batchId ? "connecting" : "off");
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +37,7 @@ export function useLiveBatch(batchId: string | null, initial: BatchOut | null = 
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inflight = useRef(false);
   const again = useRef(false);
+  const withDeleted = useRef(includeDeleted);
 
   const refresh = useCallback(async () => {
     if (!batchId) return;
@@ -42,7 +50,7 @@ export function useLiveBatch(batchId: string | null, initial: BatchOut | null = 
     try {
       do {
         again.current = false;
-        const result = await getBatchAction(batchId);
+        const result = await getBatchAction(batchId, { includeDeleted: withDeleted.current });
         if (result.ok) {
           setBatch(result.data);
           setError(null);
@@ -56,6 +64,13 @@ export function useLiveBatch(batchId: string | null, initial: BatchOut | null = 
       setRefreshing(false);
     }
   }, [batchId]);
+
+  // The Papierkorb switched: fetch the other view now, not at the next event.
+  useEffect(() => {
+    if (withDeleted.current === includeDeleted) return;
+    withDeleted.current = includeDeleted;
+    void refresh();
+  }, [includeDeleted, refresh]);
 
   const schedule = useCallback(() => {
     if (debounce.current) clearTimeout(debounce.current);
