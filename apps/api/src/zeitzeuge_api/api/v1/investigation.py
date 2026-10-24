@@ -20,6 +20,7 @@ from zeitzeuge_api.api.deps import CurrentIdentity, Identity, WriteIdentity, res
 from zeitzeuge_api.core import errors
 from zeitzeuge_api.schemas import investigation as schemas
 from zeitzeuge_api.services.investigation_service import InvestigationService
+from zeitzeuge_api.services.mirror import mirror_batch
 
 router = APIRouter(tags=["investigation"])
 
@@ -89,6 +90,19 @@ async def commit_upload(
 )
 async def rerun(asset_id: uuid.UUID, identity: WriteIdentity, service: Service) -> dict[str, str]:
     return {"run_id": await service.rerun(identity.session, user=identity.user, asset_id=asset_id)}
+
+
+@router.post(
+    "/batches/{batch_id}/mirror",
+    summary="Copy this batch into the demo archive, for the read-only guest (design note D9)",
+)
+async def mirror(batch_id: uuid.UUID, request: Request, identity: WriteIdentity) -> dict[str, Any]:
+    if not identity.user.role.can_approve:
+        raise errors.ForbiddenError("Only an archivist or admin may publish a mirror.")
+    await identity.session.commit()  # the mirror opens its own tenant-scoped transactions
+    return await mirror_batch(
+        request.app.state.database, source_org=identity.user.org_id, batch_id=batch_id
+    )
 
 
 @router.get("/batches/{batch_id}", response_model=schemas.BatchOut, summary="Progress per photo")

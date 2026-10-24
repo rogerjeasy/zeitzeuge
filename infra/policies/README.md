@@ -14,7 +14,7 @@ substituted.
 | `boundary.json` | `ZeitzeugeBoundary`, on **every** `zeitzeuge-*` role (root-managed) | the ceiling no role can exceed, whatever is attached later |
 | `github-deploy.json` | `zeitzeuge-prod-github-deploy`, via OIDC | push images, register `:<sha>`-pinned task revisions, run the migrate and seed tasks, roll services, update agent code — no IAM, no deletes |
 | `ecs-task-execution.json` | ECS agent for every task | pull `zeitzeuge/*` images, write own logs, inject `zeitzeuge/prod/*` secrets |
-| `ecs-task-api.json` | FastAPI tasks | Cognito admin calls on its one pool, presign assets, avatars, start investigations, session state |
+| `ecs-task-api.json` | FastAPI tasks | Cognito admin calls on its one pool, presign assets, avatars, start investigations, session state; since the P0 in-API worker (design note D1), EU-only Anthropic models plus `global.openai.*` for the cross-family red team alone (D4) |
 | `ecs-task-migrate.json` | one-off migrate/seed task | read the RDS-managed master secret — the only role that can |
 | `lambda-agent.json` | Lambda agents and deep-agent tasks | EU-only Bedrock through the guardrail, Data API with the RLS-bound credential, no S3 delete |
 | `sfn-orchestrator.json` | Step Functions | invoke exactly the agent functions, the falsifier, and child executions |

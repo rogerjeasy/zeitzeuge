@@ -67,7 +67,9 @@ async def _org(db: Database, slug: str) -> uuid.UUID:
         return org.id
 
 
-async def run(files: list[Path], *, org_slug: str, label: str, cache: Path | None) -> None:
+async def run(
+    files: list[Path], *, org_slug: str, label: str, cache: Path | None, concurrency: int = 1
+) -> None:
     settings = get_settings()
     db = Database(create_engine(settings.database_dsn, settings))
     org_id = await _org(db, org_slug)
@@ -136,12 +138,17 @@ async def run(files: list[Path], *, org_slug: str, label: str, cache: Path | Non
         images=LocalImageStore(Path("/")),
         code_version="cli",
     )
-    for run_id in runs:
-        try:
-            await investigate(db, run_id, org_id, deps)
-        except Exception as exc:
-            print(f"!! run {run_id} failed: {type(exc).__name__}: {exc}", file=sys.stderr)
-        await _print(db, tenant, run_id)
+    slots = asyncio.Semaphore(concurrency)
+
+    async def one(run_id: uuid.UUID) -> None:
+        async with slots:
+            try:
+                await investigate(db, run_id, org_id, deps)
+            except Exception as exc:
+                print(f"!! run {run_id} failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+            await _print(db, tenant, run_id)
+
+    await asyncio.gather(*(one(run_id) for run_id in runs))
     await tools.close()
     print(f"\nbatch {batch_id}")
     await db.dispose()
@@ -205,13 +212,22 @@ def main() -> None:
     run_p.add_argument("--org", default="stasz")
     run_p.add_argument("--label", default="prio1")
     run_p.add_argument("--cache", type=Path, default=None)
+    run_p.add_argument("--concurrency", type=int, default=1)
     exp = sub.add_parser("export")
     exp.add_argument("batch_id", type=uuid.UUID)
     exp.add_argument("out", type=Path)
     exp.add_argument("--org", default="stasz")
     args = parser.parse_args()
     if args.command == "run":
-        asyncio.run(run(args.files, org_slug=args.org, label=args.label, cache=args.cache))
+        asyncio.run(
+            run(
+                args.files,
+                org_slug=args.org,
+                label=args.label,
+                cache=args.cache,
+                concurrency=args.concurrency,
+            )
+        )
     else:
         asyncio.run(export(args.batch_id, args.out, org_slug=args.org))
 

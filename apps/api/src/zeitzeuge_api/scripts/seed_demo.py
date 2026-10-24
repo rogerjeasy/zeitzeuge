@@ -18,6 +18,7 @@ import asyncio
 import os
 import secrets
 import sys
+from typing import Any
 
 from sqlalchemy import select
 
@@ -178,10 +179,50 @@ async def main() -> int:
             user.org_id = organization.id
 
         await session.flush()
+        await _seed_staatsarchiv(session)
 
     await database.dispose()
     log.info("seed.done", organization=DEMO_SLUG, user=settings.guest_username)
     return 0
+
+
+STASZ_SLUG = "stasz"
+
+
+async def _seed_staatsarchiv(session: Any) -> None:
+    """The Staatsarchiv tenant the Prio-1 set is processed in (design note D9).
+
+    Minimal sign-up captures no archive, so the team's accounts are attached
+    here: every address in `ZZ_STASZ_MEMBERS` (comma-separated, set outside the
+    repository) that has already signed up joins `stasz` as an archivist. An
+    address that has not signed up yet is skipped and picked up on the next
+    deploy's seed. Idempotent.
+    """
+    organization = await session.scalar(select(Organization).where(Organization.slug == STASZ_SLUG))
+    if organization is None:
+        organization = Organization(
+            slug=STASZ_SLUG,
+            name="Staatsarchiv Schwyz",
+            kind=OrganizationKind.ARCHIVE,
+            canton="SZ",
+            isil="CH-000015-0",
+            contact_email="staatsarchiv@sz.ch",
+        )
+        session.add(organization)
+        await session.flush()
+        log.info("seed.organization_created", slug=STASZ_SLUG)
+
+    members = [m.strip().lower() for m in os.environ.get("ZZ_STASZ_MEMBERS", "").split(",")]
+    for email in filter(None, members):
+        user = await session.scalar(select(User).where(User.email == email))
+        if user is None:
+            log.info("seed.stasz_member_pending", email=email)
+            continue
+        if user.org_id != organization.id or not user.role.can_approve:
+            user.org_id = organization.id
+            user.role = UserRole.ARCHIVIST if user.role is not UserRole.ADMIN else user.role
+            log.info("seed.stasz_member_attached", email=email)
+    await session.flush()
 
 
 if __name__ == "__main__":

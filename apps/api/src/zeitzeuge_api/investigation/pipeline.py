@@ -147,15 +147,18 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
         tools=deps.tools,
     )
     writer = LedgerWriter(ctx, batch_id=batch_id)
+    access: tuple[str, str] | None = None
     if deps.access_bucket:
         try:
-            await deps.images.write(
-                deps.access_bucket, access_key(org_id, asset_id), ctx.asset.prepared
-            )
+            key = access_key(org_id, asset_id)
+            await deps.images.write(deps.access_bucket, key, ctx.asset.prepared)
+            access = (deps.access_bucket, key)
         except Exception as exc:  # a missing preview must not stop the investigation
             log.warning("investigation.access_copy_failed", error=str(exc))
     async with db.session(tenant) as session:
         await _record_fixity(session, asset_id, raw)
+        if access is not None:
+            await _record_access_copy(session, org_id, asset_id, access, len(ctx.asset.prepared))
 
     for name, stage in STAGES:
         async with db.session(tenant) as session:
@@ -198,6 +201,33 @@ async def _record_fixity(session: Any, asset_id: uuid.UUID, raw: bytes) -> None:
     )
     if master is not None and not master.sha256:
         master.sha256 = hashlib.sha256(raw).hexdigest()
+
+
+async def _record_access_copy(
+    session: Any, org_id: uuid.UUID, asset_id: uuid.UUID, where: tuple[str, str], size: int
+) -> None:
+    """The access copy as a file row, so a mirror can point at the same object."""
+    existing = await session.scalar(
+        select(AssetFile).where(
+            AssetFile.asset_id == asset_id,
+            AssetFile.side == AssetSide.RECTO,
+            AssetFile.role == FileRole.ACCESS,
+        )
+    )
+    if existing is None:
+        session.add(
+            AssetFile(
+                org_id=org_id,
+                asset_id=asset_id,
+                side=AssetSide.RECTO,
+                role=FileRole.ACCESS,
+                bucket=where[0],
+                s3_key=where[1],
+                mime_type="image/jpeg",
+                bytes=size,
+                uploaded_at=datetime.now(UTC),
+            )
+        )
 
 
 async def _record_exif(session: Any, asset_id: uuid.UUID, exif: dict[str, Any]) -> None:

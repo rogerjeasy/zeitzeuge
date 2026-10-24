@@ -77,7 +77,7 @@ from zeitzeuge_api.db.models.enums import (
     SourceClass,
     VersionChange,
 )
-from zeitzeuge_api.integrations.aws.originals import OriginalsStorage, access_key, master_key
+from zeitzeuge_api.integrations.aws.originals import OriginalsStorage, master_key
 from zeitzeuge_api.investigation.confidence import SOURCE_CLASS_DE, Support, score
 from zeitzeuge_api.investigation.contracts import RANKED_FIELDS
 from zeitzeuge_api.schemas import investigation as schemas
@@ -347,6 +347,7 @@ class InvestigationService:
             )
         }
         fields_by_record = await self._head_fields(session, list(records.values()))
+        previews = await self._previews(session, asset_ids)
         reviews = await self._reviews(session, [r.id for r in records.values()])
 
         counts: dict[str, int] = defaultdict(int)
@@ -408,11 +409,7 @@ class InvestigationService:
                         for f in fields
                         if f.field_key in RANKED_FIELDS
                     },
-                    preview_url=(
-                        self._originals.view_url(access_key(asset.org_id, asset.id))
-                        if asset.status is AssetStatus.DONE
-                        else None
-                    ),
+                    preview_url=previews.get(asset.id),
                 )
             )
         if (
@@ -570,7 +567,7 @@ class InvestigationService:
             priority=asset.priority,
             captured_at=asset.captured_at,
             camera=" ".join(p for p in (asset.exif_make, asset.exif_model) if p) or None,
-            preview_url=self._originals.view_url(access_key(asset.org_id, asset.id)),
+            preview_url=(await self._previews(session, [asset.id])).get(asset.id),
             batch_id=str(asset.batch_id) if asset.batch_id else None,
             status_label=status_label(fields),
             qc_status=qc_status(
@@ -1018,6 +1015,25 @@ class InvestigationService:
                 select(RecordField).where(RecordField.record_version_id.in_(list(heads)))
             ):
                 out[heads[field.record_version_id]].append(field)
+        return out
+
+    async def _previews(
+        self, session: AsyncSession, asset_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, str]:
+        """Signed GETs on the access copies (never the masters, data-model §13.1)."""
+        out: dict[uuid.UUID, str] = {}
+        if not asset_ids:
+            return out
+        for row in await session.scalars(
+            select(AssetFile).where(
+                AssetFile.asset_id.in_(asset_ids),
+                AssetFile.side == AssetSide.RECTO,
+                AssetFile.role == FileRole.ACCESS,
+            )
+        ):
+            url = self._originals.view_url(row.s3_key, bucket=row.bucket)
+            if url:
+                out[row.asset_id] = url
         return out
 
     async def _reviews(

@@ -149,3 +149,9 @@ variable "deletion_protection" {
   type        = bool
   default     = true
 }
+
+variable "stasz_members" {
+  description = "Comma-separated e-mail addresses attached to the Staatsarchiv tenant by the seed (design note D9). Set in the git-ignored terraform.tfvars."
+  type        = string
+  default     = ""
+}

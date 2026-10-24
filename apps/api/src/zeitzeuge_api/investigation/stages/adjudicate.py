@@ -137,13 +137,19 @@ def decide(
         if 0 <= i < len(ctx.ledger.objections)
         and ctx.ledger.objections[i].hypothesis == hypothesis.local_id
     ]
+    refuting = [
+        item for item in (ctx.ledger.by_id(local_id) for local_id in hypothesis.refuting) if item
+    ]
     refuted = any(
-        (item := ctx.ledger.by_id(local_id)) is not None
-        and item.source_class in _CHECKABLE
-        and item.strength >= REFUTING_STRENGTH
-        for local_id in hypothesis.refuting
+        item.source_class in _CHECKABLE and item.strength >= REFUTING_STRENGTH for item in refuting
     )
-    scored = score(support, [Objection(o.severity) for o in objections], refuted=refuted)
+    # Weaker counter-evidence (a reference photo that shows another building) is
+    # charged like an upheld objection of that strength: it is a stated reason
+    # the value may be wrong, and it must cost something.
+    charges = [Objection(o.severity) for o in objections] + [
+        Objection(item.strength) for item in refuting if item.strength < REFUTING_STRENGTH
+    ]
+    scored = score(support, charges, refuted=refuted)
     upheld_indexes = [ctx.ledger.objections.index(o) for o in objections]
     if scored.decision is FieldDecisionKind.ABSTAIN:
         return (

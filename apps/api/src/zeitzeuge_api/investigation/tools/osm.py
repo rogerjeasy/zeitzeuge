@@ -89,16 +89,16 @@ def _kind(tags: dict[str, str]) -> str:
 
 
 def _ql_regex(text: str) -> str:
-    """Escape `text` for an Overpass QL string holding a POSIX regex."""
-    out = []
-    for ch in text:
-        if ch in r"\.^$|?*+()[]{}":
-            out.append("\\\\" + ch)
-        elif ch == '"':
-            out.append('\\"')
-        else:
-            out.append(ch)
-    return "".join(out)
+    """Escape `text` for an Overpass QL string holding a POSIX regex.
+
+    Two layers, in order: first make every character a literal for the regex,
+    then make the result safe inside a double-quoted QL string. Names come from
+    a model and from registers, so control characters and newlines are dropped
+    before either step — they have no business in a place name.
+    """
+    printable = "".join(ch for ch in text if ch.isprintable())[:120]
+    regex = "".join("\\" + ch if ch in r"\.^$|?*+()[]{}" else ch for ch in printable)
+    return regex.replace("\\", "\\\\").replace('"', '\\"')
 
 
 class Overpass(HttpTool):

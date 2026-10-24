@@ -19,6 +19,31 @@
       ]
     },
     {
+      "Sid": "InvestigateInTheEU",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:eu-*::foundation-model/anthropic.*",
+        "arn:aws:bedrock:${region}:${account_id}:inference-profile/eu.anthropic.*",
+        "arn:aws:bedrock:${region}:${account_id}:application-inference-profile/*"
+      ]
+    },
+    {
+      "Sid": "CrossFamilyRedTeamOnly",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:${region}:${account_id}:inference-profile/global.openai.*",
+        "arn:aws:bedrock:::foundation-model/openai.*",
+        "arn:aws:bedrock:*::foundation-model/openai.*"
+      ]
+    },
+    {
       "Sid": "UserAvatars",
       "Effect": "Allow",
       "Action": [

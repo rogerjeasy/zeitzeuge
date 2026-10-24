@@ -194,7 +194,8 @@ class ModelClient:
                     system=[{"text": system}],
                     messages=conversation,
                     toolConfig={"tools": [tool], "toolChoice": {"tool": {"name": "answer"}}},
-                    inferenceConfig={"maxTokens": max_tokens},
+                    # Deterministic sampling: the same photo should get the same reading.
+                    inferenceConfig={"maxTokens": max_tokens, "temperature": 0},
                 )
             )
 

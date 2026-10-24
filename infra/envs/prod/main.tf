@@ -191,6 +191,12 @@ module "compute_api" {
     ZZ_EXPORTS_BUCKET                  = module.storage.bucket_names["exports"]
     ZZ_RUN_LOCKS_TABLE                 = module.keyvalue.table_names["run-locks"]
     ZZ_IDEMPOTENCY_TABLE               = module.keyvalue.table_names["idempotency"]
+    # The P0 investigation worker runs inside the API (design note D1).
+    ZZ_WORKER_ENABLED     = "true"
+    ZZ_WORKER_CONCURRENCY = "4"
+    ZZ_STASZ_MEMBERS      = var.stasz_members
+    # The root filesystem is read-only; /tmp is the task's scratch volume.
+    ZZ_TOOL_CACHE_DIR = "/tmp/zz-tools"
   }
 
   logs_kms_key_arn    = module.security.kms_key_arns["logs"]

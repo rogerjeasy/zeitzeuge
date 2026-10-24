@@ -137,6 +137,8 @@ async def run(ctx: RunContext) -> None:
         record.add_reply(reply)
         compared += 1
         best = 0.0
+        yes: list[str] = []
+        no = 0
         for verdict in reply.data.verdicts:
             if not 1 <= verdict.index <= len(kept):
                 continue
@@ -157,9 +159,10 @@ async def run(ctx: RunContext) -> None:
                     field="building",
                     value=candidate.name,
                 )
-                candidate.evidence_ids.append(item.local_id)
+                yes.append(item.local_id)
                 best = max(best, verdict.confidence)
             elif verdict.same_object == "no" and verdict.confidence >= 0.8:
+                no += 1
                 ctx.ledger.add(
                     kind=EvidenceKind.VISUAL,
                     source_class=SourceClass.REFERENCE_IMAGE,
@@ -175,10 +178,19 @@ async def run(ctx: RunContext) -> None:
                     value=candidate.name,
                     attrs={"refutes": True, "tool": hit.tool},
                 )
-        if best:
+        # Confirmed only when the matches outnumber the clear mismatches: one aerial
+        # view that «looks like it» does not outvote two street photos that do not.
+        if yes and len(yes) > no:
+            candidate.evidence_ids.extend(yes)
             confirmed.append(candidate)
-            if best >= 0.85:
+            if best >= 0.85 and no == 0:
                 break  # a clear match: no need to spend more calls on weaker candidates
+        elif yes:
+            ctx.ledger.note(
+                AgentId.MEMORY,
+                f"«{candidate.name}»: {len(yes)} Referenzbild(er) passen, {no} widersprechen "
+                "— nicht bestätigt",
+            )
 
     # --- what the catalogue already says about a confirmed building ----------
     for candidate in confirmed:

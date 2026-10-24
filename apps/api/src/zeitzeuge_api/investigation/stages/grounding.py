@@ -122,7 +122,7 @@ async def run(ctx: RunContext) -> None:
     candidates: list[BuildingCandidate] = []
 
     # --- localities and municipalities --------------------------------------
-    for candidate in seen.localities[:3]:
+    for candidate in seen.localities[:4]:
         for hit in (await _search(ctx, candidate.name))[:6]:
             if not _equal(hit) or not in_schwyz(hit):
                 continue
