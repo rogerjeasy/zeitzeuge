@@ -15,8 +15,10 @@ that needs the dependency, where it can be read.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -36,15 +38,22 @@ from zeitzeuge_api.core.security import JWKSCache, TokenVerifier
 from zeitzeuge_api.db.session import Database, build_dsn, create_engine
 from zeitzeuge_api.integrations.aws.clients import AwsClients
 from zeitzeuge_api.integrations.aws.cognito import CognitoIdentityProvider
+from zeitzeuge_api.integrations.aws.originals import OriginalsStorage
 from zeitzeuge_api.integrations.aws.ratelimit import RateLimiter
 from zeitzeuge_api.integrations.aws.s3 import AvatarStorage
 from zeitzeuge_api.integrations.aws.secrets import SecretsResolver
+from zeitzeuge_api.investigation.models import ModelClient
+from zeitzeuge_api.investigation.notifier import RunNotifier
+from zeitzeuge_api.investigation.pipeline import Deps, S3ImageStore
+from zeitzeuge_api.investigation.toolbox import Toolbox
+from zeitzeuge_api.investigation.worker import InvestigationWorker
 from zeitzeuge_api.middleware.request_context import (
     RequestContextMiddleware,
     SecurityHeadersMiddleware,
 )
 from zeitzeuge_api.services.api_key_service import ApiKeyService
 from zeitzeuge_api.services.auth_service import AuthService
+from zeitzeuge_api.services.investigation_service import InvestigationService
 from zeitzeuge_api.services.user_service import UserService
 
 log = get_logger(__name__)
@@ -107,7 +116,8 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
         else {}
     )
 
-    database = Database(create_engine(build_dsn(settings, db_credentials), settings))
+    dsn = build_dsn(settings, db_credentials)
+    database = Database(create_engine(dsn, settings))
 
     cognito = CognitoIdentityProvider(
         clients,
@@ -138,6 +148,14 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
         cdn_domain=settings.cdn_domain,
     )
     limiter = RateLimiter(clients, table_name=settings.rate_limit_table)
+    originals = OriginalsStorage(
+        clients,
+        bucket=settings.originals_bucket,
+        derivatives_bucket=settings.derivatives_bucket,
+        kms_key_id=settings.assets_kms_key_id,
+        max_bytes=settings.original_max_bytes,
+        upload_ttl=settings.original_upload_ttl_seconds,
+    )
 
     app.state.settings = settings
     app.state.clients = clients
@@ -158,6 +176,31 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
     )
     app.state.user_service = UserService(cognito=cognito, avatars=avatars, limiter=limiter)
     app.state.api_key_service = ApiKeyService(limiter=limiter)
+    app.state.investigation_service = InvestigationService(originals)
+
+    # Live progress (design note D8) and the in-API worker (D1). Both need
+    # Postgres; on SQLite (the unit suite) neither starts.
+    if dsn.startswith("postgresql"):
+        app.state.notifier = RunNotifier(dsn)
+        await app.state.notifier.start()
+        if settings.worker_enabled:
+            toolbox = Toolbox(
+                cache_dir=Path(settings.tool_cache_dir) if settings.tool_cache_dir else None
+            )
+            app.state.toolbox = toolbox
+            worker = InvestigationWorker(
+                database,
+                Deps(
+                    models=ModelClient(region=settings.region),
+                    tools=toolbox,
+                    images=S3ImageStore(clients.s3),
+                    code_version=__version__,
+                    access_bucket=settings.derivatives_bucket,
+                ),
+                concurrency=settings.worker_concurrency,
+            )
+            app.state.worker = worker
+            app.state.worker_task = asyncio.create_task(worker.run_forever())
 
     await jwks.warm()
 
@@ -189,6 +232,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        worker = getattr(app.state, "worker", None)
+        if worker is not None:
+            await worker.stop()
+            app.state.worker_task.cancel()
+        notifier = getattr(app.state, "notifier", None)
+        if notifier is not None:
+            await notifier.stop()
+        toolbox = getattr(app.state, "toolbox", None)
+        if toolbox is not None:
+            await toolbox.close()
         database = getattr(app.state, "database", None)
         if database is not None:
             await database.dispose()

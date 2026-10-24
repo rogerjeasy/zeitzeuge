@@ -96,6 +96,19 @@ class Settings(BaseSettings):
     avatar_view_ttl_seconds: int = 3600
     assets_kms_key_id: str = ""
     cdn_domain: str = ""
+    originals_bucket: str = ""
+    """Photographs as delivered (versioned, Object Lock). Browser uploads land here."""
+    derivatives_bucket: str = ""
+    """Access copies the review screen shows; regenerable from the master."""
+    original_max_bytes: int = 209_715_200
+    original_upload_ttl_seconds: int = 1800
+
+    # --- Investigation (design note D1) ------------------------------------
+    worker_enabled: bool = False
+    """Run the investigation worker inside this API process."""
+    worker_concurrency: int = 4
+    tool_cache_dir: str = ""
+    """Directory for the lookup cache; empty = in-memory only."""
 
     # --- Key-value (infra/modules/keyvalue) -------------------------------
     rate_limit_table: str = ""

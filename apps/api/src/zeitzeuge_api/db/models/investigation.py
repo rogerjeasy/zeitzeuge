@@ -160,7 +160,7 @@ class AgentInvocation(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "run_id", "agent_id", "attempt", name="uq_agent_invocations_run_agent_attempt"
+            "run_id", "stage", "attempt", name="uq_agent_invocations_run_stage_attempt"
         ),
     )
 

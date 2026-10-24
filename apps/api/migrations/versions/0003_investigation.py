@@ -238,7 +238,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_agent_invocations")),
         sa.UniqueConstraint(
-            "run_id", "agent_id", "attempt", name="uq_agent_invocations_run_agent_attempt"
+            "run_id", "stage", "attempt", name="uq_agent_invocations_run_stage_attempt"
         ),
     )
     op.create_table(

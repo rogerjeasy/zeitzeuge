@@ -155,3 +155,7 @@ The §8.12 contract, unchanged: sheet **Ergebnisse** with the 35 columns in that
 ## 8. Left to the builder
 
 Prompt wording; Overpass query shapes; the Staatsarchiv catalogue access method (scopeArchiv Query has no documented API — if it cannot be queried politely and machine-readably, the stage records the source as unavailable and the pitch says so); exact Commons query strategy; whether the worker runs in the API task or as a second ECS service from the same image (the infra is the same).
+
+## 9. Hardening deferred past 17:00
+
+- **Composite tenant foreign keys.** Postgres FK checks bypass RLS, so a crafted insert could reference another tenant's row by UUID. P0 mitigates this in code: every write path (ledger, upload, review, mirror) only uses parent ids it has just read under the caller's RLS, and the ids are random UUIDv4s. The structural fix is `UNIQUE (org_id, id)` on each parent plus `FOREIGN KEY (org_id, x_id) REFERENCES parent (org_id, id)`, and per-tenant unique constraints. That goes in the first revision after the event (flagged by the automated security review of `0955e6d`).
