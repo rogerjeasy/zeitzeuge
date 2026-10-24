@@ -85,14 +85,17 @@ _FAMILIES = {
 
 DEFAULT_BINDINGS: dict[Task, Binding] = {
     Task.PERCEIVE: OPUS,
-    Task.COMPARE: OPUS,
+    # Sonnet: the comparison stage makes up to eight calls per photo, and Opus 4.6 is
+    # limited to 25 requests/min on this account (the prod re-run throttled at 4
+    # parallel photos). Opus keeps the two judgements per photo: perceive, adjudicate.
+    Task.COMPARE: SONNET,
     Task.CHALLENGE: OPENAI,
     Task.ADJUDICATE: OPUS,
     Task.EXTRACT: SONNET,
 }
 FALLBACKS: dict[Task, Binding] = {
     Task.PERCEIVE: SONNET,
-    Task.COMPARE: SONNET,
+    Task.COMPARE: HAIKU,
     Task.CHALLENGE: HAIKU,
     Task.ADJUDICATE: SONNET,
     Task.EXTRACT: HAIKU,
@@ -117,7 +120,7 @@ _THROTTLED = {
 _BACKOFF_SECONDS = (4.0, 8.0, 15.0, 25.0, 40.0)
 """≈ 90 s plus jitter before giving up on one model; the run's heartbeat keeps it alive."""
 REQUESTS_PER_MINUTE: dict[str, float] = {
-    "claude-opus": 22.0,
+    "claude-opus": 18.0,
     "claude-sonnet": 45.0,
     "claude-haiku": 45.0,
 }
