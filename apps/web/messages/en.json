@@ -940,11 +940,39 @@
     "metaTitle": "History — ZEITZEUGE",
     "metaDescription": "The archive’s audit trail: every run, correction, sign-off and export, append-only.",
     "title": "History",
-    "subtitle": "The archive’s audit trail.",
+    "subtitle": "Who investigated, reviewed or corrected which photo, and when. Archive work only: sign-ins and addresses are not shown.",
     "empty": {
       "title": "No history yet",
-      "body": "This will show who investigated, reviewed or corrected which photo, and when.",
+      "body": "As soon as photos are uploaded, investigated or reviewed, every step appears here with who and when.",
       "cta": "Go to batches"
+    },
+    "inBatch": "batch {batch}",
+    "actions": {
+      "run_finished": "investigation finished",
+      "record_field_reviewed": "field reviewed",
+      "record_bulk_accepted": "{count, plural, one {accepted # photo} other {accepted # photos}}",
+      "asset_uploaded": "photo uploaded",
+      "batch_created": "batch created",
+      "asset_withdrawn": "photo removed",
+      "asset_restored": "photo restored",
+      "batch_withdrawn": "batch removed",
+      "batch_restored": "batch restored",
+      "batch_exported": "Excel exported",
+      "batch_mirrored": "batch mirrored to the demo",
+      "runs_purged_failed": "{count, plural, one {# failed run deleted} other {# failed runs deleted}}"
+    },
+    "review": {
+      "accept": "accepted",
+      "correct": "corrected",
+      "reject": "rejected"
+    },
+    "run": {
+      "awaiting_review": "needs review",
+      "accepted": "accepted",
+      "abstained": "nothing determinable",
+      "failed": "failed",
+      "cancelled": "cancelled",
+      "superseded": "superseded"
     }
   },
   "collections": {
@@ -953,10 +981,17 @@
     "title": "Collections",
     "subtitle": "Your archive’s fonds.",
     "empty": {
-      "title": "No collection overview yet",
-      "body": "This will list the archive’s fonds and how far each one has been described.",
+      "title": "No fonds yet",
+      "body": "The archive's fonds appear here as soon as photos are uploaded into one.",
       "cta": "Go to batches"
-    }
+    },
+    "counts": "{photos, plural, one {# photo} other {# photos}} in {batches, plural, one {# batch} other {# batches}}",
+    "bars": {
+      "investigated": "Investigated",
+      "described": "Described",
+      "reviewed": "Reviewed"
+    },
+    "toBatches": "Open the batches"
   },
   "evaluation": {
     "metaTitle": "Evaluation — ZEITZEUGE",
@@ -969,21 +1004,42 @@
       "cta": "Upload photos"
     },
     "goldSet": {
-      "tag": "No evaluation yet",
-      "title": "Accuracy and calibration will follow",
-      "body": "A gold set of reviewed photos will follow; only then is it measured here how often the system is right."
+      "tag": "Not measured yet",
+      "title": "Accuracy and calibration appear with the first reviews",
+      "body": "As soon as fields are accepted, corrected or rejected in the review screen, this measures how often the system was right, per field and per confidence band."
+    },
+    "measured": {
+      "title": "Measured hit rate",
+      "hint": "{count, plural, one {Measured on # reviewed field.} other {Measured on # reviewed fields.}} Each field counts once, by its first review: accepted = right, corrected or rejected = wrong, filled in = missed. Reviewed by the team, not an independent gold set.",
+      "byField": "Per field",
+      "byBand": "Per confidence band",
+      "field": "Field",
+      "judged": "Reviewed",
+      "correct": "Right",
+      "wrong": "Wrong",
+      "missed": "Missed",
+      "precision": "Hit rate",
+      "band": "Confidence",
+      "fields": "Fields",
+      "accuracy": "Hit rate",
+      "bandHint": "The brief accepts values at 90 % reliability: the band 0.90–1.00 is the one to check."
     }
   },
   "assist": {
     "metaTitle": "Public assist — ZEITZEUGE",
     "metaDescription": "The unknown residue, opened to the public — and every tip put through the same cross-examination.",
     "title": "Public assist",
-    "subtitle": "Photos where knowledgeable people can help.",
+    "subtitle": "Photos where the system left Ortschaft, Gemeinde or Gebäude open: where knowledgeable people can help.",
     "empty": {
-      "title": "No open questions yet",
-      "body": "Photos the system could not identify will appear here, so that knowledgeable people can help.",
-      "cta": "Open review queue"
-    }
+      "title": "No open questions",
+      "body": "Every investigated photo has its place fields filled. Photos the system cannot place will appear here.",
+      "cta": "Go to batches"
+    },
+    "open": "Still open",
+    "known": "Already established",
+    "answer": "Help identify",
+    "view": "Open the photo",
+    "photoAlt": "Photo {photo}"
   },
   "theater": {
     "metaTitle": "Run — ZEITZEUGE",

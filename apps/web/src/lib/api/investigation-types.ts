@@ -301,6 +301,14 @@ export type QcSummary = {
   machine: number;
   /** Per ranked field: overridden ÷ reviewed; null when nothing was reviewed. */
   overrideRate: Record<string, number | null>;
+  /** The machine against the archive's own reviews; absent on an older API. */
+  measured?: QcMeasured | null;
+};
+
+export type QcMeasured = {
+  judged: number;
+  fields: Record<string, { judged: number; correct: number; wrong: number; missed: number; precision: number | null }>;
+  bins: { low: number; high: number; fields: number; correct: number; accuracy: number | null }[];
 };
 
 /**
@@ -388,3 +396,43 @@ export const ACCEPT_THRESHOLD = 0.9;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (value: string): boolean => UUID.test(value);
+
+/** Archive work, newest first (`GET /history`): never addresses or IPs. */
+export type HistoryEntry = {
+  at: string;
+  actor: string;
+  actor_kind: "human" | "machine";
+  action: string;
+  asset_id: string | null;
+  photo: string | null;
+  batch_id: string | null;
+  batch: string | null;
+  field: string | null;
+  detail: string | null;
+  count: number | null;
+};
+
+/** One fonds and how far it is described (`GET /collections`). */
+export type Collection = {
+  id: string;
+  reference_code: string;
+  title: string;
+  scope_note: string | null;
+  photos: number;
+  batches: number;
+  investigated: number;
+  described: number;
+  reviewed: number;
+};
+
+/** A photo the system could not fully place (`GET /open-questions`). */
+export type OpenQuestion = {
+  asset_id: string;
+  photo: string;
+  batch_id: string | null;
+  batch: string | null;
+  preview_url: string | null;
+  captured_at: string | null;
+  open_fields: string[];
+  known: Record<string, string>;
+};

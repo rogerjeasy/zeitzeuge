@@ -940,11 +940,39 @@
     "metaTitle": "Historique — ZEITZEUGE",
     "metaDescription": "La piste d’audit du fonds : chaque traitement, correction, validation et export, en ajout seul.",
     "title": "Historique",
-    "subtitle": "La piste d’audit du fonds.",
+    "subtitle": "Qui a analysé, vérifié ou corrigé quelle photo, et quand. Uniquement le travail d'archive : connexions et adresses ne sont pas affichées.",
     "empty": {
-      "title": "Pas encore d’historique",
-      "body": "On verra ici qui a examiné, vérifié ou corrigé quelle photo, et quand.",
-      "cta": "Voir les lots"
+      "title": "Pas encore d'historique",
+      "body": "Dès que des photos sont téléversées, analysées ou vérifiées, chaque étape apparaît ici avec qui et quand.",
+      "cta": "Aller aux lots"
+    },
+    "inBatch": "lot {batch}",
+    "actions": {
+      "run_finished": "analyse terminée",
+      "record_field_reviewed": "champ vérifié",
+      "record_bulk_accepted": "{count, plural, one {# photo acceptée} other {# photos acceptées}}",
+      "asset_uploaded": "photo téléversée",
+      "batch_created": "lot créé",
+      "asset_withdrawn": "photo retirée",
+      "asset_restored": "photo restaurée",
+      "batch_withdrawn": "lot retiré",
+      "batch_restored": "lot restauré",
+      "batch_exported": "Excel exporté",
+      "batch_mirrored": "lot reflété dans la démo",
+      "runs_purged_failed": "{count, plural, one {# analyse échouée supprimée} other {# analyses échouées supprimées}}"
+    },
+    "review": {
+      "accept": "accepté",
+      "correct": "corrigé",
+      "reject": "rejeté"
+    },
+    "run": {
+      "awaiting_review": "à vérifier",
+      "accepted": "accepté",
+      "abstained": "rien de déterminable",
+      "failed": "échoué",
+      "cancelled": "annulé",
+      "superseded": "remplacé"
     }
   },
   "collections": {
@@ -953,10 +981,17 @@
     "title": "Fonds",
     "subtitle": "Les fonds de vos archives.",
     "empty": {
-      "title": "Pas encore de vue des fonds",
-      "body": "On verra ici les fonds des archives et l’avancement de leur description.",
-      "cta": "Voir les lots"
-    }
+      "title": "Pas encore de fonds",
+      "body": "Les fonds de l'archive apparaissent ici dès que des photos y sont téléversées.",
+      "cta": "Aller aux lots"
+    },
+    "counts": "{photos, plural, one {# photo} other {# photos}} dans {batches, plural, one {# lot} other {# lots}}",
+    "bars": {
+      "investigated": "Analysées",
+      "described": "Décrites",
+      "reviewed": "Vérifiées"
+    },
+    "toBatches": "Ouvrir les lots"
   },
   "evaluation": {
     "metaTitle": "Évaluation — ZEITZEUGE",
@@ -969,21 +1004,42 @@
       "cta": "Téléverser des photos"
     },
     "goldSet": {
-      "tag": "Pas encore d’évaluation",
-      "title": "Exactitude et calibration suivront",
-      "body": "Un jeu de référence de photos vérifiées suivra ; c’est alors seulement qu’on mesurera ici la justesse du système."
+      "tag": "Pas encore mesuré",
+      "title": "Taux de réussite et calibration apparaissent avec les premières vérifications",
+      "body": "Dès que des champs sont acceptés, corrigés ou rejetés dans l'écran de vérification, on mesure ici combien de fois le système avait raison, par champ et par niveau de confiance."
+    },
+    "measured": {
+      "title": "Taux de réussite mesuré",
+      "hint": "{count, plural, one {Mesuré sur # champ vérifié.} other {Mesuré sur # champs vérifiés.}} Chaque champ compte une fois, selon sa première vérification : accepté = juste, corrigé ou rejeté = faux, complété = manqué. Vérifié par l'équipe, pas un jeu de référence indépendant.",
+      "byField": "Par champ",
+      "byBand": "Par niveau de confiance",
+      "field": "Champ",
+      "judged": "Vérifiés",
+      "correct": "Justes",
+      "wrong": "Faux",
+      "missed": "Manqués",
+      "precision": "Taux de réussite",
+      "band": "Confiance",
+      "fields": "Champs",
+      "accuracy": "Taux de réussite",
+      "bandHint": "Le cahier des charges accepte une fiabilité de 90 % : c'est la tranche 0,90–1,00 qui compte."
     }
   },
   "assist": {
     "metaTitle": "Aide du public — ZEITZEUGE",
     "metaDescription": "Le reliquat inconnu, ouvert au public — et chaque indication soumise au même contre-interrogatoire.",
     "title": "Aide du public",
-    "subtitle": "Les photos pour lesquelles des connaisseurs peuvent aider.",
+    "subtitle": "Photos pour lesquelles le système a laissé localité, commune ou bâtiment ouverts : là où des connaisseurs peuvent aider.",
     "empty": {
-      "title": "Pas encore de questions ouvertes",
-      "body": "Les photos que le système n’a pas pu identifier apparaîtront ici, pour que des connaisseurs puissent aider.",
-      "cta": "Ouvrir la file"
-    }
+      "title": "Aucune question ouverte",
+      "body": "Toutes les photos analysées ont leurs champs de lieu remplis. Les photos que le système ne peut pas localiser apparaîtront ici.",
+      "cta": "Aller aux lots"
+    },
+    "open": "Encore ouvert",
+    "known": "Déjà établi",
+    "answer": "Aider à identifier",
+    "view": "Ouvrir la photo",
+    "photoAlt": "Photo {photo}"
   },
   "theater": {
     "metaTitle": "Déroulement — ZEITZEUGE",

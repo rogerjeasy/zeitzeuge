@@ -940,11 +940,39 @@
     "metaTitle": "Verlauf — ZEITZEUGE",
     "metaDescription": "Der Prüfpfad des Archivs: jeder Lauf, jede Korrektur, jede Freigabe und jeder Export, fortlaufend.",
     "title": "Verlauf",
-    "subtitle": "Der Prüfpfad des Archivs.",
+    "subtitle": "Wer welches Foto wann untersucht, geprüft oder korrigiert hat. Nur Archivarbeit: Anmeldungen und Adressen werden nicht gezeigt.",
     "empty": {
-      "title": "Noch kein Verlauf",
-      "body": "Hier erscheint, wer wann welches Foto untersucht, geprüft oder korrigiert hat.",
+      "title": "Noch keine Historie",
+      "body": "Sobald Fotos hochgeladen, untersucht oder geprüft werden, erscheint hier jeder Schritt mit Person und Zeit.",
       "cta": "Zu den Stapeln"
+    },
+    "inBatch": "Stapel {batch}",
+    "actions": {
+      "run_finished": "Untersuchung abgeschlossen",
+      "record_field_reviewed": "Feld geprüft",
+      "record_bulk_accepted": "{count, plural, one {# Foto übernommen} other {# Fotos übernommen}}",
+      "asset_uploaded": "Foto hochgeladen",
+      "batch_created": "Stapel angelegt",
+      "asset_withdrawn": "Foto entfernt",
+      "asset_restored": "Foto wiederhergestellt",
+      "batch_withdrawn": "Stapel entfernt",
+      "batch_restored": "Stapel wiederhergestellt",
+      "batch_exported": "Excel exportiert",
+      "batch_mirrored": "Stapel in die Demo gespiegelt",
+      "runs_purged_failed": "{count, plural, one {# fehlgeschlagene Analyse gelöscht} other {# fehlgeschlagene Analysen gelöscht}}"
+    },
+    "review": {
+      "accept": "übernommen",
+      "correct": "korrigiert",
+      "reject": "verworfen"
+    },
+    "run": {
+      "awaiting_review": "Prüfbedarf",
+      "accepted": "übernommen",
+      "abstained": "nichts bestimmbar",
+      "failed": "fehlgeschlagen",
+      "cancelled": "abgebrochen",
+      "superseded": "ersetzt"
     }
   },
   "collections": {
@@ -953,10 +981,17 @@
     "title": "Bestände",
     "subtitle": "Die Bestände Ihres Archivs.",
     "empty": {
-      "title": "Noch keine Bestandsübersicht",
-      "body": "Hier erscheinen die Bestände des Archivs mit dem Stand ihrer Erschliessung.",
+      "title": "Noch keine Bestände",
+      "body": "Die Bestände des Archivs erscheinen hier, sobald Fotos in einen Bestand hochgeladen sind.",
       "cta": "Zu den Stapeln"
-    }
+    },
+    "counts": "{photos, plural, one {# Foto} other {# Fotos}} in {batches, plural, one {# Stapel} other {# Stapeln}}",
+    "bars": {
+      "investigated": "Untersucht",
+      "described": "Erschlossen",
+      "reviewed": "Geprüft"
+    },
+    "toBatches": "Zu den Stapeln"
   },
   "evaluation": {
     "metaTitle": "Evaluation — ZEITZEUGE",
@@ -969,21 +1004,42 @@
       "cta": "Fotos hochladen"
     },
     "goldSet": {
-      "tag": "Noch keine Auswertung",
-      "title": "Genauigkeit und Kalibrierung folgen",
-      "body": "Ein Goldset mit geprüften Fotos folgt; erst dann wird hier gemessen, wie oft das System richtig liegt."
+      "tag": "Noch nicht gemessen",
+      "title": "Trefferquote und Kalibrierung erscheinen mit den ersten Prüfungen",
+      "body": "Sobald Felder in der Prüfansicht übernommen, korrigiert oder verworfen werden, wird hier gemessen, wie oft das System richtig lag: pro Feld und pro Konfidenzbereich."
+    },
+    "measured": {
+      "title": "Gemessene Trefferquote",
+      "hint": "{count, plural, one {Gemessen an # geprüften Feld.} other {Gemessen an # geprüften Feldern.}} Jedes Feld zählt einmal, mit seiner ersten Prüfung: übernommen = richtig, korrigiert oder verworfen = falsch, nachgetragen = verpasst. Geprüft vom Team, keine unabhängige Referenzmenge.",
+      "byField": "Pro Feld",
+      "byBand": "Pro Konfidenzbereich",
+      "field": "Feld",
+      "judged": "Geprüft",
+      "correct": "Richtig",
+      "wrong": "Falsch",
+      "missed": "Verpasst",
+      "precision": "Trefferquote",
+      "band": "Konfidenz",
+      "fields": "Felder",
+      "accuracy": "Trefferquote",
+      "bandHint": "Die Aufgabenstellung akzeptiert Angaben ab 90 % Zuverlässigkeit: Massgebend ist der Bereich 0,90–1,00."
     }
   },
   "assist": {
     "metaTitle": "Mithilfe — ZEITZEUGE",
     "metaDescription": "Der unbekannte Rest, der Öffentlichkeit geöffnet — und jeder Hinweis durch dasselbe Kreuzverhör geschickt.",
     "title": "Mithilfe",
-    "subtitle": "Fotos, bei denen Kundige mithelfen können.",
+    "subtitle": "Fotos, bei denen das System Ortschaft, Gemeinde oder Gebäude offen gelassen hat: Hier können Ortskundige helfen.",
     "empty": {
-      "title": "Noch keine offenen Fragen",
-      "body": "Hier erscheinen Fotos, die das System nicht bestimmen konnte, damit Kundige mithelfen können.",
-      "cta": "Zur Prüfliste"
-    }
+      "title": "Keine offenen Fragen",
+      "body": "Bei jedem untersuchten Foto sind die Ortsfelder gefüllt. Fotos, die das System nicht verorten kann, erscheinen hier.",
+      "cta": "Zu den Stapeln"
+    },
+    "open": "Noch offen",
+    "known": "Bereits bestimmt",
+    "answer": "Beim Bestimmen helfen",
+    "view": "Foto öffnen",
+    "photoAlt": "Foto {photo}"
   },
   "theater": {
     "metaTitle": "Ablauf — ZEITZEUGE",

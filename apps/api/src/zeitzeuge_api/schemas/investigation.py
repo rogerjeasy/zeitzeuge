@@ -274,6 +274,30 @@ class FieldReviewRequest(Schema):
     reason: str | None = Field(default=None, max_length=1000)
 
 
+class MeasuredField(Schema):
+    judged: int
+    correct: int
+    wrong: int
+    missed: int
+    precision: float | None
+
+
+class MeasuredBin(Schema):
+    low: float
+    high: float
+    fields: int
+    correct: int
+    accuracy: float | None
+
+
+class MeasuredOut(Schema):
+    """How often the machine was right, judged by the archive's own reviews (note §6)."""
+
+    fields: dict[str, MeasuredField]
+    bins: list[MeasuredBin]
+    judged: int
+
+
 class QcSummaryOut(Schema):
     batch: str | None
     total: int
@@ -283,6 +307,7 @@ class QcSummaryOut(Schema):
     open: int
     machine: int
     override_rate: dict[str, float | None] = Field(alias="overrideRate")
+    measured: MeasuredOut | None = None
 
 
 # --- batch management (batch-management note §3) -------------------------------
@@ -325,3 +350,48 @@ class PurgeResult(Schema):
     purged: int
     """Failed runs removed, with their partial ledger. Finished runs are never touched."""
     batch_id: str | None = None
+
+
+# --- archive views: history, collections, open questions -----------------------
+
+
+class HistoryEntry(Schema):
+    at: datetime
+    actor: str
+    """A person's name, or «ZEITZEUGE» for the machine. Never an address or an IP."""
+    actor_kind: Literal["human", "machine"]
+    action: str
+    """`run.finished`, `record.field_reviewed`, `asset.uploaded`, `batch.withdrawn`, …"""
+    asset_id: str | None = None
+    photo: str | None = None
+    batch_id: str | None = None
+    batch: str | None = None
+    field: str | None = None
+    detail: str | None = None
+    count: int | None = None
+
+
+class CollectionOut(Schema):
+    id: str
+    reference_code: str
+    title: str
+    scope_note: str | None = None
+    photos: int
+    batches: int
+    investigated: int
+    described: int
+    """Photos whose current record names at least one ranked field."""
+    reviewed: int
+    """Photos with at least one human review."""
+
+
+class OpenQuestion(Schema):
+    asset_id: str
+    photo: str
+    batch_id: str | None = None
+    batch: str | None = None
+    preview_url: str | None = None
+    captured_at: datetime | None = None
+    open_fields: list[str]
+    known: dict[str, str]
+    """What the machine did establish, by field: context for whoever helps."""

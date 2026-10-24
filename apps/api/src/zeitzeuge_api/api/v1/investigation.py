@@ -302,6 +302,39 @@ async def restore_batch(
     return await service.restore_batch(identity.session, user=identity.user, batch_id=batch_id)
 
 
+@router.get(
+    "/history",
+    response_model=list[schemas.HistoryEntry],
+    summary="Who investigated, reviewed or corrected which photo, and when",
+)
+async def history(
+    identity: CurrentIdentity, service: Service, limit: int = 200
+) -> list[schemas.HistoryEntry]:
+    if identity.user.role is UserRole.GUEST:
+        raise errors.ForbiddenError("The history names the archive's staff; guests do not see it.")
+    return await service.history(identity.session, limit=max(1, min(limit, 500)))
+
+
+@router.get(
+    "/collections",
+    response_model=list[schemas.CollectionOut],
+    summary="The archive's fonds and how far each one has been described",
+)
+async def collections(identity: CurrentIdentity, service: Service) -> list[schemas.CollectionOut]:
+    return await service.collections(identity.session)
+
+
+@router.get(
+    "/open-questions",
+    response_model=list[schemas.OpenQuestion],
+    summary="Photos the system could not fully place (Public assist)",
+)
+async def open_questions(
+    identity: CurrentIdentity, service: Service, limit: int = 120
+) -> list[schemas.OpenQuestion]:
+    return await service.open_questions(identity.session, limit=max(1, min(limit, 300)))
+
+
 @router.delete(
     "/runs/failed",
     response_model=schemas.PurgeResult,

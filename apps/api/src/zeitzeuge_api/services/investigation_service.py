@@ -83,7 +83,7 @@ from zeitzeuge_api.investigation.contracts import RANKED_FIELDS
 from zeitzeuge_api.investigation.timing import duration_ms, summarise
 from zeitzeuge_api.schemas import investigation as schemas
 from zeitzeuge_api.services.exporters.xlsx import build_workbook
-from zeitzeuge_api.services.qc import qc_status, qc_summary
+from zeitzeuge_api.services.qc import RANKED_FIELD_KEYS, qc_status, qc_summary
 
 FINISHED = {RunStatus.AWAITING_REVIEW, RunStatus.ACCEPTED, RunStatus.ABSTAINED}
 HUMAN_STRENGTH = 1.0
@@ -1279,6 +1279,265 @@ class InvestigationService:
             purged=len(removed), batch_id=str(batch_id) if batch_id else None
         )
 
+    # --- archive views (History, Collections, Public assist) ------------------------
+
+    async def history(
+        self, session: AsyncSession, *, limit: int = 200
+    ) -> list[schemas.HistoryEntry]:
+        """Who investigated, reviewed or corrected which photo, and when.
+
+        Archive work only: sign-ins, addresses and IPs stay in the audit log and are
+        never shown here. Machine investigations come from `runs`; human actions from
+        `audit_log`. Newest first.
+        """
+        audits = list(
+            await session.scalars(
+                select(AuditLog)
+                .where(AuditLog.action.in_([a.value for a in WORK_ACTIONS]))
+                .order_by(AuditLog.created_at.desc())
+                .limit(limit)
+            )
+        )
+        runs = list(
+            await session.scalars(
+                select(Run)
+                .where(Run.finished_at.is_not(None))
+                .order_by(Run.finished_at.desc())
+                .limit(limit)
+            )
+        )
+        record_ids = {
+            uuid.UUID(a.target_id)
+            for a in audits
+            if a.target_type == "catalogue_record" and a.target_id and _is_uuid(a.target_id)
+        }
+        record_asset = (
+            {
+                r.id: r.asset_id
+                for r in await session.scalars(
+                    select(CatalogueRecord).where(CatalogueRecord.id.in_(record_ids))
+                )
+            }
+            if record_ids
+            else {}
+        )
+        asset_ids = (
+            {r.asset_id for r in runs}
+            | set(record_asset.values())
+            | {
+                uuid.UUID(a.target_id)
+                for a in audits
+                if a.target_type == "asset" and a.target_id and _is_uuid(a.target_id)
+            }
+        )
+        assets = (
+            {a.id: a for a in await session.scalars(select(Asset).where(Asset.id.in_(asset_ids)))}
+            if asset_ids
+            else {}
+        )
+        batch_ids = {a.batch_id for a in assets.values() if a.batch_id} | {
+            uuid.UUID(a.target_id)
+            for a in audits
+            if a.target_type == "upload_batch" and a.target_id and _is_uuid(a.target_id)
+        }
+        batches = (
+            {
+                b.id: b
+                for b in await session.scalars(
+                    select(UploadBatch).where(UploadBatch.id.in_(batch_ids))
+                )
+            }
+            if batch_ids
+            else {}
+        )
+        actors = {a.actor_user_id for a in audits if a.actor_user_id}
+        names = (
+            {
+                u.id: (u.full_name or "").strip() or None
+                for u in await session.scalars(select(User).where(User.id.in_(actors)))
+            }
+            if actors
+            else {}
+        )
+
+        def place(asset_id: uuid.UUID | None) -> dict[str, Any]:
+            asset = assets.get(asset_id) if asset_id else None
+            batch = batches.get(asset.batch_id) if asset and asset.batch_id else None
+            return {
+                "asset_id": str(asset.id) if asset else None,
+                "photo": asset.external_ref if asset else None,
+                "batch_id": str(batch.id) if batch else None,
+                "batch": (batch.label or None) if batch else None,
+            }
+
+        entries: list[schemas.HistoryEntry] = []
+        for run in runs:
+            assert run.finished_at is not None
+            entries.append(
+                schemas.HistoryEntry(
+                    at=run.finished_at,
+                    actor="ZEITZEUGE",
+                    actor_kind="machine",
+                    action="run.finished",
+                    detail=run.status.value,
+                    **place(run.asset_id),
+                )
+            )
+        for audit in audits:
+            details = audit.details or {}
+            target_asset: uuid.UUID | None = None
+            if audit.target_type == "asset" and audit.target_id and _is_uuid(audit.target_id):
+                target_asset = uuid.UUID(audit.target_id)
+            elif (
+                audit.target_type == "catalogue_record"
+                and audit.target_id
+                and _is_uuid(audit.target_id)
+            ):
+                target_asset = record_asset.get(uuid.UUID(audit.target_id))
+            located = place(target_asset)
+            if (
+                audit.target_type == "upload_batch"
+                and audit.target_id
+                and _is_uuid(audit.target_id)
+            ):
+                batch = batches.get(uuid.UUID(audit.target_id))
+                located.update(
+                    batch_id=audit.target_id, batch=(batch.label or None) if batch else None
+                )
+            many = details.get("assets") if isinstance(details.get("assets"), list) else None
+            entries.append(
+                schemas.HistoryEntry(
+                    at=audit.created_at,
+                    actor=names.get(audit.actor_user_id) or "—" if audit.actor_user_id else "—",
+                    actor_kind="human",
+                    action=audit.action,
+                    field=details.get("field"),
+                    detail=details.get("action") or details.get("reason"),
+                    count=len(many) if many is not None else details.get("runs"),
+                    **located,
+                )
+            )
+        entries.sort(key=lambda e: e.at, reverse=True)
+        return entries[:limit]
+
+    async def collections(self, session: AsyncSession) -> list[schemas.CollectionOut]:
+        """Each fonds with how far it has been described, from the records themselves."""
+        live = Asset.deleted_at.is_(None)
+        out: list[schemas.CollectionOut] = []
+        for fonds in await session.scalars(select(Fonds).order_by(Fonds.reference_code)):
+            in_fonds = (Asset.fonds_id == fonds.id) & live
+            photos = await session.scalar(select(func.count()).select_from(Asset).where(in_fonds))
+            batches = await session.scalar(
+                select(func.count(func.distinct(Asset.batch_id))).where(in_fonds)
+            )
+            investigated = await session.scalar(
+                select(func.count(func.distinct(CatalogueRecord.asset_id)))
+                .join(Asset, Asset.id == CatalogueRecord.asset_id)
+                .where(in_fonds)
+            )
+            described = await session.scalar(
+                select(func.count(func.distinct(CatalogueRecord.id)))
+                .join(Asset, Asset.id == CatalogueRecord.asset_id)
+                .join(
+                    RecordVersion,
+                    (RecordVersion.record_id == CatalogueRecord.id)
+                    & (RecordVersion.version == CatalogueRecord.current_version),
+                )
+                .join(RecordField, RecordField.record_version_id == RecordVersion.id)
+                .where(
+                    in_fonds,
+                    RecordField.field_key.in_(RANKED_FIELD_KEYS),
+                    RecordField.decision != FieldDecisionKind.ABSTAIN,
+                )
+            )
+            reviewed = await session.scalar(
+                select(func.count(func.distinct(FieldReview.record_id)))
+                .join(CatalogueRecord, CatalogueRecord.id == FieldReview.record_id)
+                .join(Asset, Asset.id == CatalogueRecord.asset_id)
+                .where(in_fonds)
+            )
+            out.append(
+                schemas.CollectionOut(
+                    id=str(fonds.id),
+                    reference_code=fonds.reference_code,
+                    title=fonds.title,
+                    scope_note=fonds.scope_note,
+                    photos=photos or 0,
+                    batches=batches or 0,
+                    investigated=investigated or 0,
+                    described=described or 0,
+                    reviewed=reviewed or 0,
+                )
+            )
+        return out
+
+    async def open_questions(
+        self, session: AsyncSession, *, limit: int = 120
+    ) -> list[schemas.OpenQuestion]:
+        """Photos the system could not fully place: where knowledgeable people can help.
+
+        A photo is listed when its record is flagged `public_assist`, or its current
+        version leaves Ortschaft, Gemeinde or Gebäude open. Most open first.
+        """
+        core = ("locality", "municipality", "building")
+        rows = (
+            await session.execute(
+                select(CatalogueRecord, Asset, RecordField)
+                .join(Asset, Asset.id == CatalogueRecord.asset_id)
+                .join(
+                    RecordVersion,
+                    (RecordVersion.record_id == CatalogueRecord.id)
+                    & (RecordVersion.version == CatalogueRecord.current_version),
+                )
+                .join(RecordField, RecordField.record_version_id == RecordVersion.id)
+                .where(Asset.deleted_at.is_(None), RecordField.field_key.in_(RANKED_FIELD_KEYS))
+            )
+        ).all()
+        by_asset: dict[uuid.UUID, dict[str, Any]] = {}
+        for record, asset, field in rows:
+            slot = by_asset.setdefault(
+                asset.id, {"record": record, "asset": asset, "open": [], "known": {}}
+            )
+            if field.decision == FieldDecisionKind.ABSTAIN:
+                slot["open"].append(field.field_key)
+            elif field.value_text:
+                slot["known"][field.field_key] = field.value_text
+        wanted = [
+            s
+            for s in by_asset.values()
+            if s["record"].public_assist or any(k in s["open"] for k in core)
+        ]
+        wanted.sort(key=lambda s: (-len(s["open"]), s["asset"].external_ref))
+        wanted = wanted[:limit]
+        previews = await self._previews(session, [s["asset"].id for s in wanted])
+        batch_ids = {s["asset"].batch_id for s in wanted if s["asset"].batch_id}
+        batches = (
+            {
+                b.id: b
+                for b in await session.scalars(
+                    select(UploadBatch).where(UploadBatch.id.in_(batch_ids))
+                )
+            }
+            if batch_ids
+            else {}
+        )
+        order = {key: i for i, key in enumerate(RANKED_FIELD_KEYS)}
+        return [
+            schemas.OpenQuestion(
+                asset_id=str(s["asset"].id),
+                photo=s["asset"].external_ref,
+                batch_id=str(s["asset"].batch_id) if s["asset"].batch_id else None,
+                batch=(batches[s["asset"].batch_id].label or None)
+                if s["asset"].batch_id in batches
+                else None,
+                preview_url=previews.get(s["asset"].id),
+                captured_at=s["asset"].captured_at,
+                open_fields=sorted(s["open"], key=lambda k: order.get(k, 9)),
+                known=s["known"],
+            )
+            for s in wanted
+        ]
+
     # --- export and QC ------------------------------------------------------------
 
     async def export_xlsx(
@@ -1458,6 +1717,32 @@ class InvestigationService:
             ):
                 out[review.record_id].append(review)
         return out
+
+
+WORK_ACTIONS = frozenset(
+    {
+        AuditAction.BATCH_CREATED,
+        AuditAction.ASSET_UPLOADED,
+        AuditAction.RECORD_FIELD_REVIEWED,
+        AuditAction.RECORD_BULK_ACCEPTED,
+        AuditAction.ASSET_WITHDRAWN,
+        AuditAction.ASSET_RESTORED,
+        AuditAction.BATCH_WITHDRAWN,
+        AuditAction.BATCH_RESTORED,
+        AuditAction.BATCH_EXPORTED,
+        AuditAction.BATCH_MIRRORED,
+        AuditAction.RUNS_PURGED,
+    }
+)
+"""Archive work shown on the History page; identity events (sign-ins) are not."""
+
+
+def _is_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+    except ValueError:
+        return False
+    return True
 
 
 def _carry(field: RecordField, version_id: uuid.UUID) -> RecordField:

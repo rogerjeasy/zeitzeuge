@@ -20,6 +20,9 @@ import type {
   RegisterFilesResponse,
   WithdrawRequest,
   PurgeResult,
+  HistoryEntry,
+  Collection,
+  OpenQuestion,
 } from "./investigation-types";
 
 export * from "./investigation-types";
@@ -72,6 +75,18 @@ const deletedQuery = ({ includeDeleted }: { includeDeleted?: boolean }) =>
   includeDeleted ? "?include_deleted=true" : "";
 
 export const investigationApi = {
+  history(a: ApiAuth): Promise<ApiResult<HistoryEntry[]>> {
+    return apiRequest("/history?limit=300", { method: "GET", ...auth(a) });
+  },
+
+  collections(a: ApiAuth): Promise<ApiResult<Collection[]>> {
+    return apiRequest("/collections", { method: "GET", ...auth(a) });
+  },
+
+  openQuestions(a: ApiAuth): Promise<ApiResult<OpenQuestion[]>> {
+    return apiRequest("/open-questions", { method: "GET", ...auth(a) });
+  },
+
   listBatches(a: ApiAuth, opts: { includeDeleted?: boolean } = {}): Promise<ApiResult<BatchSummary[]>> {
     return apiRequest(`/batches${deletedQuery(opts)}`, { method: "GET", ...auth(a) });
   },

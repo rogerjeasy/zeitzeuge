@@ -317,3 +317,60 @@ async def test_only_archivists_purge_failed_runs(investigation, client, as_user)
     await _set_role(investigation, as_user["email"], UserRole.REVIEWER)
     refused = await client.delete("/api/v1/runs/failed")
     assert refused.status_code == 403
+
+
+async def test_the_qc_endpoint_answers_with_the_measured_hit_rate(
+    investigation, client, as_user
+) -> None:
+    batch_id, (first, _second) = await _batch_with_two(client)
+    await _machine_run(investigation, first["run_id"])
+    case = (await client.get(f"/api/v1/assets/{first['asset_id']}/case")).json()
+    record_id, version = case["record_id"], case["version"]
+    accepted = await client.patch(
+        f"/api/v1/records/{record_id}/fields/locality",
+        json={"action": "accept"},
+        headers={"If-Match": str(version)},
+    )
+    assert accepted.status_code == 200, accepted.text
+
+    qc = await client.get(f"/api/v1/batches/{batch_id}/qc")
+    assert qc.status_code == 200, qc.text  # the schema forbids unknown keys
+    measured = qc.json()["measured"]
+    assert measured["judged"] == 1
+    assert measured["fields"]["locality"]["correct"] == 1
+
+
+async def test_history_collections_and_open_questions_show_real_work(
+    investigation, client, as_user
+) -> None:
+    batch_id, (first, _second) = await _batch_with_two(client)
+    await _machine_run(investigation, first["run_id"])
+    case = (await client.get(f"/api/v1/assets/{first['asset_id']}/case")).json()
+    await client.patch(
+        f"/api/v1/records/{case['record_id']}/fields/locality",
+        json={"action": "accept"},
+        headers={"If-Match": str(case["version"])},
+    )
+
+    history = await client.get("/api/v1/history")
+    assert history.status_code == 200, history.text
+    actions = {(e["action"], e["photo"]) for e in history.json()}
+    assert ("record.field_reviewed", "SG.CIV.17.3.jpg") in actions
+    assert any(e["action"] == "asset.uploaded" for e in history.json())
+    assert all("ip" not in key for e in history.json() for key in e)
+
+    collections = (await client.get("/api/v1/collections")).json()
+    fonds = next(c for c in collections if c["photos"])
+    assert (fonds["photos"], fonds["investigated"], fonds["reviewed"]) == (2, 1, 1)
+    assert fonds["described"] == 1
+
+    questions = (await client.get("/api/v1/open-questions")).json()
+    first_q = next(q for q in questions if q["photo"] == "SG.CIV.17.3.jpg")
+    assert "building" in first_q["open_fields"]
+    assert first_q["known"]["locality"] == "Schwyz"
+    assert batch_id == first_q["batch_id"]
+
+
+async def test_guests_do_not_see_the_history(investigation, client, as_user) -> None:
+    await _set_role(investigation, as_user["email"], UserRole.GUEST)
+    assert (await client.get("/api/v1/history")).status_code == 403

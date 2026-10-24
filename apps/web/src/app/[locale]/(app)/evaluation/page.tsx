@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ClipboardCheck, Target } from "lucide-react";
 import { routing } from "@/i18n/routing";
 import { QcPanel } from "@/components/investigation/qc-panel";
+import { MeasuredPanel } from "@/components/investigation/measured-panel";
 import { ApiNotice } from "@/components/investigation/api-notice";
 import { EmptyState } from "@/components/ui/empty-state";
 import { loadQcView } from "@/lib/investigation/qc";
@@ -26,9 +27,9 @@ export async function generateMetadata({
 }
 
 /**
- * The real Prio-1 QC panel, and nothing invented beside it: accuracy and
- * calibration need a gold set of reviewed photographs, which does not exist
- * yet, so that part says so.
+ * The real Prio-1 QC panel and, once fields have been reviewed, the measured hit
+ * rate per field and per confidence band. Nothing invented: before the first
+ * review the measurement says it has nothing to measure yet.
  */
 export default async function EvaluationPage({
   params,
@@ -66,12 +67,16 @@ export default async function EvaluationPage({
         )
       )}
 
-      <EmptyState
-        icon={Target}
-        tag={t("goldSet.tag")}
-        title={t("goldSet.title")}
-        body={t("goldSet.body")}
-      />
+      {view.qc?.measured && view.qc.measured.judged > 0 ? (
+        <MeasuredPanel measured={view.qc.measured} />
+      ) : (
+        <EmptyState
+          icon={Target}
+          tag={t("goldSet.tag")}
+          title={t("goldSet.title")}
+          body={t("goldSet.body")}
+        />
+      )}
     </div>
   );
 }
