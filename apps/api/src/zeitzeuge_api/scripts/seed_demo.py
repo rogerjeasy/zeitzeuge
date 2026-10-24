@@ -215,7 +215,9 @@ async def _seed_staatsarchiv(session: Any) -> None:
     members = [m.strip().lower() for m in os.environ.get("ZZ_STASZ_MEMBERS", "").split(",")]
     for email in filter(None, members):
         user = await session.scalar(select(User).where(User.email == email))
-        if user is None:
+        # Only a confirmed, active account: an address in the list must not let
+        # whoever registers it first, unverified, into the Staatsarchiv tenant.
+        if user is None or not user.email_verified or user.status is not UserStatus.ACTIVE:
             log.info("seed.stasz_member_pending", email=email)
             continue
         if user.org_id != organization.id or not user.role.can_approve:

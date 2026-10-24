@@ -56,10 +56,19 @@ def _row(model: type[DeclarativeBase], source: Any, **override: Any) -> Any:
     return model(**values)
 
 
+MIRROR_SOURCES = frozenset({"stasz"})
+"""Archives allowed to publish into the demo tenant. Anyone can sign up and
+administer an archive of their own; only these may put rows in front of the
+judges' guest login."""
+
+
 async def mirror_batch(
     db: Database, *, source_org: uuid.UUID, batch_id: uuid.UUID, target_slug: str = "demo"
 ) -> dict[str, Any]:
     async with db.session(TenantContext.bootstrap()) as session:
+        source = await session.get(Organization, source_org)
+        if source is None or source.slug not in MIRROR_SOURCES:
+            raise errors.ForbiddenError("This archive may not publish into the demo archive.")
         target = await session.scalar(select(Organization).where(Organization.slug == target_slug))
         if target is None or not target.is_demo:
             raise errors.ForbiddenError("A mirror can only be written into the demo archive.")
