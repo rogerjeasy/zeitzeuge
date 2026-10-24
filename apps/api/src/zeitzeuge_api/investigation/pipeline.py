@@ -14,6 +14,7 @@ append-only), it enqueues a fresh run instead.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import uuid
 from collections.abc import Awaitable, Callable
@@ -23,7 +24,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import anyio
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from zeitzeuge_api.core.logging import get_logger
 from zeitzeuge_api.db.models import Asset, AssetFile, Run
@@ -167,6 +168,41 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
         if access is not None:
             await _record_access_copy(session, org_id, asset_id, access, len(ctx.asset.prepared))
 
+    pulse = asyncio.create_task(_heartbeat(db, tenant, run_id))
+    try:
+        await _run_stages(db, tenant, run_id, ctx, writer, asset_id, fonds_id, external_ref)
+    finally:
+        pulse.cancel()
+
+
+HEARTBEAT_SECONDS = 60
+"""Well under the worker's 10-minute stale threshold: a slow stage (six building
+candidates compared on Opus, Overpass retries) must never look like a dead worker."""
+
+
+async def _heartbeat(db: Database, tenant: TenantContext, run_id: uuid.UUID) -> None:
+    """Keep `runs.heartbeat_at` fresh while a stage runs, not only between stages."""
+    while True:
+        await asyncio.sleep(HEARTBEAT_SECONDS)
+        try:
+            async with db.session(tenant) as session:
+                await session.execute(
+                    update(Run).where(Run.id == run_id).values(heartbeat_at=datetime.now(UTC))
+                )
+        except Exception as exc:  # a missed beat is not worth failing the run over
+            log.warning("investigation.heartbeat_failed", run_id=str(run_id), error=str(exc))
+
+
+async def _run_stages(
+    db: Database,
+    tenant: TenantContext,
+    run_id: uuid.UUID,
+    ctx: RunContext,
+    writer: LedgerWriter,
+    asset_id: uuid.UUID,
+    fonds_id: uuid.UUID,
+    external_ref: str,
+) -> None:
     for name, stage in STAGES:
         async with db.session(tenant) as session:
             if await _cancelled(session, run_id):
@@ -211,7 +247,9 @@ async def _cancelled(session: Any, run_id: uuid.UUID) -> bool:
     a run it can still cancel, instead of being overwritten by it.
     """
     status = await session.scalar(select(Run.status).where(Run.id == run_id).with_for_update())
-    return status is RunStatus.CANCELLED
+    # FAILED here means the recovery gave this run up for lost and queued a
+    # replacement; carrying on would write a second result next to it.
+    return status in {RunStatus.CANCELLED, RunStatus.FAILED}
 
 
 async def _record_fixity(session: Any, asset_id: uuid.UUID, raw: bytes) -> None:
