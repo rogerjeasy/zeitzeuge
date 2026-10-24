@@ -37,6 +37,19 @@ export function UploadScreen({
 
   const q = useUploadQueue();
 
+  // The investigation runs on the server and survives a reload; the transfer
+  // does not — the browser cannot keep the files across a reload. While any
+  // file is still on its way to storage, ask before the page is left.
+  useEffect(() => {
+    if (!q.running) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [q.running]);
+
   // The real path: a batch label (default `prio1`) and the Prio-1 flag.
   const [label, setLabel] = useState("prio1");
   const [prio1, setPrio1] = useState(true);
