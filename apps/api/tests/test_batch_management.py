@@ -225,3 +225,20 @@ async def test_an_operator_does_not_decide_on_fields(investigation, client, as_u
         f"/api/v1/records/{case['record_id']}/fields/locality", json={"action": "accept"}
     )
     assert review.status_code == 403
+
+
+async def test_the_papierkorb_is_for_approvers_and_names_no_address(
+    investigation, client, as_user
+) -> None:
+    await _set_role(investigation, as_user["email"], UserRole.ARCHIVIST)
+    batch_id, (first, _second) = await _batch_with_two(client)
+    await client.request("DELETE", f"/api/v1/assets/{first['asset_id']}", json={"reason": "x"})
+    trash = (await client.get(f"/api/v1/batches/{batch_id}?include_deleted=true")).json()
+    gone = next(a for a in trash["assets"] if a["asset_id"] == first["asset_id"])
+    assert "@" not in (gone["deleted_by_name"] or "")
+
+    await _set_role(investigation, as_user["email"], UserRole.REVIEWER)
+    assert (await client.get(f"/api/v1/batches/{batch_id}?include_deleted=true")).status_code == 403
+    assert (await client.get("/api/v1/batches?include_deleted=true")).status_code == 403
+    case = (await client.get(f"/api/v1/assets/{first['asset_id']}/case")).json()
+    assert case["deleted_at"] and case["deletion_reason"] is None

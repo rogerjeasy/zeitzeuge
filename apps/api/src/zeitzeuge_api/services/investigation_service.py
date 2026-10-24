@@ -356,7 +356,8 @@ class InvestigationService:
         everything = list(await session.scalars(select(Asset).where(Asset.batch_id == batch.id)))
         withdrawn = sum(1 for a in everything if a.deleted_at is not None)
         withdrawers = {
-            u.id: u.full_name or u.email
+            # The name only, never the address: the Papierkorb says who, not how to reach them.
+            u.id: u.full_name or "Archivmitarbeiter:in"
             for u in await session.scalars(
                 select(User).where(User.id.in_({a.deleted_by for a in everything if a.deleted_by}))
             )

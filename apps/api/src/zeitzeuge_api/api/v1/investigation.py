@@ -43,6 +43,8 @@ Service = Annotated[InvestigationService, Depends(get_service)]
 async def list_batches(
     identity: CurrentIdentity, service: Service, include_deleted: bool = False
 ) -> list[schemas.BatchSummary]:
+    if include_deleted:
+        _approver(identity)  # the Papierkorb is for those who may restore from it
     return await service.list_batches(identity.session, include_deleted=include_deleted)
 
 
@@ -112,6 +114,8 @@ async def mirror(batch_id: uuid.UUID, request: Request, identity: WriteIdentity)
 async def read_batch(
     batch_id: uuid.UUID, identity: CurrentIdentity, service: Service, include_deleted: bool = False
 ) -> schemas.BatchOut:
+    if include_deleted:
+        _approver(identity)  # the Papierkorb is for those who may restore from it
     return await service.batch(identity.session, batch_id, include_deleted=include_deleted)
 
 
@@ -160,7 +164,11 @@ async def export_batch(
 async def read_case(
     asset_id: uuid.UUID, identity: CurrentIdentity, service: Service
 ) -> schemas.CaseFile:
-    return await service.case_file(identity.session, asset_id)
+    case = await service.case_file(identity.session, asset_id)
+    if case.deletion_reason and not identity.user.role.can_approve:
+        # Readers see that a photo was withdrawn, not the archive's reason why.
+        case = case.model_copy(update={"deletion_reason": None})
+    return case
 
 
 @router.patch(
