@@ -57,6 +57,7 @@ class Binding:
         return "global" if self.model_id.startswith("global.") else "eu"
 
 
+OPUS = Binding("eu.anthropic.claude-opus-4-6-v1", "claude-opus", 5.0, 25.0)
 SONNET = Binding("eu.anthropic.claude-sonnet-4-6", "claude-sonnet", 3.0, 15.0)
 HAIKU = Binding("eu.anthropic.claude-haiku-4-5-20251001-v1:0", "claude-haiku", 1.0, 5.0)
 OPENAI = Binding("global.openai.gpt-6.1-sol", "openai", 2.5, 10.0)
@@ -69,13 +70,23 @@ _FAMILIES = {
 }
 
 DEFAULT_BINDINGS: dict[Task, Binding] = {
+    Task.PERCEIVE: OPUS,
+    Task.COMPARE: OPUS,
+    Task.CHALLENGE: OPENAI,
+    Task.ADJUDICATE: OPUS,
+}
+FALLBACKS: dict[Task, Binding] = {
     Task.PERCEIVE: SONNET,
     Task.COMPARE: SONNET,
-    Task.CHALLENGE: OPENAI,
+    Task.CHALLENGE: HAIKU,
     Task.ADJUDICATE: SONNET,
 }
-CHALLENGE_FALLBACK = HAIKU
-"""Same vendor, different model — labelled as same-family wherever it is used."""
+"""Used when the first choice is refused (no model access, a policy, a region).
+For the challenge the fallback is the same vendor — labelled as same-family
+wherever it is used, never silently."""
+CHALLENGE_FALLBACK = FALLBACKS[Task.CHALLENGE]
+_REFUSED = {"AccessDeniedException", "ResourceNotFoundException", "ValidationException"}
+_REFUSAL_TTL_SECONDS = 600.0
 
 
 def _family_of(model_id: str) -> str:
@@ -133,6 +144,8 @@ class ModelClient:
         client: Any | None = None,
     ) -> None:
         self.bindings = bindings or bindings_from_env()
+        self._refused: dict[str, float] = {}
+        """model id → when it was last refused; skipped for a while instead of re-asked."""
         self._client = client or boto3.session.Session(region_name=region).client(
             "bedrock-runtime",
             config=Config(retries={"max_attempts": 4, "mode": "adaptive"}, read_timeout=180),
@@ -149,18 +162,25 @@ class ModelClient:
         max_tokens: int = 3000,
     ) -> Reply[T]:
         binding = self.bindings[task]
+        fallback = FALLBACKS.get(task)
+        refused_at = self._refused.get(binding.model_id)
+        if refused_at is None or time.monotonic() - refused_at > _REFUSAL_TTL_SECONDS:
+            try:
+                return await self._ask(binding, contract, system, prompt, images or [], max_tokens)
+            except ClientError as exc:
+                code = exc.response.get("Error", {}).get("Code", "")
+                if code not in _REFUSED or fallback is None or fallback == binding:
+                    raise ModelError(f"{binding.model_id}: {code or exc}") from exc
+                self._refused[binding.model_id] = time.monotonic()
+            except BotoCoreError as exc:
+                raise ModelError(f"{binding.model_id}: {exc}") from exc
+        if fallback is None:
+            raise ModelError(f"{binding.model_id}: refused, and no fallback for {task}")
         try:
-            return await self._ask(binding, contract, system, prompt, images or [], max_tokens)
-        except ClientError as exc:
-            code = exc.response.get("Error", {}).get("Code", "")
-            if task is Task.CHALLENGE and code in {"AccessDeniedException", "ValidationException"}:
-                reply = await self._ask(
-                    CHALLENGE_FALLBACK, contract, system, prompt, images or [], max_tokens
-                )
-                return Reply(**{**_as_dict(reply), "same_family_fallback": True})
-            raise ModelError(f"{binding.model_id}: {code or exc}") from exc
-        except BotoCoreError as exc:
-            raise ModelError(f"{binding.model_id}: {exc}") from exc
+            reply = await self._ask(fallback, contract, system, prompt, images or [], max_tokens)
+        except (ClientError, BotoCoreError) as exc:
+            raise ModelError(f"{fallback.model_id}: {exc}") from exc
+        return Reply(**{**_as_dict(reply), "same_family_fallback": task is Task.CHALLENGE})
 
     async def _ask(
         self,
