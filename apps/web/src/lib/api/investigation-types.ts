@@ -97,6 +97,16 @@ export type BatchAsset = {
   /** Who withdrew it (the archivist's name), for the Papierkorb. */
   deleted_by_name?: string | null;
   captured_at?: string | null;
+  /**
+   * Timing (spec §6), `null` until each exists and absent from an API that
+   * predates it. `duration_ms` = finished − started, only once finished;
+   * `wait_ms` = started − queued.
+   */
+  queued_at?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  duration_ms?: number | null;
+  wait_ms?: number | null;
 };
 
 export type BatchCounts = {
@@ -113,6 +123,22 @@ export type BatchCounts = {
   deleted?: number;
 };
 
+/** The batch's timing over runs with a duration (spec §6). */
+export type BatchTiming = {
+  finished: number;
+  mean_ms: number | null;
+  median_ms: number | null;
+  p90_ms: number | null;
+  min_ms: number | null;
+  max_ms: number | null;
+  first_started_at: string | null;
+  last_finished_at: string | null;
+  /** First start → last finish, or → now while photos are still running. */
+  wall_ms: number | null;
+  /** Finished ÷ wall hours; null while fewer than two have finished. */
+  per_hour: number | null;
+};
+
 export type BatchOut = {
   id: string;
   label: string | null;
@@ -123,6 +149,8 @@ export type BatchOut = {
   deleted_at?: string | null;
   counts: BatchCounts;
   assets: BatchAsset[];
+  /** Absent from an API that predates spec §6. */
+  timing?: BatchTiming | null;
 };
 
 export type BatchSummary = {
@@ -199,6 +227,22 @@ export type RunEventOut = {
   evidence: string | null;
 };
 
+/** One stage of a run, in execution order (spec §6). */
+export type RunStageTiming = {
+  stage: string;
+  agent: string | null;
+  /** The specialist roles this agent played in the stage. */
+  acting_as?: string[] | null;
+  status: string;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_ms: number | null;
+  model: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+};
+
 export type CaseRun = {
   id: string;
   status: string;
@@ -208,6 +252,12 @@ export type CaseRun = {
   cost_usd: number;
   models: string[];
   error: string | null;
+  /** Timing (spec §6); absent from an API that predates it. */
+  queued_at?: string | null;
+  duration_ms?: number | null;
+  wait_ms?: number | null;
+  /** In execution order; the produce step is the run's `finished_at`. */
+  stages?: RunStageTiming[] | null;
 };
 
 export type CaseFile = {

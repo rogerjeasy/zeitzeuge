@@ -41,6 +41,7 @@ import {
   filterParams,
   isFinished,
   naturalCompare,
+  statusBucket,
   type BatchFilter,
 } from "@/lib/investigation/batch-filter";
 import { summariseBulk, type BulkSummary } from "@/lib/investigation/bulk";
@@ -57,6 +58,7 @@ import { BatchAssetRow } from "./batch-asset-row";
 import { BatchFilterBar } from "./batch-filter-bar";
 import { ExportButton, useExport } from "./export-button";
 import { BATCH_STATUS_KEYS, intlLocale, ARCHIVE_TZ } from "./labels";
+import { BatchTimingCard } from "./timing";
 
 export { BatchAssetRow } from "./batch-asset-row";
 
@@ -158,6 +160,9 @@ export function BatchView({
   let pendingOverlay = 0;
   for (const { state } of overlay.values()) pendingOverlay += state === "withdrawn" ? 1 : -1;
   const trashCount = trash ? trashAssets.length : Math.max(0, (c.deleted ?? 0) + pendingOverlay);
+
+  // Still to finish, for «Restzeit ca. …»: queued, uploading or running, whatever the filter shows.
+  const openCount = useMemo(() => liveAssets.filter((a) => statusBucket(a) === "working").length, [liveAssets]);
 
   const selected = useMemo(() => visible.filter((a) => selection.has(a.asset_id)), [visible, selection]);
   const selectedIds = selected.map((a) => a.asset_id);
@@ -479,6 +484,8 @@ export function BatchView({
           </div>
         ))}
       </dl>
+
+      <BatchTimingCard timing={batch.timing} open={openCount} />
 
       {trash ? (
         <p className="flex items-start gap-2 rounded-xl border border-line bg-surface-2/50 px-3.5 py-2.5 text-[0.75rem] text-muted">

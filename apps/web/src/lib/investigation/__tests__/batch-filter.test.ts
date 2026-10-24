@@ -119,6 +119,34 @@ describe("applyFilter", () => {
     ]);
   });
 
+  it("sorts by duration both ways, unfinished photos last", () => {
+    const timed = [
+      row({ external_ref: "a.jpg", duration_ms: 95_000 }),
+      row({ external_ref: "b.jpg", duration_ms: 41_000 }),
+      row({ external_ref: "c.jpg", status: "analysing", run_status: "running", duration_ms: null }),
+      row({ external_ref: "d.jpg", duration_ms: 212_000 }),
+      row({ external_ref: "e.jpg" }), // an API without timing: no field at all
+      row({ external_ref: "f.jpg", duration_ms: 41_000 }),
+    ];
+    assert.deepEqual(names(applyFilter(timed, { ...DEFAULT_FILTER, sort: "duration_asc" })), [
+      "b.jpg",
+      "f.jpg",
+      "a.jpg",
+      "d.jpg",
+      "c.jpg",
+      "e.jpg",
+    ]);
+    assert.deepEqual(names(applyFilter(timed, { ...DEFAULT_FILTER, sort: "duration_desc" })), [
+      "d.jpg",
+      "a.jpg",
+      "b.jpg",
+      "f.jpg",
+      "c.jpg",
+      "e.jpg",
+    ]);
+    assert.equal(parseFilter({ sort: "duration_desc" }).sort, "duration_desc");
+  });
+
   it("does not reorder its input", () => {
     const before = names(assets);
     applyFilter(assets, { ...DEFAULT_FILTER, sort: "conf_desc" });

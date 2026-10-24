@@ -1832,7 +1832,9 @@
         "name": "Dateiname",
         "conf_asc": "Konfidenz ↑",
         "conf_desc": "Konfidenz ↓",
-        "status": "Status"
+        "status": "Status",
+        "duration_asc": "Dauer ↑",
+        "duration_desc": "Dauer ↓"
       },
       "reset": "Filter zurücksetzen",
       "shown": "{count, plural, one {# Foto} other {# Fotos}} angezeigt"
@@ -1953,6 +1955,56 @@
       "mapOpen": "In map.geo.admin.ch öffnen",
       "newTab": "(öffnet in neuem Tab)",
       "noPoint": "Kein Motivpunkt bestimmt."
+    },
+    "timing": {
+      "durationLabel": "Dauer",
+      "running": "läuft seit {clock}",
+      "runningNoClock": "läuft",
+      "wait": "Wartezeit {value}",
+      "queuedAt": "eingereiht {time}",
+      "startedAt": "begonnen {time}",
+      "finishedAt": "beendet {time}",
+      "card": {
+        "title": "Zeit",
+        "basis": "{count, plural, one {aus # fertigen Foto} other {aus # fertigen Fotos}}",
+        "mean": "Ø pro Foto",
+        "median": "Median",
+        "range": "schnellste / langsamste",
+        "wall": "Gesamtdauer",
+        "wallRunning": "Gesamtdauer bisher",
+        "perHour": "Fotos pro Stunde",
+        "perHourPending": "ab 2 fertigen Fotos",
+        "remaining": "Restzeit ca.",
+        "estimate": "Schätzung",
+        "remainingHint": "{count, plural, one {# offenes Foto} other {# offene Fotos}} × Median ÷ {lanes} parallele Läufe — eine Schätzung, keine Zusage."
+      },
+      "timeline": {
+        "title": "Zeitverlauf",
+        "hint": "Eine Zeile pro Stufe, in der Reihenfolge des Laufs; die längste Stufe füllt die Breite. Zeiger, Tastaturfokus oder Antippen zeigt Modell, Tokens und Kosten.",
+        "listLabel": "Stufen des Laufs in Ausführungsreihenfolge",
+        "position": "Stufe {n} von {total}:",
+        "share": "{value} % der Stufenzeit",
+        "shareLabel": "Anteil",
+        "agent": "Agent",
+        "actingAs": "als {roles}",
+        "model": "Modell",
+        "noModel": "ohne Modell",
+        "tokens": "Tokens",
+        "tokensValue": "{input} ein · {output} aus",
+        "cost": "Kosten",
+        "start": "Beginn",
+        "statusLabel": "Status",
+        "status": {
+          "succeeded": "erfolgreich",
+          "failed": "fehlgeschlagen",
+          "running": "läuft",
+          "skipped": "übersprungen",
+          "cancelled": "abgebrochen"
+        },
+        "queuedAt": "Eingereiht",
+        "wait": "Wartezeit",
+        "total": "Gesamtdauer"
+      }
     }
   }
 }

@@ -16,7 +16,7 @@ export type StatusFilter = (typeof STATUS_FILTERS)[number];
 export const QC_FILTERS = ["all", "open", "machine", "confirmed", "corrected"] as const;
 export type QcFilter = (typeof QC_FILTERS)[number];
 
-export const SORT_KEYS = ["name", "conf_asc", "conf_desc", "status"] as const;
+export const SORT_KEYS = ["name", "conf_asc", "conf_desc", "status", "duration_asc", "duration_desc"] as const;
 export type SortKey = (typeof SORT_KEYS)[number];
 
 export type BatchFilter = { status: StatusFilter; qc: QcFilter; q: string; sort: SortKey };
@@ -125,13 +125,23 @@ function compare(a: BatchAsset, b: BatchAsset, sort: SortKey): number {
   const byName = naturalCompare(a.external_ref, b.external_ref);
   if (sort === "name") return byName;
   if (sort === "status") return STATUS_ORDER[statusBucket(a)] - STATUS_ORDER[statusBucket(b)] || byName;
+  if (sort === "duration_asc" || sort === "duration_desc") {
+    return knownLast(durationOf(a), durationOf(b), sort === "duration_asc") || byName;
+  }
   // No confidence yet sorts last in both directions: it is not «low», it is unknown.
-  const ca = a.outcome_confidence;
-  const cb = b.outcome_confidence;
-  if (ca === null && cb === null) return byName;
-  if (ca === null) return 1;
-  if (cb === null) return -1;
-  return (sort === "conf_asc" ? ca - cb : cb - ca) || byName;
+  return knownLast(a.outcome_confidence, b.outcome_confidence, sort === "conf_asc") || byName;
+}
+
+/** A finished photo's duration (spec §6); queued, running or an older API: `null`. */
+const durationOf = (asset: BatchAsset): number | null =>
+  typeof asset.duration_ms === "number" && Number.isFinite(asset.duration_ms) ? asset.duration_ms : null;
+
+/** Ascending or descending, with the unknown (`null`) last in both directions; `0` on a tie. */
+function knownLast(a: number | null, b: number | null, ascending: boolean): number {
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return ascending ? a - b : b - a;
 }
 
 /** Filter, then sort. A new array; the input is never reordered. */

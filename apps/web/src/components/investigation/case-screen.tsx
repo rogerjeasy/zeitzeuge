@@ -45,6 +45,7 @@ import { CaseFieldRow, type FieldRowHandle } from "./case-field-row";
 import { EvidenceCard } from "./evidence-card";
 import { PhotoLightbox } from "./photo-lightbox";
 import { SubjectMap } from "./subject-map";
+import { StageTimeline } from "./stage-timeline";
 import { intlLocale, ARCHIVE_TZ } from "./labels";
 
 const POLL_MS = 15_000;
@@ -461,6 +462,7 @@ export function CaseScreen({ initial, nav = null }: { initial: CaseFile; nav?: R
             </div>
           )}
         </section>
+        {record.run && <StageTimeline run={record.run} />}
         <SubjectMap field={subjectPoint} />
         </div>
 

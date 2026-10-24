@@ -1832,7 +1832,9 @@
         "name": "File name",
         "conf_asc": "Confidence ↑",
         "conf_desc": "Confidence ↓",
-        "status": "Status"
+        "status": "Status",
+        "duration_asc": "Duration ↑",
+        "duration_desc": "Duration ↓"
       },
       "reset": "Reset filters",
       "shown": "{count, plural, one {# photo} other {# photos}} shown"
@@ -1953,6 +1955,56 @@
       "mapOpen": "Open in map.geo.admin.ch",
       "newTab": "(opens in a new tab)",
       "noPoint": "No subject point determined."
+    },
+    "timing": {
+      "durationLabel": "Duration",
+      "running": "running for {clock}",
+      "runningNoClock": "running",
+      "wait": "waited {value}",
+      "queuedAt": "queued {time}",
+      "startedAt": "started {time}",
+      "finishedAt": "finished {time}",
+      "card": {
+        "title": "Time",
+        "basis": "{count, plural, one {from # finished photo} other {from # finished photos}}",
+        "mean": "Mean per photo",
+        "median": "Median",
+        "range": "fastest / slowest",
+        "wall": "Total time",
+        "wallRunning": "Total time so far",
+        "perHour": "Photos per hour",
+        "perHourPending": "from 2 finished photos",
+        "remaining": "Time left approx.",
+        "estimate": "Estimate",
+        "remainingHint": "{count, plural, one {# open photo} other {# open photos}} × median ÷ {lanes} parallel runs — an estimate, not a promise."
+      },
+      "timeline": {
+        "title": "Timeline",
+        "hint": "One row per stage, in the order the run took them; the longest stage fills the width. Pointer, keyboard focus or a tap shows model, tokens and cost.",
+        "listLabel": "Stages of the run in execution order",
+        "position": "Stage {n} of {total}:",
+        "share": "{value} % of stage time",
+        "shareLabel": "Share",
+        "agent": "Agent",
+        "actingAs": "as {roles}",
+        "model": "Model",
+        "noModel": "no model",
+        "tokens": "Tokens",
+        "tokensValue": "{input} in · {output} out",
+        "cost": "Cost",
+        "start": "Start",
+        "statusLabel": "Status",
+        "status": {
+          "succeeded": "succeeded",
+          "failed": "failed",
+          "running": "running",
+          "skipped": "skipped",
+          "cancelled": "cancelled"
+        },
+        "queuedAt": "Queued",
+        "wait": "Wait",
+        "total": "Total time"
+      }
     }
   }
 }

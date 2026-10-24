@@ -1832,7 +1832,9 @@
         "name": "Nom de fichier",
         "conf_asc": "Confiance ↑",
         "conf_desc": "Confiance ↓",
-        "status": "Statut"
+        "status": "Statut",
+        "duration_asc": "Durée ↑",
+        "duration_desc": "Durée ↓"
       },
       "reset": "Réinitialiser les filtres",
       "shown": "{count, plural, one {# photo affichée} other {# photos affichées}}"
@@ -1953,6 +1955,56 @@
       "mapOpen": "Ouvrir dans map.geo.admin.ch",
       "newTab": "(s’ouvre dans un nouvel onglet)",
       "noPoint": "Aucun point du sujet déterminé."
+    },
+    "timing": {
+      "durationLabel": "Durée",
+      "running": "en cours depuis {clock}",
+      "runningNoClock": "en cours",
+      "wait": "attente {value}",
+      "queuedAt": "mis en file {time}",
+      "startedAt": "commencé {time}",
+      "finishedAt": "terminé {time}",
+      "card": {
+        "title": "Temps",
+        "basis": "{count, plural, one {sur # photo terminée} other {sur # photos terminées}}",
+        "mean": "Moyenne par photo",
+        "median": "Médiane",
+        "range": "la plus rapide / la plus lente",
+        "wall": "Durée totale",
+        "wallRunning": "Durée totale jusqu’ici",
+        "perHour": "Photos par heure",
+        "perHourPending": "dès 2 photos terminées",
+        "remaining": "Temps restant env.",
+        "estimate": "Estimation",
+        "remainingHint": "{count, plural, one {# photo ouverte} other {# photos ouvertes}} × médiane ÷ {lanes} analyses en parallèle — une estimation, pas un engagement."
+      },
+      "timeline": {
+        "title": "Déroulement",
+        "hint": "Une ligne par étape, dans l’ordre d’exécution ; l’étape la plus longue remplit la largeur. Le pointeur, le focus clavier ou un appui affiche modèle, tokens et coût.",
+        "listLabel": "Étapes de l’analyse dans l’ordre d’exécution",
+        "position": "Étape {n} sur {total} :",
+        "share": "{value} % du temps des étapes",
+        "shareLabel": "Part",
+        "agent": "Agent",
+        "actingAs": "en tant que {roles}",
+        "model": "Modèle",
+        "noModel": "sans modèle",
+        "tokens": "Tokens",
+        "tokensValue": "{input} entrée · {output} sortie",
+        "cost": "Coût",
+        "start": "Début",
+        "statusLabel": "Statut",
+        "status": {
+          "succeeded": "réussie",
+          "failed": "échouée",
+          "running": "en cours",
+          "skipped": "sautée",
+          "cancelled": "annulée"
+        },
+        "queuedAt": "Mis en file",
+        "wait": "Attente",
+        "total": "Durée totale"
+      }
     }
   }
 }

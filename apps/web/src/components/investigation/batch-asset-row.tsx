@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { ConfidenceFigure, QcPill, StatusPill } from "./pills";
 import { StageTrack } from "./stage-track";
 import { ARCHIVE_TZ, intlLocale } from "./labels";
+import { RowTiming } from "./timing";
 
 /**
  * One photograph's row. `batchLabel` names its batch where rows from several
@@ -111,7 +112,10 @@ export function BatchAssetRow({
               </span>
             </p>
           ) : (
-            <StageTrack stage={asset.stage} runStatus={asset.run_status} />
+            <>
+              <StageTrack stage={asset.stage} runStatus={asset.run_status} />
+              <RowTiming asset={asset} />
+            </>
           )}
           {asset.error && !withdrawn && (
             <p className="line-clamp-2 text-[0.6875rem] text-refuted" title={asset.error}>
