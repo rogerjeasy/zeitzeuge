@@ -19,10 +19,11 @@ from __future__ import annotations
 
 import asyncio
 import io
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from zeitzeuge_api.core.logging import get_logger
-from zeitzeuge_api.investigation.names import distinctive
+from zeitzeuge_api.investigation.names import PLACE_WORDS, distinctive
 from zeitzeuge_api.investigation.tools.base import HttpTool, ToolCache
 from zeitzeuge_api.investigation.tools.fetch import guarded_get
 from zeitzeuge_api.investigation.tools.text import contains_all_tokens, fold, strip_html
@@ -57,12 +58,20 @@ def mentions(page_text: str, value: str, *, place: str | None = None) -> bool:
     if contains_all_tokens(page_text, value):
         return True
     core = distinctive(value)
-    if not core or (place and core in [*fold(place).split(), fold(place)]):
+    if not core or core in PLACE_WORDS:
+        return False
+    if place and core in [*fold(place).split(), fold(place)]:
         return False
     return f" {core} " in f" {page_text} "
 
 
 PARSE_SECONDS = 15.0
+_PARSERS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="page-parse")
+"""Parsing has its own two threads. A thread cannot be killed at the deadline, so a
+hostile PDF can at worst occupy these two — it cannot starve the default executor
+that DNS resolution (`guarded_get`) and the KSI sheets use. Known limit: a stuck
+parse keeps its thread busy until it finishes; the per-stream decompression cap
+bounds how long that can be."""
 
 
 def limit_pdf_decompression() -> None:
@@ -71,7 +80,7 @@ def limit_pdf_decompression() -> None:
 
     for name in ("ZLIB_MAX_OUTPUT_LENGTH", "LZW_MAX_OUTPUT_LENGTH", "RUN_LENGTH_MAX_OUTPUT_LENGTH"):
         if hasattr(filters, name):
-            setattr(filters, name, 50_000_000)
+            setattr(filters, name, 20_000_000)
 
 
 class PageVerifier(HttpTool):
@@ -103,8 +112,11 @@ class PageVerifier(HttpTool):
             return None
         # Parsing (a PDF above all) is CPU work: off the event loop, with a deadline.
         try:
+            loop = asyncio.get_running_loop()
             return await asyncio.wait_for(
-                asyncio.to_thread(_page, fetched.url, fetched.content_type, fetched.body),
+                loop.run_in_executor(
+                    _PARSERS, _page, fetched.url, fetched.content_type, fetched.body
+                ),
                 timeout=PARSE_SECONDS,
             )
         except TimeoutError:

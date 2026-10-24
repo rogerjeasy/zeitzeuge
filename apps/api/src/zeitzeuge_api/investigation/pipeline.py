@@ -45,6 +45,7 @@ from zeitzeuge_api.investigation.stages import (
     reference,
     research,
     resolve,
+    sighting,
 )
 
 log = get_logger(__name__)
@@ -54,6 +55,7 @@ STAGES: tuple[tuple[str, Stage], ...] = (
     (intake.STAGE, intake.run),
     (perception.STAGE, perception.run),
     (research.STAGE, research.run),
+    (sighting.STAGE, sighting.run),
     (grounding.STAGE, grounding.run),
     (reference.STAGE, reference.run),
     (resolve.STAGE, resolve.run),
@@ -84,6 +86,16 @@ class S3ImageStore:
             self._s3.put_object(Bucket=bucket, Key=key, Body=data, ContentType="image/jpeg")
 
         await anyio.to_thread.run_sync(_put)
+
+    async def presign(self, bucket: str, key: str) -> str:
+        def _sign() -> str:
+            return str(
+                self._s3.generate_presigned_url(
+                    "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=900
+                )
+            )
+
+        return await anyio.to_thread.run_sync(_sign)
 
 
 class LocalImageStore:
@@ -138,7 +150,7 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
         run.status = RunStatus.RUNNING
         run.started_at = run.started_at or datetime.now(UTC)
         run.code_version = deps.code_version
-        run.agents_total = 14
+        run.agents_total = 15
         asset.status = AssetStatus.ANALYSING
         bucket, key, fonds_id, batch_id = master.bucket, master.s3_key, asset.fonds_id, run.batch_id
         external_ref, asset_id = asset.external_ref, asset.id
@@ -163,6 +175,10 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
             key = access_key(org_id, asset_id)
             await deps.images.write(deps.access_bucket, key, ctx.asset.prepared)
             access = (deps.access_bucket, key)
+            presign = getattr(deps.images, "presign", None)
+            if presign is not None:
+                # Google Lens needs a URL it can fetch: the access copy, for 15 minutes.
+                ctx.facts["public_image_url"] = await presign(deps.access_bucket, key)
         except Exception as exc:  # a missing preview must not stop the investigation
             log.warning("investigation.access_copy_failed", error=str(exc))
     async with db.session(tenant) as session:
@@ -176,6 +192,7 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
     finally:
         pulse.cancel()
         research.cancel(ctx)
+        sighting.cancel(ctx)
 
 
 HEARTBEAT_SECONDS = 60
@@ -231,6 +248,7 @@ async def _run_stages(
             # The slow web research runs while Perception looks at the photo
             # (identification-upgrade note §3); its stage only collects it.
             research.start(ctx)
+            sighting.start(ctx)
 
     async with db.session(tenant) as session:
         if await _cancelled(session, run_id):

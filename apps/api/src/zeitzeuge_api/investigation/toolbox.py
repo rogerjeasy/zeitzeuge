@@ -11,6 +11,7 @@ import httpx
 from zeitzeuge_api.investigation.tools.base import HttpTool, ToolCache
 from zeitzeuge_api.investigation.tools.commons import Commons
 from zeitzeuge_api.investigation.tools.fetch import guarded_get
+from zeitzeuge_api.investigation.tools.google import GoogleTools
 from zeitzeuge_api.investigation.tools.keys import ExternalKeys
 from zeitzeuge_api.investigation.tools.osm import Overpass
 from zeitzeuge_api.investigation.tools.pages import PageVerifier
@@ -60,6 +61,9 @@ class Toolbox:
         self._images: dict[str, bytes | None] = {}
         self.ksi = KsiInventory(self.client, self.cache, self._images)
         self.wikidata = WikidataGazetteer(self.client, self.cache)
+        self.google = GoogleTools(
+            self.client, self.cache, google_key=self.keys.google, serpapi_key=self.keys.serpapi
+        )
         self.research_openai = OpenAIResearch(
             self.client, self.cache, self.keys.openai, research_models[0], effort=research_effort
         )
@@ -84,6 +88,10 @@ class Toolbox:
         """
         if url in self._images:
             return self._images[url]
+        if url.startswith(("places-photo://", "streetview://")):
+            photo = await self.google.fetch_photo(url)
+            self._images[url] = photo
+            return photo
         if not url.startswith("https://"):
             return None
         path = (

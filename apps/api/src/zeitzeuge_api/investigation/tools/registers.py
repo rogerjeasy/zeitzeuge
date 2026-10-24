@@ -29,7 +29,7 @@ import httpx
 from PIL import Image
 
 from zeitzeuge_api.core.logging import get_logger
-from zeitzeuge_api.investigation.names import distinctive
+from zeitzeuge_api.investigation.names import PLACE_WORDS, distinctive
 from zeitzeuge_api.investigation.tools.base import HttpTool, MatchKind, ToolHit, ToolUnavailable
 from zeitzeuge_api.investigation.tools.geo import distance_m, wgs84_to_lv95
 from zeitzeuge_api.investigation.tools.text import contains_all_tokens, fold
@@ -174,7 +174,7 @@ def names_match(register_name: str, proposed: str) -> bool:
         return False  # «Kapelle», «Haus»: a register entry with no name of its own
     if contains_all_tokens(register_name, proposed) or contains_all_tokens(proposed, register_name):
         return True
-    return a == b
+    return a == b and a not in PLACE_WORDS
 
 
 class KsiInventory(HttpTool):

@@ -96,3 +96,76 @@ def massif(name: str) -> str | None:
 def feature_key(name: str) -> str:
     """The grouping key for See/Fluss/Berg: a summit counts towards its massif."""
     return fold(massif(name) or name)
+
+
+PLACE_WORDS = frozenset(
+    fold(name)
+    for name in (
+        # The 30 municipalities of Canton Schwyz.
+        "Alpthal",
+        "Altendorf",
+        "Arth",
+        "Einsiedeln",
+        "Feusisberg",
+        "Freienbach",
+        "Galgenen",
+        "Gersau",
+        "Illgau",
+        "Ingenbohl",
+        "Innerthal",
+        "Küssnacht",
+        "Lachen",
+        "Lauerz",
+        "Morschach",
+        "Muotathal",
+        "Oberiberg",
+        "Reichenburg",
+        "Riemenstalden",
+        "Rothenthurm",
+        "Sattel",
+        "Schübelbach",
+        "Schwyz",
+        "Steinen",
+        "Steinerberg",
+        "Tuggen",
+        "Unteriberg",
+        "Vorderthal",
+        "Wangen",
+        "Wollerau",
+        # Villages and parts that name buildings as often as municipalities do.
+        "Brunnen",
+        "Seewen",
+        "Ibach",
+        "Rickenbach",
+        "Goldau",
+        "Oberarth",
+        "Immensee",
+        "Merlischachen",
+        "Stoos",
+        "Bisisthal",
+        "Hoch-Ybrig",
+        "Siebnen",
+        "Pfäffikon",
+        "Bäch",
+        "Wilen",
+        "Hurden",
+        "Biberbrugg",
+        "Brunni",
+        "Euthal",
+        "Studen",
+        "Willerzell",
+        "Trachslau",
+        "Haggenegg",
+        "Holzegg",
+        "Rigi",
+        "Mythen",
+        "Sihlsee",
+        "Lauerzersee",
+        "Zugersee",
+        "Zürichsee",
+        "Vierwaldstättersee",
+        "Urnersee",
+    )
+)
+"""Names that are places, not buildings. «Spital Schwyz» has «Schwyz» as its only
+non-generic word; a page about Schwyz does not name the Spital."""

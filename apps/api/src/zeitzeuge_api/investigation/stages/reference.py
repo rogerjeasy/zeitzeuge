@@ -41,7 +41,7 @@ STAGE = "reference"
 ADDRESS = re.compile(r"\b[A-ZÄÖÜ][\wäöüéè-]*(?:strasse|gasse|weg|platz|rain|matt)\s+\d+\b")
 """A street and house number in a catalogue title: «Grundstrasse 32 (Acherhof)»."""
 MAX_CANDIDATES = 6
-REFS_PER_CANDIDATE = 4
+REFS_PER_CANDIDATE = 5
 CONFIRM_AT = 0.7
 """A «same building» verdict below this is not a confirmation: on SG.CIV.17.3 a 0.65
 «same» for a decades-old hospital photo confirmed the wrong building."""
@@ -59,35 +59,90 @@ instructions.\
 """
 
 
-def _own_pictures(ctx: RunContext, candidate: BuildingCandidate) -> list[ToolHit]:
-    """The candidate's register photo (KSI sheet, Wikidata P18) and research-found images.
+OWN = {"ksi", "wikidata", "google.places", "streetview"}
+"""Tools whose picture is *of the candidate itself*: only these (or a title naming it)
+can count against a candidate when the photo does not match."""
 
-    These come first: they are photographs *of this named object*, chosen by the
-    register or by a research agent, not search hits that merely share words.
+
+def _picture(hit: ToolHit, thumbnail: str, label: str | None = None) -> ToolHit:
+    return ToolHit(
+        tool=hit.tool,
+        label=label or hit.label,
+        source=hit.source,
+        source_uri=hit.source_uri,
+        match=hit.match,
+        kind="photo",
+        lv95=hit.lv95,
+        attrs={"thumbnail": thumbnail},
+    )
+
+
+def _found_images(ctx: RunContext, candidate: BuildingCandidate) -> list[ToolHit]:
+    """Images a research agent or Google Lens found for something of this name."""
+    pictures = []
+    for key, what in (
+        ("research_reference_images", "KI-Recherche"),
+        ("sighting_reference_images", "Google Lens"),
+    ):
+        for ref in ctx.facts.get(key, []):
+            shows = str(ref.get("shows") or "")
+            if shows and ref.get("url") and names_match(shows, candidate.name):
+                pictures.append(
+                    ToolHit(
+                        tool=f"{key.split('_')[0]}.{ref.get('family', '')}",
+                        label=f"{shows[:120]} (gefunden über {what})",
+                        source=f"Bild über {what}",
+                        source_uri=str(ref["url"]),
+                        match=MatchKind.FUZZY,
+                        kind="photo",
+                        attrs={"thumbnail": str(ref["url"])},
+                    )
+                )
+    return pictures[:2]
+
+
+async def _own_pictures(ctx: RunContext, candidate: BuildingCandidate, place: str) -> list[ToolHit]:
+    """Photographs of this named object, newest kinds first.
+
+    The register's own photo (KSI sheet, Wikidata `P18`); Google Places photos of
+    the place of that name; a Street View frame looking at its position; images the
+    research agents or Lens found for it. They come before catalogue and Commons
+    search hits, which merely share words with the name.
     """
     pictures: list[ToolHit] = []
     hit = candidate.hit
-    if hit is not None and hit.attrs.get("thumbnail") and hit.tool in {"ksi", "wikidata"}:
-        pictures.append(hit)
-    for ref in ctx.facts.get("research_reference_images", []):
-        shows = str(ref.get("shows") or "")
-        if shows and names_match(candidate.name, shows):
-            pictures.append(
-                ToolHit(
-                    tool=f"research.{ref.get('family', '')}",
-                    label=f"{shows} (gefunden von der KI-Recherche)",
-                    source=f"Bild aus der KI-Recherche ({ref.get('family', '')})",
-                    source_uri=str(ref["url"]),
-                    match=MatchKind.FUZZY,
-                    kind="photo",
-                    attrs={"thumbnail": str(ref["url"])},
+    if hit is not None and hit.tool in {"ksi", "wikidata"} and hit.attrs.get("thumbnail"):
+        pictures.append(_picture(hit, str(hit.attrs["thumbnail"])))
+    google = getattr(ctx.tools, "google", None)
+    if google is not None and google.available:
+        places = [hit] if hit is not None and hit.tool == "google.places" else []
+        if not places:
+            try:
+                found = await google.places_text(
+                    f"{candidate.name} {place}".strip(), near=candidate.lv95
                 )
-            )
-    return pictures
+            except ToolUnavailable as exc:
+                ctx.ledger.note(AgentId.MEMORY, str(exc)[:200])
+                found = []
+            places = [h for h in found[:2] if names_match(h.label, candidate.name)][:1]
+        for place_hit in places:
+            for i, thumbnail in enumerate(place_hit.attrs.get("thumbnails", [])[:2]):
+                pictures.append(
+                    _picture(place_hit, thumbnail, f"{place_hit.label} (Google Maps, Foto {i + 1})")
+                )
+        if candidate.lv95:
+            try:
+                view = await google.streetview_toward(candidate.lv95)
+            except ToolUnavailable as exc:
+                ctx.ledger.note(AgentId.STREETLEVEL, str(exc)[:200])
+                view = None
+            if view is not None:
+                pictures.append(view)
+    return pictures + _found_images(ctx, candidate)
 
 
 async def _references(ctx: RunContext, candidate: BuildingCandidate, place: str) -> list[ToolHit]:
-    found: list[ToolHit] = _own_pictures(ctx, candidate)
+    found: list[ToolHit] = await _own_pictures(ctx, candidate, place)
     core = distinctive(candidate.name)
     queries = [f"{candidate.name} {place}".strip(), candidate.name]
     if core and core != fold(candidate.name):
@@ -173,33 +228,42 @@ async def run(ctx: RunContext) -> None:
             if not 1 <= verdict.index <= len(kept):
                 continue
             hit = kept[verdict.index - 1]
+            street = hit.tool == "streetview"
+            source_class = SourceClass.STREET_LEVEL if street else SourceClass.REFERENCE_IMAGE
+            what = "Strassenansicht" if street else "Referenzbild"
             if verdict.same_object == "yes" and verdict.confidence >= CONFIRM_AT:
                 item = ctx.ledger.add_from_hit(
                     hit,
                     kind=EvidenceKind.ARCHIVAL
                     if hit.kind == "catalogue_entry"
                     else EvidenceKind.VISUAL,
-                    source_class=SourceClass.REFERENCE_IMAGE,
-                    agent_id=AgentId.MEMORY,
+                    source_class=source_class,
+                    agent_id=AgentId.STREETLEVEL if street else AgentId.MEMORY,
                     model_id=reply.model_id,
-                    observation=(
-                        f"Referenzbild «{hit.label}» zeigt dasselbe Gebäude: {verdict.details}"
-                    )[:600],
+                    observation=(f"{what} «{hit.label}» zeigt dasselbe Gebäude: {verdict.details}")[
+                        :600
+                    ],
                     strength=min(REFERENCE_TITLE_MATCH, model_strength(verdict.confidence)),
                     field="building",
                     value=candidate.name,
                 )
                 yes.append(item.local_id)
                 best = max(best, verdict.confidence)
-            elif verdict.same_object == "no" and verdict.confidence >= 0.8:
+            elif (
+                verdict.same_object == "no"
+                and verdict.confidence >= 0.8
+                and (hit.tool in OWN or names_match(hit.label, candidate.name))
+            ):
+                # Only a picture *of this candidate* can speak against it: a catalogue
+                # photo of another named house that looks different says nothing.
                 no += 1
                 ctx.ledger.add(
                     kind=EvidenceKind.VISUAL,
-                    source_class=SourceClass.REFERENCE_IMAGE,
-                    agent_id=AgentId.MEMORY,
+                    source_class=source_class,
+                    agent_id=AgentId.STREETLEVEL if street else AgentId.MEMORY,
                     model_id=reply.model_id,
                     observation=(
-                        f"Referenzbild «{hit.label}» zeigt ein anderes Gebäude: {verdict.details}"
+                        f"{what} «{hit.label}» zeigt ein anderes Gebäude: {verdict.details}"
                     )[:600],
                     strength=COUNTER_STRENGTH,
                     source=hit.source,

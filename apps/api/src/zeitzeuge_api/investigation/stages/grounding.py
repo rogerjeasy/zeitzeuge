@@ -233,6 +233,13 @@ async def run(ctx: RunContext) -> None:
         hits = [h for h in ksi_near if names_match(h.label, building_name)]
         hits += await _wikidata_named(ctx, building_name, near)
         if not hits:
+            where = anchors[0].name if anchors else ""
+            hits = [
+                h
+                for h in await _places(ctx, f"{building_name} {where}", near)
+                if names_match(h.label, building_name)
+            ][:1]
+        if not hits:
             try:
                 hits = await ctx.tools.overpass.search_name(building_name, near=near, radius_m=8000)
             except ToolUnavailable as exc:
@@ -262,6 +269,18 @@ async def run(ctx: RunContext) -> None:
             candidates.append(
                 BuildingCandidate(building_name, None, kinds.get(building_name, ""), None, origin)
             )
+
+    # --- named places of the right type, from Google Maps -------------------
+    types = [seen.building_type, *(b.kind for b in seen.buildings)]
+    wanted_words = next(
+        (_TYPE_WORDS[t.strip().lower()] for t in types if t.strip().lower() in _TYPE_WORDS), None
+    )
+    if wanted_words and anchors:
+        for hit in (await _places(ctx, f"{wanted_words} {anchors[0].name}", anchors[0].lv95))[:3]:
+            if hit.attrs.get("thumbnail") and not any(
+                names_match(c.name, hit.label) for c in candidates
+            ):
+                candidates.append(BuildingCandidate(hit.label, hit.lv95, hit.kind, hit, "nearby"))
 
     # --- protected buildings nearby: named, placed, with a photograph --------
     if seen.scene_type in {"building", "village", "street"} or seen.buildings:
@@ -311,7 +330,36 @@ _REGISTER_DE = {
     "ksi": "Das kantonale Schutzinventar (KSI)",
     "wikidata": "Wikidata",
     "osm.overpass": "OpenStreetMap",
+    "google.places": "Google Maps",
 }
+_TYPE_WORDS = {
+    "nursing_home": "Alterszentrum Pflegeheim",
+    "care_home": "Alterszentrum Pflegeheim",
+    "retirement_home": "Alterszentrum",
+    "hospital": "Spital",
+    "hotel": "Hotel",
+    "restaurant": "Restaurant",
+    "church": "Kirche",
+    "chapel": "Kapelle",
+    "monastery": "Kloster",
+    "school": "Schulhaus",
+    "mountain_hut": "Berggasthaus",
+    "museum": "Museum",
+    "town_hall": "Rathaus",
+    "townhall": "Rathaus",
+    "station": "Bahnhof",
+}
+
+
+async def _places(ctx: RunContext, query: str, near: tuple[float, float] | None) -> list[ToolHit]:
+    google = getattr(ctx.tools, "google", None)
+    if google is None or not google.available:
+        return []
+    try:
+        return list(await google.places_text(query.strip(), near=near))
+    except ToolUnavailable as exc:
+        ctx.ledger.note(AgentId.HERITAGE, str(exc)[:200])
+        return []
 
 
 def _value_for(hit: ToolHit, proposed: str) -> str:
