@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <strong><a href="#in-one-minute">Watch the demo (1:30)</a></strong> ·
+  <strong><a href="#demo">Watch the demo (1:30)</a></strong> ·
   <strong><a href="https://d8ic8dbboqgce.cloudfront.net/de">Open the live app</a></strong> ·
   «Demo starten» opens an archive of your own, no account needed ·
   <a href="docs/architecture.md">Architecture</a> ·
@@ -34,6 +34,8 @@
 </p>
 
 > **Zentral Hack 2026** · Challenge «KI-Bilderkennung für historische Fotos» · Staatsarchiv des Kantons Schwyz
+
+<a id="demo"></a>
 
 https://github.com/user-attachments/assets/ddd432dc-e392-4f7d-8f46-96a4641c3907
 
