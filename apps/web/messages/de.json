@@ -1982,7 +1982,13 @@
       "removedJustNow": "gerade entfernt",
       "showRemoved": "Entfernte Stapel anzeigen",
       "hideRemoved": "Entfernte Stapel ausblenden",
-      "withdrawnBy": "von {name}"
+      "withdrawnBy": "von {name}",
+      "publish": "Für Gäste veröffentlichen",
+      "publishTitle": "Diesen Stapel für Gäste veröffentlichen?",
+      "publishBody": "Eine Kopie mit allen Ergebnissen, Belegen und Prüfungen geht ins Demo-Archiv. «Als Gast ansehen» zeigt sie, und jedes neue «Demo starten»-Archiv beginnt mit ihr.",
+      "publishReplace": "Eine frühere Veröffentlichung dieses Stapels wird ersetzt. Ihr Archiv bleibt unverändert.",
+      "publishConfirm": "Veröffentlichen",
+      "published": "{assets} Fotos für Gäste veröffentlicht."
     },
     "review": {
       "navLabel": "In der Liste blättern",

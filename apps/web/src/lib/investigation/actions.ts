@@ -22,6 +22,7 @@ import {
   type RegisterFilesResponse,
   type RunMode,
   PurgeResult,
+  MirrorResult,
 } from "@/lib/api/investigation";
 import type { ApiResult } from "@/lib/api/server";
 
@@ -179,6 +180,11 @@ export async function withdrawBatchAction(
 export async function purgeFailedRunsAction(batchId: string): Promise<InvestigationResult<PurgeResult>> {
   if (!isUuid(String(batchId))) return INVALID;
   return call((a) => investigationApi.purgeFailedRuns(a, batchId));
+}
+
+export async function mirrorBatchAction(batchId: string): Promise<InvestigationResult<MirrorResult>> {
+  if (!isUuid(String(batchId))) return INVALID;
+  return call((a) => investigationApi.mirrorBatch(a, batchId));
 }
 
 export async function restoreBatchAction(

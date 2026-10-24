@@ -1982,7 +1982,13 @@
       "removedJustNow": "removed just now",
       "showRemoved": "Show removed batches",
       "hideRemoved": "Hide removed batches",
-      "withdrawnBy": "by {name}"
+      "withdrawnBy": "by {name}",
+      "publish": "Publish for guests",
+      "publishTitle": "Publish this batch for guests?",
+      "publishBody": "A copy with every result, piece of evidence and review goes to the demo archive. «View as guest» shows it, and every new «Start demo» archive begins with it.",
+      "publishReplace": "An earlier publication of this batch is replaced. Your archive stays unchanged.",
+      "publishConfirm": "Publish",
+      "published": "{assets} photos published for guests."
     },
     "review": {
       "navLabel": "Move through the list",

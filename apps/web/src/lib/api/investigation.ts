@@ -20,6 +20,7 @@ import type {
   RegisterFilesResponse,
   WithdrawRequest,
   PurgeResult,
+  MirrorResult,
   HistoryEntry,
   CostReport,
   Collection,
@@ -164,6 +165,15 @@ export const investigationApi = {
     return apiRequest(`/runs/failed?batch_id=${id(batchId)}`, {
       method: "DELETE",
       timeoutMs: 30_000,
+      ...auth(a),
+    });
+  },
+
+  /** Publish a copy to the guests' demo archive (and so to every new «Start demo» archive). */
+  mirrorBatch(a: ApiAuth, batchId: string): Promise<ApiResult<MirrorResult>> {
+    return apiRequest(`/batches/${id(batchId)}/mirror`, {
+      method: "POST",
+      timeoutMs: 120_000,
       ...auth(a),
     });
   },

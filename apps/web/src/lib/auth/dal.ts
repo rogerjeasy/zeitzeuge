@@ -46,5 +46,7 @@ function toSessionUser(profile: ProfileResponse): SessionUser {
     role: profile.role,
     organizationName: profile.organization.name,
     isGuest: profile.role === "guest",
+    canPublishDemo:
+      profile.organization.slug === "stasz" && ["archivist", "admin"].includes(profile.role),
   };
 }

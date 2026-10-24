@@ -14,6 +14,7 @@ import {
   RefreshCw,
   RotateCcw,
   RotateCw,
+  Share2,
   TimerReset,
   Trash2,
   X,
@@ -35,6 +36,7 @@ import {
   withdrawAssetAction,
   withdrawBatchAction,
   purgeFailedRunsAction,
+  mirrorBatchAction,
 } from "@/lib/investigation/actions";
 import {
   DEFAULT_FILTER,
@@ -69,7 +71,8 @@ type Pending =
   | { kind: "accept"; ids: string[]; skipped: number }
   | { kind: "rerun"; ids: string[] }
   | { kind: "batchDelete" }
-  | { kind: "purgeFailed" };
+  | { kind: "purgeFailed" }
+  | { kind: "publish" };
 
 /** An optimistic overlay: what the screen shows before the API has confirmed it. */
 type Overlay = Map<string, { state: "withdrawn" | "restored"; asset: BatchAsset }>;
@@ -98,7 +101,8 @@ export function BatchView({
   const tm = useTranslations("investigation.manage");
   const locale = useLocale();
   const intl = intlLocale(locale);
-  const can = capabilitiesFor(useSessionUser().role);
+  const sessionUser = useSessionUser();
+  const can = capabilitiesFor(sessionUser.role);
 
   const [filter, setFilter] = useState<BatchFilter>(initialFilter);
   const [trash, setTrash] = useState(initialTrash && can.canApprove);
@@ -303,6 +307,18 @@ export function BatchView({
     router.refresh();
   }
 
+  async function publish() {
+    setBusy(true);
+    const result = await mirrorBatchAction(batch.id);
+    setBusy(false);
+    setPending(null);
+    if (!result.ok) {
+      failToast(result.code);
+      return;
+    }
+    push({ tone: "success", message: tm("published", { assets: result.data.assets }) });
+  }
+
   async function deleteBatch(why: string) {
     setBusy(true);
     const result = await withdrawBatchAction(batch.id, why.trim() || undefined);
@@ -425,6 +441,16 @@ export function BatchView({
                   {trashCount}
                 </span>
               </button>
+              {sessionUser.canPublishDemo && !batch.mirrored_from && (
+                <button
+                  type="button"
+                  onClick={() => setPending({ kind: "publish" })}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3.5 text-[0.8125rem] font-medium text-foreground transition-colors hover:border-evidence hover:text-evidence"
+                >
+                  <Share2 aria-hidden className="size-4" strokeWidth={2} />
+                  {tm("publish")}
+                </button>
+              )}
               {c.failed > 0 && (
                 <button
                   type="button"
@@ -734,6 +760,22 @@ export function BatchView({
         title={tm("rerunTitle", { count: pending?.kind === "rerun" ? pending.ids.length : 0 })}
         description={<p>{tm("rerunBody")}</p>}
         confirmLabel={tm("rerunConfirm")}
+        cancelLabel={tm("cancel")}
+      />
+
+      <ConfirmDialog
+        open={pending?.kind === "publish"}
+        onClose={() => setPending(null)}
+        onConfirm={() => void publish()}
+        busy={busy}
+        title={tm("publishTitle")}
+        description={
+          <>
+            <p>{tm("publishBody")}</p>
+            <p className="font-medium text-foreground">{tm("publishReplace")}</p>
+          </>
+        }
+        confirmLabel={tm("publishConfirm")}
         cancelLabel={tm("cancel")}
       />
 

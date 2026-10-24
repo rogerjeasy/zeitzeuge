@@ -21,7 +21,7 @@ export type ProfileResponse = {
   full_name: string;
   initials: string;
   role: string;
-  organization: { name: string; is_demo: boolean };
+  organization: { name: string; slug: string; is_demo: boolean };
 };
 
 export const authApi = {

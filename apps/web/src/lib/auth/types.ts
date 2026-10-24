@@ -56,4 +56,6 @@ export type SessionUser = {
   role: string;
   organizationName: string;
   isGuest: boolean;
+  /** The Staatsarchiv's approvers publish batches to the guest archive (the API decides). */
+  canPublishDemo: boolean;
 };

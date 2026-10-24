@@ -90,3 +90,10 @@ async def test_an_ordinary_archive_has_no_demo_cap(investigation, client, as_use
     batch = (await client.post("/api/v1/batches", json={"label": "real"})).json()["id"]
     ok = await client.post(f"/api/v1/batches/{batch}/assets", json=_files(11))
     assert ok.status_code in (200, 201), ok.text
+
+
+def test_the_demo_address_passes_profile_validation() -> None:
+    # `.invalid` once made every profile response of a demo account a 500.
+    from pydantic import EmailStr, TypeAdapter
+
+    TypeAdapter(EmailStr).validate_python(f"demo-0a1b2c3d4e@{DEMO_EMAIL_DOMAIN}")

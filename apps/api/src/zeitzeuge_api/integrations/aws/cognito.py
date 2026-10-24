@@ -267,7 +267,7 @@ class CognitoIdentityProvider:
         """An account that can sign in at once: the «Start demo» visitor. Returns the `sub`.
 
         AdminCreateUser with no invitation (`SUPPRESS`) and the address marked
-        verified (it is a reserved `.invalid` address nobody can receive mail at),
+        verified (a reserved example.org address nobody can receive mail at),
         then a permanent password, so the next step is an ordinary sign-in through
         the same flow as every other user.
         """

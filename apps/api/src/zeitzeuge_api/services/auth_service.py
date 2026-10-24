@@ -905,8 +905,10 @@ class AuthService:
         return schemas.GuestSessionResponse(tokens=tokens, organization_id=str(user.org_id))
 
 
-DEMO_EMAIL_DOMAIN = "demo.zeitzeuge.invalid"
-"""Reserved by RFC 6761: no visitor account can ever receive or send mail."""
+DEMO_EMAIL_DOMAIN = "demo.zeitzeuge.example.org"
+"""Reserved by RFC 2606, so no visitor account can ever receive mail. Not
+`.invalid`: email validation (and so every profile response) rejects the
+RFC 6761 special-use names."""
 
 
 def _demo_password() -> str:

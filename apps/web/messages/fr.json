@@ -1982,7 +1982,13 @@
       "removedJustNow": "retiré à l’instant",
       "showRemoved": "Afficher les lots retirés",
       "hideRemoved": "Masquer les lots retirés",
-      "withdrawnBy": "par {name}"
+      "withdrawnBy": "par {name}",
+      "publish": "Publier pour les invités",
+      "publishTitle": "Publier ce lot pour les invités ?",
+      "publishBody": "Une copie avec tous les résultats, preuves et vérifications rejoint l'archive de démo. «Voir en tant qu'invité» l'affiche, et chaque nouvelle archive «Lancer la démo» commence avec elle.",
+      "publishReplace": "Une publication antérieure de ce lot est remplacée. Votre archive reste inchangée.",
+      "publishConfirm": "Publier",
+      "published": "{assets} photos publiées pour les invités."
     },
     "review": {
       "navLabel": "Parcourir la liste",
