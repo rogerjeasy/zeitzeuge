@@ -470,6 +470,16 @@ async def test_spalten_maps_every_field(app, batch) -> None:
 async def test_qc_summary(app, batch) -> None:
     async with app.state.database.session(TenantContext.bootstrap()) as session:
         summary = await qc_summary(session, batch["batch_id"])
+    measured = summary.pop("measured")
+    assert measured["judged"] == 2
+    assert measured["fields"]["locality"] == {
+        "judged": 1,
+        "correct": 1,
+        "wrong": 0,
+        "missed": 0,
+        "precision": 1.0,
+    }
+    assert measured["fields"]["building"]["precision"] is None  # not measured is not 0 %
     assert summary == {
         "batch": "prio1",
         "total": 3,

@@ -291,6 +291,7 @@ def summarise(state: BatchState) -> dict[str, Any]:
         "overrideRate": override_rates(
             (a.record.id, r) for a in state.assets if a.record is not None for r in a.reviews
         ),
+        "measured": measured_accuracy(state),
     }
 
 
@@ -314,6 +315,70 @@ def override_rates(
     return {
         key: (round(len(overridden[key]) / len(reviewed[key]), 3) if reviewed[key] else None)
         for key in RANKED_FIELD_KEYS
+    }
+
+
+CONFIDENCE_BINS: tuple[tuple[float, float], ...] = (
+    (0.5, 0.6),
+    (0.6, 0.7),
+    (0.7, 0.8),
+    (0.8, 0.9),
+    (0.9, 1.01),
+)
+
+
+def measured_accuracy(state: BatchState) -> dict[str, Any]:
+    """How often the machine was right, judged by the team's QC review (note §6).
+
+    Each (photo, field) counts once, by its **first** review — the one that judged
+    the machine's value: accepted unchanged = correct; edited or rejected = wrong;
+    filled = the machine left open something a person could name (a miss, not an
+    error). The machine's confidence comes from the review (corrections store it)
+    or from the field (an acceptance keeps it). Not an independent gold set: the
+    reviewers are the team, and the table says so.
+    """
+    per_field: dict[str, dict[str, int]] = {
+        key: {"judged": 0, "correct": 0, "wrong": 0, "missed": 0} for key in RANKED_FIELD_KEYS
+    }
+    bins = [
+        {"low": lo, "high": min(hi, 1.0), "fields": 0, "correct": 0} for lo, hi in CONFIDENCE_BINS
+    ]
+    for asset in state.assets:
+        first: dict[str, FieldReview] = {}
+        for review in asset.reviews:
+            if review.field_key in per_field and review.action in REVIEW_ACTIONS:
+                first.setdefault(review.field_key, review)
+        for key, review in first.items():
+            counts = per_field[key]
+            if review.action is ReviewAction.FILLED:
+                counts["missed"] += 1
+                continue
+            correct = review.action is ReviewAction.ACCEPTED_UNCHANGED
+            counts["judged"] += 1
+            counts["correct" if correct else "wrong"] += 1
+            field_row = asset.fields.get(key)
+            confidence = review.overrode_confidence or (field_row.confidence if field_row else None)
+            if confidence is None:
+                continue
+            for row, (lo, hi) in zip(bins, CONFIDENCE_BINS, strict=True):
+                if lo <= float(confidence) < hi:
+                    row["fields"] += 1
+                    row["correct"] += int(correct)
+    return {
+        "fields": {
+            key: {
+                **counts,
+                "precision": round(counts["correct"] / counts["judged"], 3)
+                if counts["judged"]
+                else None,
+            }
+            for key, counts in per_field.items()
+        },
+        "bins": [
+            {**row, "accuracy": round(row["correct"] / row["fields"], 3) if row["fields"] else None}
+            for row in bins
+        ],
+        "judged": sum(c["judged"] for c in per_field.values()),
     }
 
 

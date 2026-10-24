@@ -72,6 +72,7 @@ from zeitzeuge_api.services.qc import (
     AssetState,
     BatchState,
     load_batch,
+    measured_accuracy,
 )
 
 STATUS_ACCEPT = "übernahmefähig"
@@ -659,15 +660,45 @@ def _write_methode(
         "oder die Analyse läuft noch). Eine Korrektur geht vor einer Bestätigung."
     )
 
-    lines.section("8. Kalibrierung")
+    lines.section("8. Kalibrierung und gemessene Trefferquote")
     lines.text(
         "nicht kalibriert: die Zahl ist eine Regel über die Belege, keine gemessene Trefferquote."
     )
     lines.text(
         "Die Aufgabenstellung weist selbst darauf hin, dass eine selbst eingeschätzte Konfidenz "
-        "keine gemessene Trefferquote ist. Eine Kalibrierung an geprüften Fotos ist vorgesehen; "
-        "bis dahin gilt Konfidenz = Rohwert der Regel."
+        "keine gemessene Trefferquote ist. Deshalb wird gemessen: Jedes Feld, das im Programm "
+        "geprüft wurde, zählt mit seiner ersten Prüfung. Unverändert übernommen = richtig, "
+        "korrigiert oder verworfen = falsch, nachgetragen = von der Maschine verpasst."
     )
+    measured = measured_accuracy(state)
+    if not measured["judged"]:
+        lines.text("Noch keine geprüften Felder in diesem Stapel: keine Messung.")
+    else:
+        lines.text(
+            f"Gemessen an {measured['judged']} geprüften Feldern dieses Stapels. Geprüft hat das "
+            "Projektteam; das ist keine unabhängige Referenzmenge."
+        )
+        lines.row(("Feld", "geprüft · richtig · falsch · verpasst", "Trefferquote"), bold=True)
+        for ranked_field in ranked:
+            row = measured["fields"].get(ranked_field.key)
+            if row is None:
+                continue
+            lines.row(
+                (
+                    ranked_field.label,
+                    f"{row['judged']} · {row['correct']} · {row['wrong']} · {row['missed']}",
+                    row["precision"],
+                )
+            )
+        lines.row(("Konfidenzbereich", "Felder · davon richtig", "Trefferquote"), bold=True)
+        for bin_row in measured["bins"]:
+            lines.row(
+                (
+                    f"{bin_row['low']:.2f} bis {bin_row['high']:.2f}",
+                    f"{bin_row['fields']} · {bin_row['correct']}",
+                    bin_row["accuracy"],
+                )
+            )
 
     lines.section("9. Die Spalten im Blatt «Ergebnisse»")
     lines.row(("Spalte", "Bedeutung", ""), bold=True)
@@ -679,7 +710,7 @@ def _write_methode(
     lines.pair("Schwelle übernahmefähig", accept)
     lines.pair("Schwelle Prüfbedarf", review)
     lines.pair("Höchste Stärke einer Modellaussage", f"{MODEL_STRENGTH_CAP:.2f}")
-    lines.pair("Kalibrierung", "keine (Konfidenz = Rohwert)")
+    lines.pair("Kalibrierung", "keine (Konfidenz = Rohwert); Trefferquote gemessen in Abschnitt 8")
     lines.pair("Export erstellt am", stamp)
 
     ws.column_dimensions["A"].width = 34
