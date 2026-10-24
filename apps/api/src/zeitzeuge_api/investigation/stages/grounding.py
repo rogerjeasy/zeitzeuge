@@ -212,6 +212,7 @@ async def run(ctx: RunContext) -> None:
                 strength=strength,
                 field="building",
                 value=hit.label,
+                attrs_extra={"existence_only": True},
             )
             candidates.append(
                 BuildingCandidate(hit.label, hit.lv95, hit.kind, hit, "perception", [item.local_id])

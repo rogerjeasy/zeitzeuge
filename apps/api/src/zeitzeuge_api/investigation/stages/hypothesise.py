@@ -26,6 +26,7 @@ from zeitzeuge_api.investigation.names import feature_key, is_placeholder, massi
 
 STAGE = "hypothesise"
 
+_IDENTIFYING = {SourceClass.REFERENCE_IMAGE, SourceClass.TEXT_IN_IMAGE, SourceClass.HUMAN}
 _OFFICIAL = (SourceClass.GEODATA_LAYER, SourceClass.TEXT_IN_IMAGE, SourceClass.REFERENCE_IMAGE)
 
 
@@ -62,7 +63,16 @@ async def run(ctx: RunContext) -> None:
 
         scored = []
         for items in groups.values():
-            supporting = [i for i in items if not i.attrs.get("refutes")]
+            identified = any(
+                i.source_class in _IDENTIFYING and not i.attrs.get("refutes") for i in items
+            )
+            # A register entry that only proves a name exists supports a building
+            # once something independent says *this photo* shows it.
+            supporting = [
+                i
+                for i in items
+                if not i.attrs.get("refutes") and (identified or not i.attrs.get("existence_only"))
+            ]
             refuting = [i for i in items if i.attrs.get("refutes")]
             raw = score([Support(i.source_class, i.strength) for i in supporting]).raw
             if supporting:

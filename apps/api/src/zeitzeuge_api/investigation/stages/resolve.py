@@ -67,6 +67,9 @@ def _complex(addresses: list[ToolHit], chosen: ToolHit) -> tuple[str, list[str]]
     return chosen.label, entrances
 
 
+_IDENTIFYING = {SourceClass.REFERENCE_IMAGE, SourceClass.TEXT_IN_IMAGE, SourceClass.HUMAN}
+
+
 def _best_building(ctx: RunContext) -> tuple[BuildingCandidate, Evidence] | None:
     best: tuple[BuildingCandidate, Evidence] | None = None
     for candidate in ctx.facts.get("building_candidates", []):
@@ -74,7 +77,11 @@ def _best_building(ctx: RunContext) -> tuple[BuildingCandidate, Evidence] | None
             continue
         for local_id in candidate.evidence_ids:
             item = ctx.ledger.by_id(local_id)
-            if item is None or item.attrs.get("refutes"):
+            # Only an independent identification places the point: a matching
+            # reference photo, or the name read off the image. That a building
+            # of the model's suggested name *exists* somewhere says nothing
+            # about whether this photograph shows it.
+            if item is None or item.attrs.get("refutes") or item.source_class not in _IDENTIFYING:
                 continue
             weight = (item.source_class is SourceClass.REFERENCE_IMAGE, item.strength)
             if best is None or weight > (

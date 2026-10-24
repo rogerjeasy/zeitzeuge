@@ -117,3 +117,30 @@ async def test_no_hypothesis_is_an_abstention() -> None:
     decision, _ = decide(ctx, "street", None, [], [], "")
     assert decision.decision is FieldDecisionKind.ABSTAIN
     assert decision.value is None
+
+
+async def test_a_name_that_merely_exists_does_not_identify_the_building() -> None:
+    ctx = _ctx()
+    _add(ctx, "building", "Spital Lachen", SourceClass.VISUAL, 0.4)
+    _add(ctx, "building", "Spital Lachen", SourceClass.GEODATA_LAYER, 0.85, existence_only=True)
+    await hypothesise.run(ctx)
+    [hyp] = ctx.ledger.hypotheses
+    assert len(hyp.supporting) == 1  # the register entry is context, not support
+    decision, _ = decide(ctx, "building", hyp.local_id, [], [], "")
+    assert decision.decision is FieldDecisionKind.ABSTAIN
+
+
+async def test_existence_counts_once_a_reference_photo_identifies_it() -> None:
+    ctx = _ctx()
+    _add(
+        ctx,
+        "building",
+        "Alterszentrum Acherhof",
+        SourceClass.GEODATA_LAYER,
+        0.85,
+        existence_only=True,
+    )
+    _add(ctx, "building", "Alterszentrum Acherhof", SourceClass.REFERENCE_IMAGE, 0.8)
+    await hypothesise.run(ctx)
+    [hyp] = ctx.ledger.hypotheses
+    assert len(hyp.supporting) == 2

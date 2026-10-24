@@ -104,13 +104,15 @@ class RunLedger:
         )
         return item
 
-    def add_from_hit(self, hit: ToolHit, **fields: Any) -> Evidence:
+    def add_from_hit(
+        self, hit: ToolHit, *, attrs_extra: dict[str, Any] | None = None, **fields: Any
+    ) -> Evidence:
         """An evidence item citing a tool hit: source, link and position come with it."""
         return self.add(
             source=hit.source,
             source_uri=hit.source_uri,
             lv95=hit.lv95,
-            attrs={"tool": hit.tool, "match": hit.match.value, **hit.attrs},
+            attrs={"tool": hit.tool, "match": hit.match.value, **hit.attrs, **(attrs_extra or {})},
             **fields,
         )
 
