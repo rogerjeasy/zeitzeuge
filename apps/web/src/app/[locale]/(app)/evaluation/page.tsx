@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { EvaluationScreen } from "@/components/evaluation/evaluation-screen";
+import { loadQcView } from "@/lib/investigation/qc";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -28,5 +29,5 @@ export default async function EvaluationPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <EvaluationScreen />;
+  return <EvaluationScreen qc={await loadQcView()} />;
 }

@@ -19,6 +19,9 @@ import { MetricsTable } from "./metrics-table";
 import { AblationTable } from "./ablation-table";
 import { formatValue } from "./format";
 import { cn } from "@/lib/cn";
+import { QcPanel } from "@/components/investigation/qc-panel";
+import { ExampleBanner } from "@/components/investigation/example-banner";
+import type { QcView } from "@/lib/investigation/qc";
 
 /**
  * The live accuracy dashboard (§9.2 #9).
@@ -29,7 +32,7 @@ import { cn } from "@/lib/cn";
  * the rows that then go red. That is the feature: a dashboard where nothing can
  * fail is a brochure.
  */
-export function EvaluationScreen() {
+export function EvaluationScreen({ qc }: { qc: QcView }) {
   const t = useTranslations("evaluation");
   const locale = useLocale();
   const intl = locale === "de" ? "de-CH" : locale;
@@ -63,6 +66,11 @@ export function EvaluationScreen() {
           })}
         </p>
       </header>
+
+      {/* ── the Prio-1 QC panel: real when the archive has a batch ───────── */}
+      <QcPanel qc={qc.qc} batchId={qc.batchId} example={qc.example} error={qc.error} />
+
+      <ExampleBanner message={t("exampleNote")} />
 
       {/* ── the hero: one number, and why it is allowed to be zero ───────── */}
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] xl:items-stretch">

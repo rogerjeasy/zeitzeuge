@@ -606,7 +606,8 @@
       "openMenu": "Ouvrir le menu",
       "closeMenu": "Fermer le menu",
       "soon": "en cours",
-      "editor": "Notice de catalogue"
+      "editor": "Notice de catalogue",
+      "batches": "Lots"
     },
     "header": {
       "searchPlaceholder": "Rechercher",
@@ -934,10 +935,10 @@
     "signaturePlaceholder": "p. ex. StASZ Ansichtskarten/0042",
     "collectionLabel": "Fonds",
     "modeLabel": "Mode",
-    "statusQueued": "prêt",
-    "statusUploading": "transfert",
-    "statusUploaded": "transféré",
-    "statusAnalysing": "analyse",
+    "statusQueued": "en attente",
+    "statusUploading": "téléversement",
+    "statusUploaded": "téléversé",
+    "statusAnalysing": "en examen",
     "statusDone": "terminé",
     "statusError": "erreur",
     "startCta": "{count, plural, one {Analyser # pièce} other {Analyser # pièces}}",
@@ -969,7 +970,31 @@
     "pairedManually": "apparié à la main",
     "demoTitle": "Exemples",
     "demoHint": "Ces numérisations servent à essayer l’écran. Retirez-les pour téléverser les vôtres.",
-    "demoLoad": "Charger des exemples"
+    "demoLoad": "Charger des exemples",
+    "real": {
+      "guest": "Accès invité : le téléversement est en lecture seule. Vous pouvez parcourir le flux avec des données d’exemple (simulé, rien n’est envoyé).",
+      "title": "Téléversement réel vers l’examen",
+      "hint": "Chaque fichier va directement dans le stockage des archives, puis il est examiné. Le nom de fichier devient le nom de fichier dans le classeur Excel. Téléverser à nouveau le même fichier dans le même lot ne crée pas de doublon. La cote et le fonds de cette liste ne sont pas encore transmis dans cette version.",
+      "labelField": "Désignation du lot",
+      "labelInvalid": "Minuscules, chiffres, - et _ uniquement (64 caractères max.).",
+      "labelHint": "Un lot existant portant cette désignation est complété.",
+      "prio1": "Priorité 1",
+      "versoNotSent": "{count, plural, one {# verso n’est} other {# versos ne sont}} pas transmis pour l’instant — l’examen travaille sur le recto.",
+      "addedTo": "Ajouté au lot « {label} ».",
+      "created": "Lot « {label} » créé.",
+      "progress": "{sent} sur {total} transmis · {failed} erreurs",
+      "live": {
+        "connecting": "connexion à la progression …",
+        "live": "progression en direct",
+        "polling": "progression toutes les 15 s",
+        "off": "pas encore connecté"
+      },
+      "toBatch": "Vers le lot",
+      "simulated": "Simulation",
+      "retryCta": "{count, plural, one {Réessayer # erreur} other {Réessayer # erreurs}}",
+      "startCta": "{count, plural, one {Téléverser et examiner # photo} other {Téléverser et examiner # photos}}",
+      "errorLine": "Non transféré (code : {code}). « Réessayer » n’envoie que les fichiers en échec."
+    }
   },
   "queue": {
     "metaTitle": "File de vérification — ZEITZEUGE",
@@ -1422,7 +1447,8 @@
       },
       "best": "meilleur",
       "delta": "vs baseline"
-    }
+    },
+    "exampleNote": "Les chiffres de précision ci-dessous proviennent d’un jeu de référence d’exemple et n’ont pas été mesurés sur vos photos."
   },
   "assist": {
     "metaTitle": "Aide du public — ZEITZEUGE",
@@ -2247,6 +2273,220 @@
       "submit": "Composer le message",
       "mailSubject": "Message depuis le formulaire de contact ZEITZEUGE",
       "mailtoNote": "Ceci ouvre votre propre messagerie avec tout le contenu prérempli. Le prototype n’a pas de serveur de courrier : rien n’est envoyé depuis cette page — vous appuyez sur envoyer dans votre client, et vous en gardez la copie."
+    }
+  },
+  "investigation": {
+    "fields": {
+      "locality": "Localité",
+      "municipality": "Commune",
+      "building": "Bâtiment",
+      "landscape_feature": "Lac / rivière / montagne",
+      "street": "Rue"
+    },
+    "status": {
+      "accept": "reprenable",
+      "review": "à vérifier",
+      "undetermined": "indéterminé",
+      "none": "pas encore de résultat"
+    },
+    "qc": {
+      "machine": "automatique",
+      "confirmed": "vérifié",
+      "corrected": "corrigé",
+      "open": "ouvert"
+    },
+    "qcPrefix": "CQ",
+    "decision": {
+      "emit": "reprenable",
+      "emit_with_review": "à vérifier",
+      "abstain": "vide"
+    },
+    "leftEmpty": "laissé vide",
+    "stages": {
+      "intake": "Réception",
+      "perception": "Perception",
+      "grounding": "Localisation",
+      "reference": "Références",
+      "resolve": "Résolution",
+      "hypothesise": "Hypothèses",
+      "check": "Contre-vérification",
+      "adjudicate": "Verdict",
+      "produce": "Sortie"
+    },
+    "runStatus": {
+      "none": "pas encore lancé",
+      "queued": "en attente d’examen",
+      "finished": "examen terminé"
+    },
+    "stageAt": "Étape {n}/{total} · {stage}",
+    "stageFailedAt": "Échec à l’étape « {stage} »",
+    "errors": {
+      "unauthenticated": "La session a expiré. Rechargez la page ou reconnectez-vous.",
+      "token_expired": "La session a expiré. Rechargez la page ou reconnectez-vous.",
+      "forbidden": "Ce compte est en lecture seule (accès invité). Connectez-vous avec un compte d’archives pour téléverser et vérifier.",
+      "network": "L’API d’examen est injoignable pour le moment.",
+      "not_found": "Introuvable — ou non visible dans ces archives.",
+      "version_conflict": "Quelqu’un a modifié cette notice entre-temps. La version actuelle a été rechargée ; veuillez reprendre votre décision.",
+      "generic": "L’API a refusé la requête (code : {code}).",
+      "back": "Vers les lots"
+    },
+    "example": {
+      "label": "Données d’exemple",
+      "default": "Cette zone montre un exemple, pas vos archives.",
+      "toReal": "Vers les vraies données",
+      "toBatches": "Vers les lots",
+      "editor": "Cette notice est un exemple élaboré. Ouvrez les vrais examens depuis « Lots ».",
+      "queue": "Cette liste montre des pièces d’exemple. Les vraies photos et leur progression se trouvent sous « Lots ».",
+      "dashboard": "L’aperçu ci-dessous montre des chiffres d’exemple. Le compteur CQ ci-dessus et tout ce qui se trouve sous « Lots » sont réels."
+    },
+    "batches": {
+      "metaTitle": "Lots — ZEITZEUGE",
+      "title": "Lots",
+      "subtitle": "Chaque lot est une livraison de photos avec leur examen. Voyez ce qui tourne, ce qui est terminé, et téléchargez le classeur Excel.",
+      "newBatch": "Téléverser des photos",
+      "emptyTitle": "Aucun lot dans ces archives pour l’instant.",
+      "emptyBody": "Téléversez des photos ; elles apparaissent ici comme un lot, avec la progression de chaque examen.",
+      "mirror": "Miroir des StASZ",
+      "photos": "{count, plural, one {# photo} other {# photos}}"
+    },
+    "batch": {
+      "metaTitle": "Lot — ZEITZEUGE",
+      "back": "Tous les lots",
+      "eyebrow": "Lot",
+      "unlabelled": "sans désignation",
+      "created": "créé {time}",
+      "batchStatus": {
+        "uploading": "téléversement",
+        "ready": "prêt",
+        "running": "en examen",
+        "done": "terminé",
+        "failed": "échoué"
+      },
+      "mirrored": "Miroir des StASZ, état au {time}",
+      "liveHint": {
+        "connecting": "Connexion au flux en direct …",
+        "live": "En direct : chaque étape d’un examen met cette page à jour.",
+        "polling": "Pas de flux en direct — la page se recharge toutes les 15 secondes.",
+        "off": "Non connecté."
+      },
+      "live": {
+        "connecting": "connexion",
+        "live": "en direct",
+        "polling": "toutes les 15 s",
+        "off": "arrêt"
+      },
+      "updated": "état {time}",
+      "refresh": "Recharger",
+      "counts": {
+        "total": "Photos",
+        "uploaded": "téléversées",
+        "queued": "en attente",
+        "running": "en cours",
+        "done": "terminées",
+        "failed": "erreurs",
+        "accepted": "reprenables",
+        "review": "à vérifier",
+        "undetermined": "indéterminées"
+      },
+      "emptyTitle": "Ce lot est encore vide.",
+      "emptyBody": "Les photos téléversées sous cette désignation apparaissent ici.",
+      "emptyCta": "Téléverser des photos",
+      "rowsLabel": "Photos du lot",
+      "colPhoto": "Photo",
+      "colFile": "Nom de fichier · progression",
+      "colFields": "Les cinq champs · confiance",
+      "colStatus": "Statut",
+      "review": "Vérifier",
+      "export": "Exporter vers Excel",
+      "exporting": "Création du classeur …",
+      "exportFailed": "Échec de l’export (code : {code})."
+    },
+    "case": {
+      "back": "Vers le lot",
+      "priority": "Priorité {n}",
+      "version": "Version {n}",
+      "noRecord": "pas encore de notice",
+      "rowConfidence": "Confiance globale {value}",
+      "guestReadOnly": "Accès invité : vous voyez tout, mais ne pouvez ni reprendre, ni corriger, ni rejeter.",
+      "photoAlt": "Photo {name}",
+      "noPreview": "L’API ne fournit pas d’aperçu pour cette photo.",
+      "exifDate": "Prise de vue (EXIF)",
+      "unknown": "inconnu",
+      "camera": "Appareil",
+      "run": "Exécution",
+      "progress": "Progression",
+      "models": "Modèles",
+      "cost": "Coût",
+      "finished": "terminé",
+      "rerun": "Examiner à nouveau",
+      "rerunHint": "Une nouvelle exécution ; le registre des preuves existant est conservé.",
+      "fieldsTitle": "Les cinq champs",
+      "fieldsHint": "Valeur, confiance avec la raison de la règle, verdict et preuves. Reprendre, corriger ou rejeter — chaque décision crée une nouvelle version.",
+      "stillRunning": "L’examen est en cours. Cette page vérifie à nouveau toutes les 15 secondes.",
+      "noFields": "Aucun résultat pour cette photo pour l’instant.",
+      "evidenceTitle": "{count, plural, one {# preuve} other {# preuves}}",
+      "evidenceHint": "Tout ce que l’exécution a trouvé — avec type de source, observation, source et force selon la règle.",
+      "noEvidence": "Pas encore de preuves.",
+      "eventsTitle": "Déroulement ({count} événements)",
+      "linksHint": "Les liens vers les sources s’ouvrent dans un nouvel onglet.",
+      "noRecordHint": "Une fois l’exécution terminée, les champs apparaissent ici pour vérification.",
+      "strength": "Force selon la règle",
+      "strengthValue": "force {value}",
+      "rank": "Rang {n}",
+      "reviewAction": {
+        "accepted_unchanged": "repris",
+        "edited": "corrigé",
+        "rejected": "rejeté",
+        "filled": "complété",
+        "constraint_disabled": "règle suspendue"
+      },
+      "leftEmpty": "laissé vide à dessein",
+      "abstainReasons": {
+        "insufficient_evidence": "Trop peu de sources indépendantes pour une valeur. Plutôt vide que deviné.",
+        "conflicting_evidence": "Les preuves se contredisent ; une contre-vérification a réfuté le candidat.",
+        "out_of_scope": "Non applicable à cette photo.",
+        "sensitivity_hold": "Retenu pour des raisons de protection.",
+        "unknown": "Sans raison indiquée."
+      },
+      "rationale": "Motivation du verdict",
+      "objection": "Objection (gravité {severity}, {resolution}) :",
+      "sources": "{count, plural, =0 {aucune preuve citée} one {# preuve} other {# preuves}}",
+      "classes": "{count, plural, one {# type de source} other {# types de source}}",
+      "accept": "Reprendre",
+      "fill": "Saisir une valeur",
+      "correct": "Corriger",
+      "reject": "Rejeter",
+      "correctLabel": "Valeur correcte pour « {field} »",
+      "rejectConfirm": "Rejeter cette valeur ? Le champ reste vide et votre décision est consignée.",
+      "reasonLabel": "Motif (facultatif)",
+      "cancel": "Annuler",
+      "rejectSubmit": "Rejeter",
+      "correctSubmit": "Enregistrer la correction",
+      "noCited": "Aucune preuve n’a été citée pour ce champ.",
+      "hypotheses": "Hypothèses examinées"
+    },
+    "qcPanel": {
+      "title": "Contrôle qualité · lot {batch}",
+      "hint": "Combien de photos un humain a regardées, et à quelle fréquence il a corrigé la machine — par champ.",
+      "open": "Vers le lot",
+      "example": "Pas encore de vrai lot dans ces archives ; les chiffres ci-dessous sont un exemple.",
+      "exampleError": "Les vrais chiffres CQ sont indisponibles pour le moment (code : {code}) ; les chiffres ci-dessous sont un exemple.",
+      "exampleCta": "Téléverser des photos",
+      "tiles": {
+        "total": "Photos",
+        "processed": "traitées",
+        "confirmed": "vérifiées",
+        "corrected": "corrigées",
+        "open": "ouvertes",
+        "machine": "automatiques"
+      },
+      "overrideTitle": "Taux de correction par champ",
+      "notMeasured": "—",
+      "overrideHint": "Corrigé ou rejeté ÷ vérifié. « — » signifie pas encore mesuré, pas 0 %.",
+      "counterLabel": "Compteur CQ",
+      "counterTitle": "CQ lot {batch} · {total} photos",
+      "exampleTag": "Exemple",
+      "counterCta": "Vers le CQ"
     }
   }
 }

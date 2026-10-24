@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowRight, Loader2, Play, Trash2, Info, Layers, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Play, Trash2, Info, Layers, Sparkles, CloudUpload, FlaskConical } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Select } from "@/components/ui/select";
 import { COLLECTIONS, RUN_MODES, CATALOGUING_DEFAULTS } from "@/lib/data/settings";
@@ -12,8 +12,26 @@ import { blockingIssues, issuesFor } from "@/lib/upload/validation";
 import { Dropzone } from "./dropzone";
 import { AssetRow } from "./asset-row";
 import { cn } from "@/lib/cn";
+import { Field } from "@/components/ui/field";
+import { Toggle } from "@/components/ui/toggle";
+import { ApiNotice } from "@/components/investigation/api-notice";
+import { useLiveBatch } from "@/hooks/use-live-batch";
+import { FINISHED_RUN_STATUSES } from "@/lib/api/investigation-types";
 
-export function UploadScreen() {
+const LABEL = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+
+export function UploadScreen({
+  readOnly,
+  apiProblem,
+  hasRealBatch,
+}: {
+  /** The demo guest may watch, never write. */
+  readOnly: boolean;
+  /** Why the API could not be asked, if it could not. */
+  apiProblem: string | null;
+  /** The archive already holds a real batch: no example seed then. */
+  hasRealBatch: boolean;
+}) {
   const t = useTranslations("upload");
   const tModes = useTranslations("settings.cataloguing.modes");
   const locale = useLocale();
@@ -24,10 +42,44 @@ export function UploadScreen() {
   const [seeded, setSeeded] = useState(false);
   const seedStarted = useRef(false);
 
+  // The real path: a batch label (default `prio1`) and the Prio-1 flag.
+  const [label, setLabel] = useState("prio1");
+  const [prio1, setPrio1] = useState(true);
+  const [realRun, setRealRun] = useState<{ batchId: string; label: string; reused: boolean } | null>(null);
+  const [realProblem, setRealProblem] = useState<string | null>(null);
+  const realOpen = !readOnly && apiProblem === null;
+  /** Real upload for the visitor's own files; the labelled example stays simulated. */
+  const real = realOpen && !seeded;
+  const labelValid = LABEL.test(label);
+
+  const live = useLiveBatch(realRun?.batchId ?? null);
+  // Reflect finished and failed runs back onto the rows that started them.
+  useEffect(() => {
+    if (!live.batch) return;
+    const remote = new Map(live.batch.assets.map((a) => [a.asset_id, a]));
+    for (const asset of q.assets) {
+      const r = asset.remoteId ? remote.get(asset.remoteId) : undefined;
+      if (!r) continue;
+      if (r.run_status && FINISHED_RUN_STATUSES.has(r.run_status) && asset.status !== "done") {
+        q.update(asset.id, { status: "done" });
+      } else if (r.run_status === "failed" && asset.status !== "error") {
+        q.update(asset.id, { status: "error", error: r.error ?? "run_failed" });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live.batch]);
+
+  async function startReal() {
+    setRealProblem(null);
+    const result = await q.startReal({ label, priority: prio1 ? 1 : null, mode });
+    if (result.ok) setRealRun(result);
+    else setRealProblem(result.code);
+  }
+
   // Fill the queue with examples on first open so the screen shows its design
   // straight away. Runs once, and never over anything the visitor added.
   useEffect(() => {
-    if (seedStarted.current) return;
+    if (seedStarted.current || hasRealBatch) return;
     seedStarted.current = true;
     loadDemoScans().then((files) => {
       if (files.length === 0) return;
@@ -39,6 +91,11 @@ export function UploadScreen() {
   const blocking = blockingIssues(q.issues);
   const hasAssets = q.assets.length > 0;
   const allDone = hasAssets && q.assets.every((a) => a.status === "done");
+  const sent = q.assets.filter((a) => a.status === "analysing" || a.status === "done").length;
+  const failedCount = q.assets.filter((a) => a.status === "error").length;
+  const versosHeld = q.assets.filter((a) => a.verso).length;
+  const pending = q.assets.filter((a) => a.status === "queued" || a.status === "error").length;
+  const finishedReal = Boolean(real && realRun && pending === 0);
 
   const bytes = (n: number) => {
     const units = ["B", "kB", "MB", "GB"];
@@ -69,6 +126,16 @@ export function UploadScreen() {
         compact={hasAssets}
       />
 
+      {apiProblem && (
+        <ApiNotice code={apiProblem} />
+      )}
+      {readOnly && apiProblem === null && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2/50 px-3.5 py-3">
+          <FlaskConical aria-hidden className="mt-px size-4 shrink-0 text-muted-2" strokeWidth={1.9} />
+          <p className="min-w-0 text-[0.75rem] leading-snug text-muted">{t("real.guest")}</p>
+        </div>
+      )}
+
       {seeded && hasAssets && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface-2/50 px-3.5 py-3">
           <Sparkles aria-hidden className="size-4 shrink-0 text-muted-2" strokeWidth={1.9} />
@@ -87,6 +154,67 @@ export function UploadScreen() {
             <Trash2 aria-hidden className="size-3.5" strokeWidth={1.9} />
             {t("clearAll")}
           </button>
+        </div>
+      )}
+
+      {real && hasAssets && (
+        <section
+          aria-labelledby="real-upload-heading"
+          className="flex flex-col gap-3 rounded-xl border border-evidence/30 bg-evidence-soft/40 px-3.5 py-3.5 sm:px-4"
+        >
+          <div className="flex items-start gap-2.5">
+            <CloudUpload aria-hidden className="mt-px size-4 shrink-0 text-evidence" strokeWidth={1.9} />
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2 id="real-upload-heading" className="text-[0.8125rem] font-medium text-foreground-strong">
+                {t("real.title")}
+              </h2>
+              <p className="max-w-[80ch] text-[0.75rem] leading-snug text-muted">{t("real.hint")}</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,16rem)_auto] sm:items-end">
+            <Field
+              label={t("real.labelField")}
+              value={label}
+              disabled={q.running}
+              onChange={(e) => setLabel(e.target.value.trim().toLowerCase())}
+              error={labelValid ? undefined : t("real.labelInvalid")}
+              hint={labelValid ? t("real.labelHint") : undefined}
+            />
+            <label className="flex h-11 items-center gap-2.5 text-[0.8125rem] text-foreground">
+              <Toggle checked={prio1} onChange={setPrio1} label={t("real.prio1")} disabled={q.running} />
+              {t("real.prio1")}
+            </label>
+          </div>
+          {versosHeld > 0 && (
+            <p className="text-[0.75rem] text-review">{t("real.versoNotSent", { count: versosHeld })}</p>
+          )}
+        </section>
+      )}
+
+      {realProblem && <ApiNotice code={realProblem} />}
+
+      {realRun && (
+        <div
+          aria-live="polite"
+          className="flex flex-wrap items-center gap-3 rounded-xl border border-corroborated/35 bg-corroborated-soft px-3.5 py-3"
+        >
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <p className="text-[0.8125rem] font-medium text-corroborated">
+              {t(realRun.reused ? "real.addedTo" : "real.created", { label: realRun.label })}
+            </p>
+            <p className="text-[0.75rem] text-foreground">
+              {t("real.progress", { sent, failed: failedCount, total: q.assets.length })}
+              {" · "}
+              {t(`real.live.${live.mode}`)}
+            </p>
+          </div>
+          <Link
+            href={`/batches/${realRun.batchId}`}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-foreground px-3.5 text-[0.75rem] font-medium text-background"
+          >
+            {t("real.toBatch")}
+            <ArrowRight aria-hidden className="size-3.5" strokeWidth={2} />
+          </Link>
         </div>
       )}
 
@@ -198,7 +326,7 @@ export function UploadScreen() {
             </p>
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              {!allDone && (
+              {!allDone && !finishedReal && (
                 <Select
                   label={t("modeLabel")}
                   hideLabel
@@ -213,19 +341,26 @@ export function UploadScreen() {
                 />
               )}
 
-              {allDone ? (
+              {!real && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[0.5625rem] uppercase tracking-[0.1em] text-muted">
+                  <FlaskConical aria-hidden className="size-3" strokeWidth={2} />
+                  {t("real.simulated")}
+                </span>
+              )}
+
+              {allDone || finishedReal ? (
                 <Link
-                  href="/queue"
+                  href={realRun ? `/batches/${realRun.batchId}` : "/queue"}
                   className="inline-flex h-10 items-center gap-2 rounded-lg bg-corroborated px-4 text-[0.8125rem] font-medium text-background"
                 >
-                  {t("doneCta")}
+                  {realRun ? t("real.toBatch") : t("doneCta")}
                   <ArrowRight aria-hidden className="size-3.5" strokeWidth={2} />
                 </Link>
               ) : (
                 <button
                   type="button"
-                  onClick={() => q.start(mode)}
-                  disabled={q.running || blocking.length > 0}
+                  onClick={() => (real ? void startReal() : void q.start(mode))}
+                  disabled={q.running || blocking.length > 0 || (real && !labelValid)}
                   aria-busy={q.running}
                   title={blocking.length > 0 ? t("startBlocked") : undefined}
                   className={cn(
@@ -241,8 +376,16 @@ export function UploadScreen() {
                     </>
                   ) : (
                     <>
-                      <Play aria-hidden className="size-3.5" strokeWidth={2.2} />
-                      {t("startCta", { count: q.stats.assets })}
+                      {real ? (
+                        <CloudUpload aria-hidden className="size-3.5" strokeWidth={2.2} />
+                      ) : (
+                        <Play aria-hidden className="size-3.5" strokeWidth={2.2} />
+                      )}
+                      {real
+                        ? failedCount > 0 && realRun
+                          ? t("real.retryCta", { count: failedCount })
+                          : t("real.startCta", { count: q.stats.assets })
+                        : t("startCta", { count: q.stats.assets })}
                     </>
                   )}
                 </button>

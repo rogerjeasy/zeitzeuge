@@ -36,7 +36,7 @@ export function SidebarNav({
 
       {items.map((item) => {
         const Icon = NAV_ICON[item.icon];
-        const active = pathname === item.href;
+        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const badge = item.badge === "queue" ? REVIEW_QUEUE.waiting : undefined;
 
         return (

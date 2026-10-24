@@ -39,17 +39,29 @@ type RequestOptions = {
   accessToken?: string;
   sessionId?: string;
   caller?: CallerHeaders;
+  /** Extra request headers, e.g. `If-Match` on a field review. */
+  headers?: Record<string, string>;
+  timeoutMs?: number;
 };
 
 export async function apiRequest<T>(
   path: string,
-  { method = "POST", body, accessToken, sessionId, caller }: RequestOptions = {},
+  {
+    method = "POST",
+    body,
+    accessToken,
+    sessionId,
+    caller,
+    headers: extra,
+    timeoutMs = TIMEOUT_MS,
+  }: RequestOptions = {},
 ): Promise<ApiResult<T>> {
   const headers = new Headers({ Accept: "application/json" });
   if (body !== undefined) headers.set("Content-Type", "application/json");
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
   if (sessionId) headers.set("X-ZZ-Session", sessionId);
   for (const [name, value] of Object.entries(caller ?? {})) headers.set(name, value);
+  for (const [name, value] of Object.entries(extra ?? {})) headers.set(name, value);
 
   let response: Response;
   try {
@@ -58,7 +70,7 @@ export async function apiRequest<T>(
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
     return { ok: false, problem: { status: 0, code: "network", errors: [] } };
@@ -79,4 +91,36 @@ function toProblem(status: number, payload: unknown): ApiProblem {
         .map(({ field, type }) => ({ field, type }))
     : [];
   return { status, code: typeof body.code === "string" ? body.code : "unknown", errors };
+}
+
+/**
+ * The raw upstream response, for the two route handlers that must pass bytes
+ * through untouched (the SSE stream and the xlsx workbook). Same address, same
+ * bearer, same caller headers as `apiRequest`; no timeout unless one is given,
+ * because a live stream is meant to stay open.
+ */
+export async function apiFetchRaw(
+  path: string,
+  {
+    accessToken,
+    sessionId,
+    caller,
+    accept,
+    signal,
+  }: {
+    accessToken: string;
+    sessionId?: string;
+    caller?: CallerHeaders;
+    accept: string;
+    signal?: AbortSignal;
+  },
+): Promise<Response | null> {
+  const headers = new Headers({ Accept: accept, Authorization: `Bearer ${accessToken}` });
+  if (sessionId) headers.set("X-ZZ-Session", sessionId);
+  for (const [name, value] of Object.entries(caller ?? {})) headers.set(name, value);
+  try {
+    return await fetch(`${API_URL}${path}`, { headers, cache: "no-store", signal });
+  } catch {
+    return null;
+  }
 }

@@ -7,6 +7,9 @@ import { StatRow } from "@/components/dashboard/stat-row";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { CostPanel } from "@/components/dashboard/cost-panel";
 import { RecentRuns } from "@/components/dashboard/recent-runs";
+import { QcCounter } from "@/components/investigation/qc-counter";
+import { ExampleBanner } from "@/components/investigation/example-banner";
+import { loadQcView } from "@/lib/investigation/qc";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -33,10 +36,16 @@ export default async function DashboardPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const [qc, t] = await Promise.all([
+    loadQcView(),
+    getTranslations({ locale, namespace: "investigation.example" }),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <PageHeader />
+      <QcCounter view={qc} />
+      <ExampleBanner message={t("dashboard")} href="/batches" cta={t("toBatches")} />
       <QueueCallout />
       <StatRow />
 

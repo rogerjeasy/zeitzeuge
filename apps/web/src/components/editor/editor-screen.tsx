@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { CaseFile } from "@/lib/data/editor";
 import type { FieldState } from "./field-row";
 import { EditorHeader } from "./editor-header";
@@ -10,6 +10,7 @@ import { RecordPane } from "./record-pane";
 import { ContextPanel } from "./context-panel";
 import { SteerPanel } from "./steer-panel";
 import { EditorFooter, type ExportFormat } from "./editor-footer";
+import { ExampleBanner } from "@/components/investigation/example-banner";
 
 function initialStates(record: CaseFile): Record<string, FieldState> {
   return Object.fromEntries(
@@ -31,6 +32,7 @@ function initialStates(record: CaseFile): Record<string, FieldState> {
  */
 export function EditorScreen({ record }: { record: CaseFile }) {
   const locale = useLocale();
+  const t = useTranslations("investigation.example");
 
   const [states, setStates] = useState(() => initialStates(record));
   const [hovered, setHovered] = useState<string[]>([]);
@@ -94,6 +96,7 @@ export function EditorScreen({ record }: { record: CaseFile }) {
 
   return (
     <div className="mx-auto flex w-full max-w-[104rem] flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6">
+      <ExampleBanner message={t("editor")} href="/batches" cta={t("toBatches")} />
       <EditorHeader
         record={record}
         decided={decided}

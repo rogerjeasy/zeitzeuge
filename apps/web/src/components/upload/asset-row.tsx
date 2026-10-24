@@ -134,7 +134,14 @@ export function AssetRow({
                 STATUS_TONE[asset.status],
               )}
             >
-              {asset.status === "uploading" && (
+              {asset.status === "error" && asset.error && (
+            <p className="flex items-start gap-1.5 text-[0.6875rem] leading-snug text-refuted">
+              <AlertTriangle aria-hidden className="mt-px size-3 shrink-0" strokeWidth={2} />
+              {t("real.errorLine", { code: asset.error })}
+            </p>
+          )}
+
+          {asset.status === "uploading" && (
                 <Loader2 aria-hidden className="mr-1 inline size-2.5 animate-spin" strokeWidth={2.5} />
               )}
               {t(`status${asset.status[0].toUpperCase()}${asset.status.slice(1)}`)}
@@ -170,6 +177,13 @@ export function AssetRow({
                 </li>
               ))}
             </ul>
+          )}
+
+          {asset.status === "error" && asset.error && (
+            <p className="flex items-start gap-1.5 text-[0.6875rem] leading-snug text-refuted">
+              <AlertTriangle aria-hidden className="mt-px size-3 shrink-0" strokeWidth={2} />
+              {t("real.errorLine", { code: asset.error })}
+            </p>
           )}
 
           {asset.status === "uploading" && (

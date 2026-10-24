@@ -606,7 +606,8 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
       "soon": "in progress",
-      "editor": "Catalogue record"
+      "editor": "Catalogue record",
+      "batches": "Batches"
     },
     "header": {
       "searchPlaceholder": "Search",
@@ -934,10 +935,10 @@
     "signaturePlaceholder": "e.g. StASZ Ansichtskarten/0042",
     "collectionLabel": "Collection",
     "modeLabel": "Mode",
-    "statusQueued": "ready",
+    "statusQueued": "waiting",
     "statusUploading": "uploading",
     "statusUploaded": "uploaded",
-    "statusAnalysing": "investigating",
+    "statusAnalysing": "being investigated",
     "statusDone": "done",
     "statusError": "error",
     "startCta": "{count, plural, one {Investigate # item} other {Investigate # items}}",
@@ -969,7 +970,31 @@
     "pairedManually": "paired by hand",
     "demoTitle": "Example scans",
     "demoHint": "These are here to try the screen out. Remove them to upload your own.",
-    "demoLoad": "Load example scans"
+    "demoLoad": "Load example scans",
+    "real": {
+      "guest": "Guest access: uploading is read-only. You can walk through the flow with example data (simulated, nothing is sent).",
+      "title": "Real upload into the investigation",
+      "hint": "Each file goes straight into the archive's storage and is then investigated. The file name becomes the file name in the Excel workbook. Uploading the same file to the same batch again creates no duplicate. The signature and collection in this list are not sent yet in this version.",
+      "labelField": "Batch label",
+      "labelInvalid": "Lower-case letters, digits, - and _ only (max. 64 characters).",
+      "labelHint": "An existing batch with this label is added to.",
+      "prio1": "Priority 1",
+      "versoNotSent": "{count, plural, one {# back is} other {# backs are}} not sent for now — the investigation works from the front.",
+      "addedTo": "Added to batch “{label}”.",
+      "created": "Batch “{label}” created.",
+      "progress": "{sent} of {total} handed over · {failed} failed",
+      "live": {
+        "connecting": "connecting to progress …",
+        "live": "progress live",
+        "polling": "progress every 15 s",
+        "off": "not connected yet"
+      },
+      "toBatch": "To the batch",
+      "simulated": "Simulation",
+      "retryCta": "{count, plural, one {Retry # failure} other {Retry # failures}}",
+      "startCta": "{count, plural, one {Upload and investigate # photo} other {Upload and investigate # photos}}",
+      "errorLine": "Not transferred (code: {code}). “Retry” sends only the failed ones."
+    }
   },
   "queue": {
     "metaTitle": "Review queue — ZEITZEUGE",
@@ -1422,7 +1447,8 @@
       },
       "best": "best",
       "delta": "vs. baseline"
-    }
+    },
+    "exampleNote": "The accuracy figures below come from an example gold set and were not measured on your photos."
   },
   "assist": {
     "metaTitle": "Public assist — ZEITZEUGE",
@@ -2247,6 +2273,220 @@
       "submit": "Compose the message",
       "mailSubject": "Message from the ZEITZEUGE contact form",
       "mailtoNote": "This opens your own mail app with everything filled in. The prototype has no mail server, so nothing is sent from this page — you press send in your own client, and you keep the copy."
+    }
+  },
+  "investigation": {
+    "fields": {
+      "locality": "Locality",
+      "municipality": "Municipality",
+      "building": "Building",
+      "landscape_feature": "Lake / river / mountain",
+      "street": "Street"
+    },
+    "status": {
+      "accept": "ready to adopt",
+      "review": "needs review",
+      "undetermined": "undetermined",
+      "none": "no result yet"
+    },
+    "qc": {
+      "machine": "machine",
+      "confirmed": "checked",
+      "corrected": "corrected",
+      "open": "open"
+    },
+    "qcPrefix": "QC",
+    "decision": {
+      "emit": "ready to adopt",
+      "emit_with_review": "needs review",
+      "abstain": "empty"
+    },
+    "leftEmpty": "left empty",
+    "stages": {
+      "intake": "Intake",
+      "perception": "Perception",
+      "grounding": "Grounding",
+      "reference": "References",
+      "resolve": "Resolve",
+      "hypothesise": "Hypotheses",
+      "check": "Cross-check",
+      "adjudicate": "Verdict",
+      "produce": "Output"
+    },
+    "runStatus": {
+      "none": "not started",
+      "queued": "waiting to be investigated",
+      "finished": "investigation finished"
+    },
+    "stageAt": "Stage {n}/{total} · {stage}",
+    "stageFailedAt": "Failed at “{stage}”",
+    "errors": {
+      "unauthenticated": "Your session has expired. Reload the page or sign in again.",
+      "token_expired": "Your session has expired. Reload the page or sign in again.",
+      "forbidden": "This account is read-only (guest access). Sign in with an archive account to upload and review.",
+      "network": "The investigation API cannot be reached right now.",
+      "not_found": "Not found — or not visible in this archive.",
+      "version_conflict": "Someone changed this record in the meantime. The current version has been reloaded; please make your decision again.",
+      "generic": "The API declined the request (code: {code}).",
+      "back": "To the batches"
+    },
+    "example": {
+      "label": "Example data",
+      "default": "This area shows an example, not your archive.",
+      "toReal": "To the real data",
+      "toBatches": "To the batches",
+      "editor": "This catalogue record is a worked example. Open real investigations from “Batches”.",
+      "queue": "This review list shows example items. The real photos and their progress are under “Batches”.",
+      "dashboard": "The overview below shows example figures. The QC counter above and everything under “Batches” are real."
+    },
+    "batches": {
+      "metaTitle": "Batches — ZEITZEUGE",
+      "title": "Batches",
+      "subtitle": "Each batch is a delivery of photos with their investigation. See what is running and what is done, and download the Excel workbook.",
+      "newBatch": "Upload photos",
+      "emptyTitle": "No batch in this archive yet.",
+      "emptyBody": "Upload photos; they appear here as a batch with the progress of each investigation.",
+      "mirror": "Mirror of StASZ",
+      "photos": "{count, plural, one {# photo} other {# photos}}"
+    },
+    "batch": {
+      "metaTitle": "Batch — ZEITZEUGE",
+      "back": "All batches",
+      "eyebrow": "Batch",
+      "unlabelled": "unlabelled",
+      "created": "created {time}",
+      "batchStatus": {
+        "uploading": "uploading",
+        "ready": "ready",
+        "running": "being investigated",
+        "done": "finished",
+        "failed": "failed"
+      },
+      "mirrored": "Mirror of StASZ, as of {time}",
+      "liveHint": {
+        "connecting": "Connecting to the live stream …",
+        "live": "Live: every stage of an investigation updates this page.",
+        "polling": "No live stream available — the page asks again every 15 seconds.",
+        "off": "Not connected."
+      },
+      "live": {
+        "connecting": "connecting",
+        "live": "live",
+        "polling": "every 15 s",
+        "off": "off"
+      },
+      "updated": "as of {time}",
+      "refresh": "Reload",
+      "counts": {
+        "total": "Photos",
+        "uploaded": "uploaded",
+        "queued": "waiting",
+        "running": "running",
+        "done": "done",
+        "failed": "failed",
+        "accepted": "ready to adopt",
+        "review": "needs review",
+        "undetermined": "undetermined"
+      },
+      "emptyTitle": "This batch is still empty.",
+      "emptyBody": "Photos you upload under this batch label appear here.",
+      "emptyCta": "Upload photos",
+      "rowsLabel": "Photos in the batch",
+      "colPhoto": "Photo",
+      "colFile": "File name · progress",
+      "colFields": "The five fields · confidence",
+      "colStatus": "Status",
+      "review": "Review",
+      "export": "Export to Excel",
+      "exporting": "Building the workbook …",
+      "exportFailed": "Export failed (code: {code})."
+    },
+    "case": {
+      "back": "To the batch",
+      "priority": "Priority {n}",
+      "version": "Version {n}",
+      "noRecord": "no catalogue record yet",
+      "rowConfidence": "Overall confidence {value}",
+      "guestReadOnly": "Guest access: you can see everything but cannot accept, correct or reject.",
+      "photoAlt": "Photo {name}",
+      "noPreview": "The API provides no preview for this photo.",
+      "exifDate": "Taken (EXIF)",
+      "unknown": "unknown",
+      "camera": "Camera",
+      "run": "Run",
+      "progress": "Progress",
+      "models": "Models",
+      "cost": "Cost",
+      "finished": "finished",
+      "rerun": "Investigate again",
+      "rerunHint": "A new run; the existing evidence ledger is kept.",
+      "fieldsTitle": "The five fields",
+      "fieldsHint": "Value, confidence with the rule's reason, verdict and evidence. Accept, correct or reject — every decision becomes a new version.",
+      "stillRunning": "The investigation is still running. This page checks again every 15 seconds.",
+      "noFields": "There is no result for this photo yet.",
+      "evidenceTitle": "{count, plural, one {# evidence item} other {# evidence items}}",
+      "evidenceHint": "Everything the run found — with source class, observation, source and rule-assigned strength.",
+      "noEvidence": "No evidence yet.",
+      "eventsTitle": "Run log ({count} events)",
+      "linksHint": "Source links open in a new tab.",
+      "noRecordHint": "Once the run has finished, the fields appear here for review.",
+      "strength": "Rule-assigned strength",
+      "strengthValue": "strength {value}",
+      "rank": "Rank {n}",
+      "reviewAction": {
+        "accepted_unchanged": "accepted",
+        "edited": "corrected",
+        "rejected": "rejected",
+        "filled": "filled in",
+        "constraint_disabled": "rule suspended"
+      },
+      "leftEmpty": "deliberately left empty",
+      "abstainReasons": {
+        "insufficient_evidence": "Too few independent sources for a value. Empty rather than guessed.",
+        "conflicting_evidence": "The evidence conflicts; a cross-check refuted the candidate.",
+        "out_of_scope": "Not applicable to this photo.",
+        "sensitivity_hold": "Held back for protection reasons.",
+        "unknown": "No reason given."
+      },
+      "rationale": "Reasoning behind the verdict",
+      "objection": "Objection (severity {severity}, {resolution}):",
+      "sources": "{count, plural, =0 {no evidence cited} one {# evidence item} other {# evidence items}}",
+      "classes": "{count, plural, one {# source class} other {# source classes}}",
+      "accept": "Accept",
+      "fill": "Enter a value",
+      "correct": "Correct",
+      "reject": "Reject",
+      "correctLabel": "Correct value for “{field}”",
+      "rejectConfirm": "Reject this value? The field will stay empty and your decision is recorded.",
+      "reasonLabel": "Reason (optional)",
+      "cancel": "Cancel",
+      "rejectSubmit": "Reject",
+      "correctSubmit": "Save correction",
+      "noCited": "No evidence was cited for this field.",
+      "hypotheses": "Hypotheses tested"
+    },
+    "qcPanel": {
+      "title": "Quality control · batch {batch}",
+      "hint": "How many photos a human has looked at, and how often the human overrode the machine — per field.",
+      "open": "To the batch",
+      "example": "No real batch in this archive yet; the figures below are an example.",
+      "exampleError": "The real QC figures cannot be fetched right now (code: {code}); the figures below are an example.",
+      "exampleCta": "Upload photos",
+      "tiles": {
+        "total": "Photos",
+        "processed": "processed",
+        "confirmed": "checked",
+        "corrected": "corrected",
+        "open": "open",
+        "machine": "machine"
+      },
+      "overrideTitle": "Override rate per field",
+      "notMeasured": "—",
+      "overrideHint": "Corrected or rejected ÷ reviewed. “—” means not measured yet, not 0 %.",
+      "counterLabel": "QC counter",
+      "counterTitle": "QC batch {batch} · {total} photos",
+      "exampleTag": "Example",
+      "counterCta": "To QC"
     }
   }
 }

@@ -5,6 +5,28 @@ import { pairByName, stripExtension } from "@/lib/upload/pairing";
 import { isZip, readZip, type ZipProblem } from "@/lib/upload/zip";
 import { isAcceptedImage, validate } from "@/lib/upload/validation";
 import type { QueuedAsset, QueuedFile } from "@/lib/upload/types";
+import {
+  UploadError,
+  chunk,
+  postToS3,
+  runPool,
+  serverContentType,
+} from "@/lib/upload/real-upload";
+import {
+  commitUploadAction,
+  createBatchAction,
+  listBatchesAction,
+  registerFilesAction,
+} from "@/lib/investigation/actions";
+import type { FileToRegister, RegisteredFile } from "@/lib/api/investigation-types";
+
+/** Files registered per request: ≤ 200 by contract, kept small so tickets don't expire unused. */
+const REGISTER_CHUNK = 40;
+const CONCURRENCY = 4;
+
+export type RealStart =
+  | { ok: true; batchId: string; label: string; reused: boolean }
+  | { ok: false; code: string };
 
 let counter = 0;
 const nextId = () => `a${++counter}_${Date.now().toString(36)}`;
@@ -195,8 +217,116 @@ export function useUploadQueue(defaultCollection: string) {
     setRunning(false);
   }, [assets, update]);
 
+  /**
+   * The real path (design note §2.4): find or open the batch, register the
+   * files in chunks, POST each one to S3 with its presigned fields (four at a
+   * time, with real progress), then commit it — which queues its
+   * investigation. Re-running after a failure is safe: the API answers a
+   * filename it already holds with no ticket, and those are skipped.
+   *
+   * Only the front of each photograph is sent; the API has no verso
+   * endpoint yet, and the screen says so.
+   */
+  const startReal = useCallback(
+    async (opts: { label: string; priority: number | null; mode: string }): Promise<RealStart> => {
+      setRunning(true);
+      try {
+        const existing = await listBatchesAction();
+        if (!existing.ok) return { ok: false, code: existing.code };
+        let batch = existing.data.find((b) => b.label === opts.label);
+        const reused = Boolean(batch);
+        if (!batch) {
+          const created = await createBatchAction(opts);
+          if (!created.ok) return { ok: false, code: created.code };
+          batch = created.data;
+        }
+        const batchId = batch.id;
+
+        const targets = assets.filter(
+          (a) => a.recto && a.status !== "done" && a.status !== "analysing",
+        );
+        const typed = targets.flatMap((a) => {
+          const type = serverContentType(a.recto!.file);
+          if (!type) {
+            update(a.id, { status: "error", error: "unsupported_type" });
+            return [];
+          }
+          update(a.id, { status: "queued", progress: 0, error: undefined });
+          return [{ asset: a, file: a.recto!.file, type }];
+        });
+
+        const register = (items: typeof typed) =>
+          registerFilesAction(
+            batchId,
+            items.map<FileToRegister>(({ file, type }) => ({
+              filename: file.name,
+              content_type: type,
+              content_length: file.size,
+              priority: opts.priority,
+            })),
+          );
+
+        for (const group of chunk(typed, REGISTER_CHUNK)) {
+          const registered = await register(group);
+          if (!registered.ok) {
+            group.forEach(({ asset }) => update(asset.id, { status: "error", error: registered.code }));
+            if (registered.code === "forbidden" || registered.code === "unauthenticated") {
+              return { ok: false, code: registered.code };
+            }
+            continue;
+          }
+          const byName = new Map<string, RegisteredFile>(
+            registered.data.files.map((f) => [f.filename, f]),
+          );
+
+          await runPool(group, CONCURRENCY, async ({ asset, file, type }) => {
+            const entry = byName.get(file.name);
+            if (!entry) {
+              update(asset.id, { status: "error", error: "not_registered" });
+              return;
+            }
+            update(asset.id, { remoteId: entry.asset_id });
+            if (!entry.upload) {
+              // Already in this batch and committed: nothing to send.
+              update(asset.id, { status: "analysing", progress: 100 });
+              return;
+            }
+            update(asset.id, { status: "uploading", progress: 0 });
+            const progress = (p: number) => update(asset.id, { progress: p });
+            try {
+              await postToS3(entry.upload, file, type, progress);
+            } catch (error) {
+              // An expired ticket is a 403 from S3: ask for a fresh one, once.
+              if (!(error instanceof UploadError) || error.status !== 403) throw failed(error);
+              const again = await register([{ asset, file, type }]);
+              const ticket = again.ok ? again.data.files[0]?.upload : null;
+              if (!ticket) throw failed(error);
+              await postToS3(ticket, file, type, progress).catch((e) => {
+                throw failed(e);
+              });
+            }
+            update(asset.id, { status: "uploaded", progress: 100 });
+            const committed = await commitUploadAction(entry.asset_id);
+            if (committed.ok) update(asset.id, { status: "analysing" });
+            else update(asset.id, { status: "error", error: committed.code });
+
+            function failed(e: unknown) {
+              const code = e instanceof UploadError ? e.code : "s3_error";
+              update(asset.id, { status: "error", error: code });
+              return e;
+            }
+          });
+        }
+        return { ok: true, batchId, label: opts.label, reused };
+      } finally {
+        setRunning(false);
+      }
+    },
+    [assets, update],
+  );
+
   return {
     assets, add, update, remove, clear, unpair, pairInto, applyCollectionToAll,
-    issues, stats, busy, running, rejected, zipProblems, start,
+    issues, stats, busy, running, rejected, zipProblems, start, startReal,
   };
 }

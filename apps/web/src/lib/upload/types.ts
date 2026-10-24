@@ -29,6 +29,10 @@ export interface QueuedAsset {
   status: AssetStatus;
   /** 0–100 while uploading. */
   progress: number;
+  /** The API's asset id once registered (real uploads only). */
+  remoteId?: string;
+  /** Why this one failed, as an API or S3 code. */
+  error?: string;
 }
 
 export const ACCEPTED_TYPES = [

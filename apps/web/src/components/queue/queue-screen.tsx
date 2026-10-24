@@ -12,11 +12,13 @@ import {
 import { CATALOGUING_DEFAULTS } from "@/lib/data/settings";
 import { QueueRow, type FieldVerdict } from "./queue-row";
 import { BulkAccept } from "./bulk-accept";
+import { ExampleBanner } from "@/components/investigation/example-banner";
 
 type Verdicts = Record<string, Record<string, FieldVerdict>>;
 
 export function QueueScreen() {
   const t = useTranslations("queue");
+  const tEx = useTranslations("investigation.example");
 
   const [remaining, setRemaining] = useState(QUEUE_ITEMS);
   const [verdicts, setVerdicts] = useState<Verdicts>({});
@@ -80,6 +82,8 @@ export function QueueScreen() {
           />
         </div>
       </header>
+
+      <ExampleBanner message={tEx("queue")} href="/batches" cta={tEx("toBatches")} />
 
       <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.8125rem]">
         <ListChecks aria-hidden className="size-4 shrink-0 text-muted-2" strokeWidth={1.9} />

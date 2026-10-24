@@ -606,7 +606,8 @@
       "openMenu": "Menü öffnen",
       "closeMenu": "Menü schliessen",
       "soon": "in Arbeit",
-      "editor": "Katalogeintrag"
+      "editor": "Katalogeintrag",
+      "batches": "Stapel"
     },
     "header": {
       "searchPlaceholder": "Suchen",
@@ -934,10 +935,10 @@
     "signaturePlaceholder": "z. B. StASZ Ansichtskarten/0042",
     "collectionLabel": "Bestand",
     "modeLabel": "Modus",
-    "statusQueued": "bereit",
-    "statusUploading": "wird übertragen",
-    "statusUploaded": "übertragen",
-    "statusAnalysing": "wird untersucht",
+    "statusQueued": "wartet",
+    "statusUploading": "lädt hoch",
+    "statusUploaded": "hochgeladen",
+    "statusAnalysing": "in Untersuchung",
     "statusDone": "fertig",
     "statusError": "Fehler",
     "startCta": "{count, plural, one {# Stück untersuchen} other {# Stück untersuchen}}",
@@ -969,7 +970,31 @@
     "pairedManually": "von Hand gepaart",
     "demoTitle": "Beispieldaten",
     "demoHint": "Diese Scans sind zum Ausprobieren da. Entfernen Sie sie, um eigene hochzuladen.",
-    "demoLoad": "Beispieldaten laden"
+    "demoLoad": "Beispieldaten laden",
+    "real": {
+      "guest": "Gastzugang: Hochladen ist schreibgeschützt. Sie können den Ablauf mit Beispieldaten durchspielen (simuliert, nichts wird gesendet).",
+      "title": "Echter Upload in die Untersuchung",
+      "hint": "Jede Datei geht direkt in den Speicher des Archivs und wird danach untersucht. Der Dateiname wird zum Dateinamen im Excel. Erneutes Hochladen derselben Datei in denselben Stapel legt nichts doppelt an. Signatur und Bestand dieser Liste werden in dieser Version noch nicht übertragen.",
+      "labelField": "Stapel-Bezeichnung",
+      "labelInvalid": "Nur Kleinbuchstaben, Ziffern, - und _ (max. 64 Zeichen).",
+      "labelHint": "Ein bestehender Stapel mit dieser Bezeichnung wird ergänzt.",
+      "prio1": "Priorität 1",
+      "versoNotSent": "{count, plural, one {# Rückseite wird} other {# Rückseiten werden}} vorerst nicht übertragen — die Untersuchung arbeitet mit der Vorderseite.",
+      "addedTo": "Dem Stapel «{label}» hinzugefügt.",
+      "created": "Stapel «{label}» angelegt.",
+      "progress": "{sent} von {total} übergeben · {failed} Fehler",
+      "live": {
+        "connecting": "verbinde mit dem Fortschritt …",
+        "live": "Fortschritt live",
+        "polling": "Fortschritt alle 15 s",
+        "off": "noch nicht verbunden"
+      },
+      "toBatch": "Zum Stapel",
+      "simulated": "Simulation",
+      "retryCta": "{count, plural, one {# Fehler erneut versuchen} other {# Fehler erneut versuchen}}",
+      "startCta": "{count, plural, one {# Foto hochladen und untersuchen} other {# Fotos hochladen und untersuchen}}",
+      "errorLine": "Nicht übertragen (Code: {code}). «Erneut versuchen» schickt nur die fehlgeschlagenen."
+    }
   },
   "queue": {
     "metaTitle": "Prüfliste — ZEITZEUGE",
@@ -1422,7 +1447,8 @@
       },
       "best": "bestes",
       "delta": "ggü. Baseline"
-    }
+    },
+    "exampleNote": "Die Genauigkeitszahlen unten stammen aus einem Beispiel-Goldset und sind nicht auf Ihren Fotos gemessen."
   },
   "assist": {
     "metaTitle": "Mithilfe — ZEITZEUGE",
@@ -2247,6 +2273,220 @@
       "submit": "Nachricht verfassen",
       "mailSubject": "Nachricht über das ZEITZEUGE-Kontaktformular",
       "mailtoNote": "Das öffnet Ihr eigenes Mailprogramm mit allem Ausgefüllten. Der Prototyp hat keinen Mailserver, es wird von dieser Seite also nichts versendet — Sie drücken in Ihrem eigenen Programm auf Senden und behalten die Kopie."
+    }
+  },
+  "investigation": {
+    "fields": {
+      "locality": "Ortschaft",
+      "municipality": "Gemeinde",
+      "building": "Gebäude",
+      "landscape_feature": "See / Fluss / Berg",
+      "street": "Strasse"
+    },
+    "status": {
+      "accept": "übernahmefähig",
+      "review": "Prüfbedarf",
+      "undetermined": "unbestimmt",
+      "none": "noch kein Ergebnis"
+    },
+    "qc": {
+      "machine": "maschinell",
+      "confirmed": "geprüft",
+      "corrected": "korrigiert",
+      "open": "offen"
+    },
+    "qcPrefix": "QC",
+    "decision": {
+      "emit": "übernahmefähig",
+      "emit_with_review": "Prüfbedarf",
+      "abstain": "leer"
+    },
+    "leftEmpty": "bewusst leer",
+    "stages": {
+      "intake": "Eingang",
+      "perception": "Wahrnehmung",
+      "grounding": "Verortung",
+      "reference": "Referenzen",
+      "resolve": "Auflösung",
+      "hypothesise": "Hypothesen",
+      "check": "Gegenprüfung",
+      "adjudicate": "Urteil",
+      "produce": "Ausgabe"
+    },
+    "runStatus": {
+      "none": "noch nicht gestartet",
+      "queued": "wartet auf Untersuchung",
+      "finished": "Untersuchung abgeschlossen"
+    },
+    "stageAt": "Stufe {n}/{total} · {stage}",
+    "stageFailedAt": "Fehler in Stufe «{stage}»",
+    "errors": {
+      "unauthenticated": "Die Sitzung ist abgelaufen. Bitte die Seite neu laden oder neu anmelden.",
+      "token_expired": "Die Sitzung ist abgelaufen. Bitte die Seite neu laden oder neu anmelden.",
+      "forbidden": "Dieses Konto darf hier nur lesen (Gastzugang). Zum Hochladen und Prüfen mit einem Archivkonto anmelden.",
+      "network": "Die Untersuchungs-API ist gerade nicht erreichbar..",
+      "not_found": "Nicht gefunden — oder in diesem Archiv nicht sichtbar.",
+      "version_conflict": "Jemand hat diesen Eintrag inzwischen geändert. Die aktuelle Fassung wurde neu geladen; bitte Ihre Entscheidung noch einmal treffen.",
+      "generic": "Die API hat die Anfrage abgelehnt (Code: {code}).",
+      "back": "Zu den Stapeln"
+    },
+    "example": {
+      "label": "Beispieldaten",
+      "default": "Dieser Bereich zeigt ein Beispiel, nicht Ihr Archiv.",
+      "toReal": "Zu den echten Daten",
+      "toBatches": "Zu den Stapeln",
+      "editor": "Dieser Katalogeintrag ist ein ausgearbeitetes Beispiel. Echte Untersuchungen öffnen Sie über «Stapel».",
+      "queue": "Diese Prüfliste zeigt Beispielstücke. Die echten Fotos und ihr Fortschritt stehen unter «Stapel».",
+      "dashboard": "Die Übersicht unten zeigt Beispielzahlen. Echt sind der QC-Zähler oben und alles unter «Stapel»."
+    },
+    "batches": {
+      "metaTitle": "Stapel — ZEITZEUGE",
+      "title": "Stapel",
+      "subtitle": "Jeder Stapel ist eine Lieferung Fotos mit ihrer Untersuchung. Hier sehen Sie, was läuft, was fertig ist, und laden das Excel herunter.",
+      "newBatch": "Fotos hochladen",
+      "emptyTitle": "Noch kein Stapel in diesem Archiv.",
+      "emptyBody": "Laden Sie Fotos hoch; sie erscheinen hier als Stapel mit dem Fortschritt jeder Untersuchung.",
+      "mirror": "Spiegel aus StASZ",
+      "photos": "{count, plural, one {# Foto} other {# Fotos}}"
+    },
+    "batch": {
+      "metaTitle": "Stapel — ZEITZEUGE",
+      "back": "Alle Stapel",
+      "eyebrow": "Stapel",
+      "unlabelled": "ohne Bezeichnung",
+      "created": "angelegt {time}",
+      "batchStatus": {
+        "uploading": "wird hochgeladen",
+        "ready": "bereit",
+        "running": "in Untersuchung",
+        "done": "abgeschlossen",
+        "failed": "fehlgeschlagen"
+      },
+      "mirrored": "Spiegel aus StASZ, Stand {time}",
+      "liveHint": {
+        "connecting": "Verbindung zum Live-Strom wird aufgebaut …",
+        "live": "Live: jede Stufe einer Untersuchung aktualisiert diese Seite.",
+        "polling": "Kein Live-Strom verfügbar — die Seite fragt alle 15 Sekunden neu ab.",
+        "off": "Nicht verbunden."
+      },
+      "live": {
+        "connecting": "verbinde",
+        "live": "live",
+        "polling": "alle 15 s",
+        "off": "aus"
+      },
+      "updated": "Stand {time}",
+      "refresh": "Neu laden",
+      "counts": {
+        "total": "Fotos",
+        "uploaded": "hochgeladen",
+        "queued": "wartend",
+        "running": "laufend",
+        "done": "fertig",
+        "failed": "Fehler",
+        "accepted": "übernahmefähig",
+        "review": "Prüfbedarf",
+        "undetermined": "unbestimmt"
+      },
+      "emptyTitle": "Dieser Stapel ist noch leer.",
+      "emptyBody": "Fotos, die Sie mit dieser Stapel-Bezeichnung hochladen, erscheinen hier.",
+      "emptyCta": "Fotos hochladen",
+      "rowsLabel": "Fotos im Stapel",
+      "colPhoto": "Foto",
+      "colFile": "Dateiname · Fortschritt",
+      "colFields": "Die fünf Felder · Konfidenz",
+      "colStatus": "Status",
+      "review": "Prüfen",
+      "export": "Excel exportieren",
+      "exporting": "Excel wird erstellt …",
+      "exportFailed": "Export fehlgeschlagen (Code: {code})."
+    },
+    "case": {
+      "back": "Zum Stapel",
+      "priority": "Priorität {n}",
+      "version": "Fassung {n}",
+      "noRecord": "noch kein Katalogeintrag",
+      "rowConfidence": "Gesamtkonfidenz {value}",
+      "guestReadOnly": "Gastzugang: Sie sehen alles, können aber nichts übernehmen, korrigieren oder verwerfen.",
+      "photoAlt": "Foto {name}",
+      "noPreview": "Für dieses Foto liefert die API keine Ansicht.",
+      "exifDate": "Aufnahme (EXIF)",
+      "unknown": "unbekannt",
+      "camera": "Kamera",
+      "run": "Lauf",
+      "progress": "Fortschritt",
+      "models": "Modelle",
+      "cost": "Kosten",
+      "finished": "abgeschlossen",
+      "rerun": "Erneut untersuchen",
+      "rerunHint": "Ein neuer Lauf; der bisherige Beleg-Nachweis bleibt erhalten.",
+      "fieldsTitle": "Die fünf Felder",
+      "fieldsHint": "Wert, Konfidenz mit dem Grund der Regel, Urteil und Belege. Übernehmen, korrigieren oder verwerfen — jede Entscheidung wird eine neue Fassung.",
+      "stillRunning": "Die Untersuchung läuft noch. Diese Seite fragt alle 15 Sekunden neu ab.",
+      "noFields": "Für dieses Foto liegt noch kein Ergebnis vor.",
+      "evidenceTitle": "{count, plural, one {# Beleg} other {# Belege}}",
+      "evidenceHint": "Alles, was der Lauf gefunden hat — mit Quellenart, Beobachtung, Quelle und Stärke nach Regel.",
+      "noEvidence": "Noch keine Belege.",
+      "eventsTitle": "Ablauf ({count} Ereignisse)",
+      "linksHint": "Quellenlinks öffnen in einem neuen Tab.",
+      "noRecordHint": "Sobald der Lauf fertig ist, erscheinen hier die Felder zur Prüfung.",
+      "strength": "Stärke nach Regel",
+      "strengthValue": "Stärke {value}",
+      "rank": "Rang {n}",
+      "reviewAction": {
+        "accepted_unchanged": "übernommen",
+        "edited": "korrigiert",
+        "rejected": "verworfen",
+        "filled": "ergänzt",
+        "constraint_disabled": "Regel ausgesetzt"
+      },
+      "leftEmpty": "bewusst leer gelassen",
+      "abstainReasons": {
+        "insufficient_evidence": "Zu wenig unabhängige Belege für einen Wert. Lieber leer als geraten.",
+        "conflicting_evidence": "Die Belege widersprechen sich; eine Gegenprüfung hat den Kandidaten widerlegt.",
+        "out_of_scope": "Für dieses Foto nicht anwendbar.",
+        "sensitivity_hold": "Zurückgehalten aus Schutzgründen.",
+        "unknown": "Ohne angegebenen Grund."
+      },
+      "rationale": "Begründung des Urteils",
+      "objection": "Einwand (Schwere {severity}, {resolution}):",
+      "sources": "{count, plural, =0 {keine Belege zitiert} one {# Beleg} other {# Belege}}",
+      "classes": "{count, plural, one {# Quellenart} other {# Quellenarten}}",
+      "accept": "Übernehmen",
+      "fill": "Wert eintragen",
+      "correct": "Korrigieren",
+      "reject": "Verwerfen",
+      "correctLabel": "Richtiger Wert für «{field}»",
+      "rejectConfirm": "Den Wert verwerfen? Das Feld bleibt dann leer, Ihre Entscheidung wird festgehalten.",
+      "reasonLabel": "Begründung (optional)",
+      "cancel": "Abbrechen",
+      "rejectSubmit": "Verwerfen",
+      "correctSubmit": "Korrektur speichern",
+      "noCited": "Für dieses Feld wurden keine Belege zitiert.",
+      "hypotheses": "Geprüfte Hypothesen"
+    },
+    "qcPanel": {
+      "title": "Qualitätskontrolle · Stapel {batch}",
+      "hint": "Wie viele Fotos ein Mensch angesehen hat, und wie oft er die Maschine überstimmt hat — je Feld.",
+      "open": "Zum Stapel",
+      "example": "Noch kein echter Stapel in diesem Archiv; die Zahlen unten sind ein Beispiel.",
+      "exampleError": "Die echten QC-Zahlen sind gerade nicht abrufbar (Code: {code}); die Zahlen unten sind ein Beispiel.",
+      "exampleCta": "Fotos hochladen",
+      "tiles": {
+        "total": "Fotos",
+        "processed": "verarbeitet",
+        "confirmed": "geprüft",
+        "corrected": "korrigiert",
+        "open": "offen",
+        "machine": "maschinell"
+      },
+      "overrideTitle": "Übersteuerungsrate je Feld",
+      "notMeasured": "—",
+      "overrideHint": "Korrigiert oder verworfen ÷ geprüft. «—» heisst: noch nicht gemessen, nicht 0 %.",
+      "counterLabel": "QC-Zähler",
+      "counterTitle": "QC Stapel {batch} · {total} Fotos",
+      "exampleTag": "Beispiel",
+      "counterCta": "Zur QC"
     }
   }
 }

@@ -1,6 +1,7 @@
 import {
   LayoutGrid,
   UploadCloud,
+  Layers,
   ListChecks,
   History,
   Library,
@@ -14,6 +15,7 @@ import type { NavIcon } from "@/lib/data/nav";
 export const NAV_ICON: Record<NavIcon, typeof LayoutGrid> = {
   overview: LayoutGrid,
   upload: UploadCloud,
+  batches: Layers,
   queue: ListChecks,
   history: History,
   collections: Library,
