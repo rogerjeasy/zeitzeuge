@@ -198,3 +198,15 @@ class ReferenceVerdicts(BaseModel):
     """Do the reference photos show the same building as the archive photo?"""
 
     verdicts: list[ReferenceVerdict]
+
+
+class SightedName(BaseModel):
+    field: Literal["locality", "municipality", "building", "landscape_feature", "street"]
+    value: str = Field(description="A proper name exactly as a page title or label spells it.")
+
+
+class SightingNames(BaseModel):
+    """Proper names found in reverse-image page titles, labels and OCR text. No confidence:
+    the pipeline checks which pages contain each name and assigns the strength itself."""
+
+    names: list[SightedName] = Field(default_factory=list)

@@ -48,6 +48,8 @@ class Task(StrEnum):
     COMPARE = "compare"
     CHALLENGE = "challenge"
     ADJUDICATE = "adjudicate"
+    EXTRACT = "extract"
+    """Names out of reverse-image page titles: mechanical, no strength (Sighting)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,12 +86,14 @@ DEFAULT_BINDINGS: dict[Task, Binding] = {
     Task.COMPARE: OPUS,
     Task.CHALLENGE: OPENAI,
     Task.ADJUDICATE: OPUS,
+    Task.EXTRACT: SONNET,
 }
 FALLBACKS: dict[Task, Binding] = {
     Task.PERCEIVE: SONNET,
     Task.COMPARE: SONNET,
     Task.CHALLENGE: HAIKU,
     Task.ADJUDICATE: SONNET,
+    Task.EXTRACT: HAIKU,
 }
 """Used when the first choice is refused (no model access, a policy, a region).
 For the challenge the fallback is the same vendor — labelled as same-family

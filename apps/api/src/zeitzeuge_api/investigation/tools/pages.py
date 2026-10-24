@@ -6,9 +6,10 @@ address, the wrong building; identification-upgrade note §1.1). So a cited URL
 is never trusted: this module fetches it and reports whether the page contains
 the claimed value — and, for a building, also the place — after folding.
 
-The fetch is the part a hostile page could abuse, so it is narrow: `https`
-only, every hop's host must resolve to public addresses only (no private,
-loopback, link-local or metadata addresses), at most five redirects, 2 MB, 10 s.
+The fetch is the part a hostile page could abuse, so it goes through
+`tools/fetch.guarded_get`: `https` only, public addresses only, pinned to the
+checked address, at most five redirects, 2 MB, 10 s. Parsing runs off the event
+loop with a 15 s deadline and capped PDF decompression.
 The text is data for a substring check; it is never shown to a model as
 instructions. PDFs (the canton's KSI inventory sheets are PDFs) are reduced to
 their text with pypdf.
@@ -18,16 +19,12 @@ from __future__ import annotations
 
 import asyncio
 import io
-import ipaddress
-import socket
 from dataclasses import dataclass
-from urllib.parse import urljoin, urlsplit
-
-import httpx
 
 from zeitzeuge_api.core.logging import get_logger
 from zeitzeuge_api.investigation.names import distinctive
 from zeitzeuge_api.investigation.tools.base import HttpTool, ToolCache
+from zeitzeuge_api.investigation.tools.fetch import guarded_get
 from zeitzeuge_api.investigation.tools.text import contains_all_tokens, fold, strip_html
 
 log = get_logger(__name__)
@@ -36,6 +33,7 @@ MAX_BYTES = 2 * 1024 * 1024
 TIMEOUT_SECONDS = 10.0
 MAX_REDIRECTS = 5
 _TEXT_TYPES = ("text/html", "text/plain", "application/xhtml+xml", "application/pdf")
+MAX_REDIRECTS = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,13 +62,16 @@ def mentions(page_text: str, value: str, *, place: str | None = None) -> bool:
     return f" {core} " in f" {page_text} "
 
 
-async def _public_host(host: str) -> bool:
-    try:
-        infos = await asyncio.to_thread(socket.getaddrinfo, host, 443, proto=socket.IPPROTO_TCP)
-    except OSError:
-        return False
-    addresses = {info[4][0] for info in infos}
-    return bool(addresses) and all(ipaddress.ip_address(a).is_global for a in addresses)
+PARSE_SECONDS = 15.0
+
+
+def limit_pdf_decompression() -> None:
+    """pypdf's default stream limits are generous; a 2 MB PDF must not inflate to gigabytes."""
+    from pypdf import filters
+
+    for name in ("ZLIB_MAX_OUTPUT_LENGTH", "LZW_MAX_OUTPUT_LENGTH", "RUN_LENGTH_MAX_OUTPUT_LENGTH"):
+        if hasattr(filters, name):
+            setattr(filters, name, 50_000_000)
 
 
 class PageVerifier(HttpTool):
@@ -90,39 +91,25 @@ class PageVerifier(HttpTool):
         return page
 
     async def _fetch(self, url: str) -> Page | None:
-        current = url
-        for _ in range(MAX_REDIRECTS + 1):
-            parts = urlsplit(current)
-            if parts.scheme != "https" or not parts.hostname:
-                return None
-            if not await _public_host(parts.hostname):
-                log.info("page.refused_host", host=parts.hostname)
-                return None
-            try:
-                async with self._client.stream(
-                    "GET",
-                    current,
-                    headers={"User-Agent": self.USER_AGENT, "Accept-Language": "de,en;q=0.8"},
-                    timeout=TIMEOUT_SECONDS,
-                    follow_redirects=False,
-                ) as response:
-                    if response.is_redirect and "location" in response.headers:
-                        current = urljoin(current, response.headers["location"])
-                        continue
-                    if not response.is_success:
-                        return None
-                    kind = response.headers.get("content-type", "").split(";")[0].strip()
-                    if kind and kind not in _TEXT_TYPES:
-                        return None
-                    body = bytearray()
-                    async for chunk in response.aiter_bytes():
-                        body.extend(chunk)
-                        if len(body) > MAX_BYTES:
-                            break
-                    return _page(current, kind, bytes(body[:MAX_BYTES]))
-            except (httpx.HTTPError, ValueError):
-                return None
-        return None
+        fetched = await guarded_get(
+            self._client,
+            url,
+            max_bytes=MAX_BYTES,
+            types=_TEXT_TYPES,
+            read_seconds=TIMEOUT_SECONDS,
+            user_agent=self.USER_AGENT,
+        )
+        if fetched is None:
+            return None
+        # Parsing (a PDF above all) is CPU work: off the event loop, with a deadline.
+        try:
+            return await asyncio.wait_for(
+                asyncio.to_thread(_page, fetched.url, fetched.content_type, fetched.body),
+                timeout=PARSE_SECONDS,
+            )
+        except TimeoutError:
+            log.info("page.parse_timeout", url=fetched.url[:200])
+            return None
 
     async def verify(self, url: str, value: str, *, place: str | None = None) -> Page | None:
         """The page, if it names `value` (and `place`, when given); else `None`."""
@@ -139,6 +126,7 @@ def _page(url: str, kind: str, body: bytes) -> Page | None:
         try:
             from pypdf import PdfReader
 
+            limit_pdf_decompression()
             reader = PdfReader(io.BytesIO(body))
             text = " ".join((p.extract_text() or "") for p in reader.pages[:10])
         except Exception:

@@ -10,6 +10,7 @@ import httpx
 
 from zeitzeuge_api.investigation.tools.base import HttpTool, ToolCache
 from zeitzeuge_api.investigation.tools.commons import Commons
+from zeitzeuge_api.investigation.tools.fetch import guarded_get
 from zeitzeuge_api.investigation.tools.keys import ExternalKeys
 from zeitzeuge_api.investigation.tools.osm import Overpass
 from zeitzeuge_api.investigation.tools.pages import PageVerifier
@@ -74,11 +75,17 @@ class Toolbox:
         self._replay = replay
 
     async def fetch_image(self, url: str) -> bytes | None:
-        """A reference photo's thumbnail; None when it cannot be had."""
-        if not url.startswith(("https://", "http://")):
-            return None
+        """A reference photo; None when it cannot be had.
+
+        Pictures the pipeline holds itself (KSI sheet photos) are served from the
+        memo. Everything else is a URL someone else chose — a search engine, a
+        research model — and goes through `guarded_get` (public https only,
+        address pinned, size-capped).
+        """
         if url in self._images:
             return self._images[url]
+        if not url.startswith("https://"):
+            return None
         path = (
             self._image_dir / f"{ToolCache.key('IMG', url, None, None)}.bin"
             if self._image_dir
@@ -89,16 +96,15 @@ class Toolbox:
         elif self._replay:
             data = None
         else:
-            data = None
-            try:
-                response = await self.client.get(
-                    url, headers={"User-Agent": HttpTool.USER_AGENT}, timeout=20
-                )
-                kind = response.headers.get("content-type", "").split(";")[0]
-                if response.is_success and kind in _IMAGE_TYPES:
-                    data = response.content[:MAX_REFERENCE_BYTES]
-            except httpx.HTTPError:
-                data = None
+            fetched = await guarded_get(
+                self.client,
+                url,
+                max_bytes=MAX_REFERENCE_BYTES,
+                types=_IMAGE_TYPES,
+                read_seconds=20,
+                user_agent=HttpTool.USER_AGENT,
+            )
+            data = fetched.body if fetched else None
             if data and path is not None:
                 path.write_bytes(data)
         self._images[url] = data

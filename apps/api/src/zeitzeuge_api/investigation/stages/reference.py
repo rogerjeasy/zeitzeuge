@@ -42,7 +42,9 @@ ADDRESS = re.compile(r"\b[A-ZÄÖÜ][\wäöüéè-]*(?:strasse|gasse|weg|platz|r
 """A street and house number in a catalogue title: «Grundstrasse 32 (Acherhof)»."""
 MAX_CANDIDATES = 6
 REFS_PER_CANDIDATE = 4
-CONFIRM_AT = 0.6
+CONFIRM_AT = 0.7
+"""A «same building» verdict below this is not a confirmation: on SG.CIV.17.3 a 0.65
+«same» for a decades-old hospital photo confirmed the wrong building."""
 COUNTER_STRENGTH = 0.4
 
 SYSTEM = """\

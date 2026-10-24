@@ -144,3 +144,14 @@ async def test_existence_counts_once_a_reference_photo_identifies_it() -> None:
     await hypothesise.run(ctx)
     [hyp] = ctx.ledger.hypotheses
     assert len(hyp.supporting) == 2
+
+
+async def test_a_building_named_with_and_without_its_generic_word_is_one_hypothesis() -> None:
+    ctx = _ctx()
+    _add(ctx, "building", "Hotel du Lac Seehof", SourceClass.TEXT_IN_IMAGE, 0.8)
+    _add(ctx, "building", "Hotel du Lac Seehof", SourceClass.REFERENCE_IMAGE, 0.8)
+    _add(ctx, "building", "du Lac Seehof", SourceClass.GEODATA_LAYER, 0.85)
+    await hypothesise.run(ctx)
+    (building,) = [h for h in ctx.ledger.hypotheses if h.field == "building"]
+    assert building.value == "Hotel du Lac Seehof"
+    assert len(building.supporting) == 3

@@ -128,6 +128,9 @@ def parse_ksi_sheet(number: str, text: str, photos: list[bytes]) -> KsiSheet:
 def _photos(pdf: bytes) -> tuple[str, list[bytes]]:
     from pypdf import PdfReader
 
+    from zeitzeuge_api.investigation.tools.pages import limit_pdf_decompression
+
+    limit_pdf_decompression()
     reader = PdfReader(io.BytesIO(pdf))
     page = reader.pages[0]
     text = page.extract_text() or ""

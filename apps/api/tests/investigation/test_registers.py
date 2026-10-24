@@ -47,9 +47,7 @@ def test_the_newer_sheet_layout_carries_the_address() -> None:
 
 
 def test_a_name_that_is_an_address_yields_the_street() -> None:
-    sheet = parse_ksi_sheet(
-        "01.050", "Schwyz - Haus Hauptplatz 3 (Hotel Wysses Rössli) 01.050", []
-    )
+    sheet = parse_ksi_sheet("01.050", "Schwyz - Haus Hauptplatz 3 (Hotel Wysses Rössli) 01.050", [])
     assert street_and_number(sheet) == ("Hauptplatz", "3")
     assert alias(sheet.name) == "Hotel Wysses Rössli"
 

@@ -22,7 +22,7 @@ from zeitzeuge_api.db.models.enums import AgentId, SourceClass
 from zeitzeuge_api.investigation.confidence import Support, score
 from zeitzeuge_api.investigation.context import RunContext
 from zeitzeuge_api.investigation.contracts import RANKED_FIELDS, Evidence, HypothesisOut
-from zeitzeuge_api.investigation.names import feature_key, is_placeholder, massif
+from zeitzeuge_api.investigation.names import distinctive, feature_key, is_placeholder, massif
 
 STAGE = "hypothesise"
 
@@ -43,10 +43,33 @@ def normalise(value: str) -> str:
     return " ".join(folded.replace("-", " ").split())
 
 
+def group_key(field: str, value: str) -> str:
+    """Values that name the same thing share a key.
+
+    Summits fold into their massif; a building folds to its distinctive core, so
+    «Hotel du Lac Seehof» (sign, research, reference) and «du Lac Seehof» (the
+    OpenStreetMap name) are one hypothesis, not two that split the evidence
+    (SG.CIV.17.58).
+    """
+    if field == "landscape_feature":
+        return feature_key(value)
+    if field == "building":
+        return distinctive(value) or normalise(value)
+    return normalise(value)
+
+
 def _label(items: list[Evidence]) -> str:
     massifs = {massif(i.value) for i in items if i.value and massif(i.value)}
     if items and items[0].field == "landscape_feature" and len(massifs) == 1:
         return massifs.pop()  # type: ignore[return-value]
+    if items and items[0].field == "building":
+        # The name most of the evidence uses, then the longest: the sign and the
+        # research say «Hotel du Lac Seehof» where a register says «du Lac Seehof».
+        counts: dict[str, int] = defaultdict(int)
+        for item in items:
+            if item.value:
+                counts[item.value] += 1
+        return max(counts, key=lambda v: (counts[v], len(v)))
     for source_class in _OFFICIAL:
         for item in items:
             if item.source_class is source_class and item.value:
@@ -60,11 +83,7 @@ async def run(ctx: RunContext) -> None:
         groups: dict[str, list[Evidence]] = defaultdict(list)
         for item in ctx.ledger.for_field(field):
             if item.value and not (field == "building" and is_placeholder(item.value)):
-                key = (
-                    feature_key(item.value)
-                    if field == "landscape_feature"
-                    else normalise(item.value)
-                )
+                key = group_key(field, item.value)
                 groups[key].append(item)
 
         scored = []
