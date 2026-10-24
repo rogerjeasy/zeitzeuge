@@ -46,6 +46,7 @@ from zeitzeuge_api.investigation.models import ModelClient
 from zeitzeuge_api.investigation.notifier import RunNotifier
 from zeitzeuge_api.investigation.pipeline import Deps, S3ImageStore
 from zeitzeuge_api.investigation.toolbox import Toolbox
+from zeitzeuge_api.investigation.tools.keys import ExternalKeys
 from zeitzeuge_api.investigation.worker import InvestigationWorker
 from zeitzeuge_api.middleware.request_context import (
     RequestContextMiddleware,
@@ -185,16 +186,21 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
         await app.state.notifier.start()
         if settings.worker_enabled:
             try:
+                keys = await _external_keys(secrets, settings)
                 toolbox = Toolbox(
-                    cache_dir=Path(settings.tool_cache_dir) if settings.tool_cache_dir else None
+                    cache_dir=Path(settings.tool_cache_dir) if settings.tool_cache_dir else None,
+                    keys=keys,
+                    research_models=(
+                        settings.research_openai_model,
+                        settings.research_gemini_model,
+                    ),
+                    research_effort=settings.research_effort,
                 )
                 app.state.toolbox = toolbox
                 worker = InvestigationWorker(
                     database,
                     Deps(
-                        models=ModelClient(
-                            region=settings.region, openai_key=await _openai_key(secrets, settings)
-                        ),
+                        models=ModelClient(region=settings.region, openai_key=keys.openai),
                         tools=toolbox,
                         images=S3ImageStore(clients.s3),
                         code_version=__version__,
@@ -210,6 +216,29 @@ async def build_state(app: FastAPI, settings: Settings) -> None:
                 )
 
     await jwks.warm()
+
+
+async def _external_keys(secrets: SecretsResolver, settings: Settings) -> ExternalKeys:
+    """Every public tool's key: `.env` locally, the `external/api-keys` JSON secret in AWS.
+
+    A missing secret or field leaves that key empty; the tool then reports itself
+    skipped in the ledger (identification-upgrade note D10). Values are never logged.
+    """
+    stored: dict[str, str] = {}
+    reference = f"secretsmanager://{settings.project}/{settings.env}/external/api-keys"
+    if not settings.is_local:
+        try:
+            stored = await secrets.resolve_json(reference)
+        except Exception as exc:
+            log.warning("startup.external_keys_unavailable", error=type(exc).__name__)
+    keys = ExternalKeys(
+        openai=settings.openai_api_key or await _openai_key(secrets, settings),
+        gemini=settings.gemini_api_key or stored.get("gemini", ""),
+        serpapi=settings.serpapi_api_key or stored.get("serpapi", ""),
+        google=settings.google_api_key or stored.get("google", ""),
+    )
+    log.info("startup.external_keys", present=keys.present())
+    return keys
 
 
 async def _openai_key(secrets: SecretsResolver, settings: Settings) -> str:

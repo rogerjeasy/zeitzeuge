@@ -43,6 +43,7 @@ from zeitzeuge_api.investigation.stages import (
     intake,
     perception,
     reference,
+    research,
     resolve,
 )
 
@@ -52,6 +53,7 @@ Stage = Callable[[RunContext], Awaitable[None]]
 STAGES: tuple[tuple[str, Stage], ...] = (
     (intake.STAGE, intake.run),
     (perception.STAGE, perception.run),
+    (research.STAGE, research.run),
     (grounding.STAGE, grounding.run),
     (reference.STAGE, reference.run),
     (resolve.STAGE, resolve.run),
@@ -136,7 +138,7 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
         run.status = RunStatus.RUNNING
         run.started_at = run.started_at or datetime.now(UTC)
         run.code_version = deps.code_version
-        run.agents_total = 13
+        run.agents_total = 14
         asset.status = AssetStatus.ANALYSING
         bucket, key, fonds_id, batch_id = master.bucket, master.s3_key, asset.fonds_id, run.batch_id
         external_ref, asset_id = asset.external_ref, asset.id
@@ -173,6 +175,7 @@ async def investigate(db: Database, run_id: uuid.UUID, org_id: uuid.UUID, deps: 
         await _run_stages(db, tenant, run_id, ctx, writer, asset_id, fonds_id, external_ref)
     finally:
         pulse.cancel()
+        research.cancel(ctx)
 
 
 HEARTBEAT_SECONDS = 60
@@ -224,6 +227,10 @@ async def _run_stages(
             await writer.stage_done(session, ctx.records[-1])
             if name == intake.STAGE:
                 await _record_exif(session, asset_id, ctx.facts["exif"])
+        if name == intake.STAGE:
+            # The slow web research runs while Perception looks at the photo
+            # (identification-upgrade note §3); its stage only collects it.
+            research.start(ctx)
 
     async with db.session(tenant) as session:
         if await _cancelled(session, run_id):
@@ -236,6 +243,12 @@ async def _run_stages(
             subject_point=ctx.facts.get("subject_point"),
             fonds_id=fonds_id,
         )
+        if "outside_canton" in ctx.facts:
+            await session.execute(
+                update(Asset)
+                .where(Asset.id == asset_id)
+                .values(outside_canton=bool(ctx.facts["outside_canton"]))
+            )
     log.info("investigation.done", run_id=str(run_id), asset=external_ref)
 
 

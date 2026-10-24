@@ -116,6 +116,22 @@ class Settings(BaseSettings):
     openai_key_ref: str = ""
     """In AWS: a reference such as `secretsmanager://…/external/api-keys#openai`.
     Empty means the conventional `{project}/{env}/external/api-keys#openai`."""
+    gemini_api_key: str = Field(
+        default="", validation_alias=AliasChoices("ZZ_GEMINI_API_KEY", "GEMINI_API_KEY")
+    )
+    serpapi_api_key: str = Field(
+        default="", validation_alias=AliasChoices("ZZ_SERPAPI_API_KEY", "SERPAPI_API_KEY")
+    )
+    google_api_key: str = Field(
+        default="", validation_alias=AliasChoices("ZZ_GOOGLE_API_KEY", "GOOGLE_API_KEY")
+    )
+    """Local development only, like `openai_api_key`. In AWS every external key is a
+    field of the JSON secret `{project}/{env}/external/api-keys`: `openai`, `gemini`,
+    `serpapi`, `google` (identification-upgrade note §4)."""
+    research_openai_model: str = "gpt-5.5"
+    research_gemini_model: str = "gemini-4-argon"
+    research_effort: str = "medium"
+    """OpenAI reasoning effort for the research agent: `low` halves the cost for the 600."""
 
     # --- Key-value (infra/modules/keyvalue) -------------------------------
     rate_limit_table: str = ""

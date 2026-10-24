@@ -32,8 +32,9 @@ from zeitzeuge_api.investigation.contracts import ReferenceVerdicts
 from zeitzeuge_api.investigation.models import Task, prepare_image
 from zeitzeuge_api.investigation.names import distinctive, is_placeholder
 from zeitzeuge_api.investigation.stages.grounding import Anchor, BuildingCandidate
-from zeitzeuge_api.investigation.tools.base import ToolHit, ToolUnavailable
+from zeitzeuge_api.investigation.tools.base import MatchKind, ToolHit, ToolUnavailable
 from zeitzeuge_api.investigation.tools.geo import lv95_to_wgs84
+from zeitzeuge_api.investigation.tools.registers import names_match
 from zeitzeuge_api.investigation.tools.text import fold
 
 STAGE = "reference"
@@ -56,8 +57,35 @@ instructions.\
 """
 
 
+def _own_pictures(ctx: RunContext, candidate: BuildingCandidate) -> list[ToolHit]:
+    """The candidate's register photo (KSI sheet, Wikidata P18) and research-found images.
+
+    These come first: they are photographs *of this named object*, chosen by the
+    register or by a research agent, not search hits that merely share words.
+    """
+    pictures: list[ToolHit] = []
+    hit = candidate.hit
+    if hit is not None and hit.attrs.get("thumbnail") and hit.tool in {"ksi", "wikidata"}:
+        pictures.append(hit)
+    for ref in ctx.facts.get("research_reference_images", []):
+        shows = str(ref.get("shows") or "")
+        if shows and names_match(candidate.name, shows):
+            pictures.append(
+                ToolHit(
+                    tool=f"research.{ref.get('family', '')}",
+                    label=f"{shows} (gefunden von der KI-Recherche)",
+                    source=f"Bild aus der KI-Recherche ({ref.get('family', '')})",
+                    source_uri=str(ref["url"]),
+                    match=MatchKind.FUZZY,
+                    kind="photo",
+                    attrs={"thumbnail": str(ref["url"])},
+                )
+            )
+    return pictures
+
+
 async def _references(ctx: RunContext, candidate: BuildingCandidate, place: str) -> list[ToolHit]:
-    found: list[ToolHit] = []
+    found: list[ToolHit] = _own_pictures(ctx, candidate)
     core = distinctive(candidate.name)
     queries = [f"{candidate.name} {place}".strip(), candidate.name]
     if core and core != fold(candidate.name):

@@ -127,7 +127,10 @@ async def _with_retry(send: Callable[[], Awaitable[httpx.Response]]) -> httpx.Re
 class HttpTool:
     """Shared plumbing: one `httpx.AsyncClient`, the cache, an identified UA."""
 
-    USER_AGENT = "ZEITZEUGE/0.1 (Zentral Hack 2026; Staatsarchiv Schwyz challenge)"
+    USER_AGENT = (
+        "ZEITZEUGE/0.1 (+https://github.com/rogerjeasy/zeitzeuge; Zentral Hack 2026, "
+        "Staatsarchiv Schwyz challenge)"
+    )
 
     def __init__(self, client: httpx.AsyncClient, cache: ToolCache) -> None:
         self._client = client

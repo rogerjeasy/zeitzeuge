@@ -2,31 +2,69 @@
 
 from __future__ import annotations
 
+import ssl
 from pathlib import Path
 
+import certifi
 import httpx
 
 from zeitzeuge_api.investigation.tools.base import HttpTool, ToolCache
 from zeitzeuge_api.investigation.tools.commons import Commons
+from zeitzeuge_api.investigation.tools.keys import ExternalKeys
 from zeitzeuge_api.investigation.tools.osm import Overpass
+from zeitzeuge_api.investigation.tools.pages import PageVerifier
+from zeitzeuge_api.investigation.tools.registers import KsiInventory, WikidataGazetteer
+from zeitzeuge_api.investigation.tools.research import GeminiResearch, OpenAIResearch
 from zeitzeuge_api.investigation.tools.stasz import StaatsarchivCatalogue
 from zeitzeuge_api.investigation.tools.swisstopo import Swisstopo
 from zeitzeuge_api.investigation.tools.wikipedia import Wikipedia
 
 MAX_REFERENCE_BYTES = 6 * 1024 * 1024
+
+
+def _tls_context() -> ssl.SSLContext:
+    """Certificates verified as usual; OpenSSL's DEFAULT cipher list instead of Python's.
+
+    The canton's file server (data.geo.sz.ch, the KSI inventory sheets) resets the
+    handshake for Python's narrower default list and accepts OpenSSL's DEFAULT,
+    which still excludes every insecure suite.
+    """
+    context = ssl.create_default_context(cafile=certifi.where())
+    context.set_ciphers("DEFAULT")
+    return context
+
+
 _IMAGE_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif")
 
 
 class Toolbox:
-    def __init__(self, *, cache_dir: Path | None = None, replay: bool = False) -> None:
-        self.client = httpx.AsyncClient(follow_redirects=True)
+    def __init__(
+        self,
+        *,
+        cache_dir: Path | None = None,
+        replay: bool = False,
+        keys: ExternalKeys | None = None,
+        research_models: tuple[str, str] = ("gpt-5.5", "gemini-4-argon"),
+        research_effort: str = "medium",
+    ) -> None:
+        self.keys = keys or ExternalKeys()
+        self.client = httpx.AsyncClient(follow_redirects=True, verify=_tls_context())
         self.cache = ToolCache(cache_dir, replay=replay)
         self.swisstopo = Swisstopo(self.client, self.cache)
         self.overpass = Overpass(self.client, self.cache)
         self.commons = Commons(self.client, self.cache)
         self.wikipedia = Wikipedia(self.client, self.cache)
         self.catalogue = StaatsarchivCatalogue(self.client, self.cache)
+        self.pages = PageVerifier(self.client, self.cache)
         self._images: dict[str, bytes | None] = {}
+        self.ksi = KsiInventory(self.client, self.cache, self._images)
+        self.wikidata = WikidataGazetteer(self.client, self.cache)
+        self.research_openai = OpenAIResearch(
+            self.client, self.cache, self.keys.openai, research_models[0], effort=research_effort
+        )
+        self.research_gemini = GeminiResearch(
+            self.client, self.cache, self.keys.gemini, research_models[1]
+        )
         self._image_dir = cache_dir / "images" if cache_dir else None
         if self._image_dir:
             try:

@@ -26,7 +26,13 @@ from zeitzeuge_api.investigation.names import feature_key, is_placeholder, massi
 
 STAGE = "hypothesise"
 
-_IDENTIFYING = {SourceClass.REFERENCE_IMAGE, SourceClass.TEXT_IN_IMAGE, SourceClass.HUMAN}
+_IDENTIFYING = {
+    SourceClass.REFERENCE_IMAGE,
+    SourceClass.TEXT_IN_IMAGE,
+    SourceClass.REVERSE_IMAGE,
+    SourceClass.STREET_LEVEL,
+    SourceClass.HUMAN,
+}
 _OFFICIAL = (SourceClass.GEODATA_LAYER, SourceClass.TEXT_IN_IMAGE, SourceClass.REFERENCE_IMAGE)
 
 

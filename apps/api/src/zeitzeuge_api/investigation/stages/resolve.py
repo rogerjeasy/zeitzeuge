@@ -14,6 +14,15 @@ stay independent and each class counts once.
 
 Without a building point, the best locality anchor (an exact register hit for
 a name the image suggested) still yields the Gemeinde.
+
+**What placed the point decides what the lookups are worth** (identification-
+upgrade note §5). A point fixed by an identifying witness — a sign, a matching
+reference or Street View frame, the same picture online, a landmark detection —
+makes the Ortschaft and Gemeinde at it strong (`SPATIAL`). A point that is only
+where a *proposed* building is registered gives `POINT_FROM_CANDIDATE`; a point
+that is only the centroid of a proposed locality name restates that name and
+is worth no more than its existence (`REGISTER_EXISTENCE`). The canton of the
+point fills `Ausserhalb_SZ`.
 """
 
 from __future__ import annotations
@@ -23,11 +32,12 @@ from datetime import UTC, datetime
 from typing import Any
 
 from zeitzeuge_api.db.models.enums import AgentId, EvidenceKind, SourceClass
-from zeitzeuge_api.investigation.confidence import strength_for_match
+from zeitzeuge_api.investigation.confidence import REGISTER_EXISTENCE, strength_for_match
 from zeitzeuge_api.investigation.context import RunContext
 from zeitzeuge_api.investigation.contracts import Evidence
 from zeitzeuge_api.investigation.names import feature_key, massif
 from zeitzeuge_api.investigation.stages.grounding import Anchor, BuildingCandidate
+from zeitzeuge_api.investigation.stages.hypothesise import normalise
 from zeitzeuge_api.investigation.tools.base import MatchKind, ToolHit, ToolUnavailable
 from zeitzeuge_api.investigation.tools.text import fold
 
@@ -35,6 +45,8 @@ STAGE = "resolve"
 FEATURE_RADIUS_M = 8000
 NEAREST_ADDRESS_STRENGTH = 0.6
 """The nearest address to a building's point: probably, not certainly, its entrance."""
+POINT_FROM_CANDIDATE = 0.5
+"""A point that is only where a proposed (not identified) building is registered."""
 
 
 def _base_number(hit: ToolHit) -> str | None:
@@ -67,15 +79,41 @@ def _complex(addresses: list[ToolHit], chosen: ToolHit) -> tuple[str, list[str]]
     return chosen.label, entrances
 
 
-_IDENTIFYING = {SourceClass.REFERENCE_IMAGE, SourceClass.TEXT_IN_IMAGE, SourceClass.HUMAN}
+_IDENTIFYING = {
+    SourceClass.REFERENCE_IMAGE,
+    SourceClass.TEXT_IN_IMAGE,
+    SourceClass.REVERSE_IMAGE,
+    SourceClass.STREET_LEVEL,
+    SourceClass.HUMAN,
+}
+_RANK = {
+    SourceClass.HUMAN: 5,
+    SourceClass.REFERENCE_IMAGE: 4,
+    SourceClass.REVERSE_IMAGE: 3,
+    SourceClass.TEXT_IN_IMAGE: 2,
+    SourceClass.STREET_LEVEL: 1,
+}
+
+
+def _names_it(item: Evidence, name: str) -> bool:
+    return bool(item.value) and normalise(str(item.value)) == normalise(name)
 
 
 def _best_building(ctx: RunContext) -> tuple[BuildingCandidate, Evidence] | None:
+    """The placed building candidate with the strongest identifying evidence.
+
+    The evidence may sit on the candidate (a reference photo of it) or anywhere in
+    the ledger under the same name: «HOTEL DU LAC SEEHOF» read off the façade
+    identifies the OpenStreetMap entry of that name (SG.CIV.17.58).
+    """
     best: tuple[BuildingCandidate, Evidence] | None = None
     for candidate in ctx.facts.get("building_candidates", []):
         if not candidate.lv95:
             continue
-        for local_id in candidate.evidence_ids:
+        ids = list(candidate.evidence_ids) + [
+            e.local_id for e in ctx.ledger.for_field("building") if _names_it(e, candidate.name)
+        ]
+        for local_id in dict.fromkeys(ids):
             item = ctx.ledger.by_id(local_id)
             # Only an independent identification places the point: a matching
             # reference photo, or the name read off the image. That a building
@@ -83,13 +121,22 @@ def _best_building(ctx: RunContext) -> tuple[BuildingCandidate, Evidence] | None
             # about whether this photograph shows it.
             if item is None or item.attrs.get("refutes") or item.source_class not in _IDENTIFYING:
                 continue
-            weight = (item.source_class is SourceClass.REFERENCE_IMAGE, item.strength)
-            if best is None or weight > (
-                best[1].source_class is SourceClass.REFERENCE_IMAGE,
-                best[1].strength,
-            ):
+            weight = (_RANK[item.source_class], item.strength)
+            if best is None or weight > (_RANK[best[1].source_class], best[1].strength):
                 best = (candidate, item)
     return best
+
+
+def _proposed_building(ctx: RunContext) -> BuildingCandidate | None:
+    """A placed candidate that research or the image named, not yet identified."""
+    for candidate in ctx.facts.get("building_candidates", []):
+        if candidate.lv95 and candidate.named_by in {"research", "perception", "sighting"}:
+            if any(
+                e.source_class is SourceClass.OPEN_RESEARCH and _names_it(e, candidate.name)
+                for e in ctx.ledger.for_field("building")
+            ):
+                return candidate
+    return None
 
 
 def _restate(ctx: RunContext, witness: Evidence, field: str, value: str, why: str) -> None:
@@ -119,11 +166,22 @@ async def run(ctx: RunContext) -> None:
     point: tuple[float, float] | None = None
     witness: Evidence | None = None
     building: BuildingCandidate | None = None
+    landmarks: list[dict[str, Any]] = ctx.facts.get("landmarks", [])
+    placed_by = "none"
     if chosen:
         building, witness = chosen
         point = building.lv95
+        placed_by = "identified"
+    elif landmarks:
+        point = (float(landmarks[0]["lv95"][0]), float(landmarks[0]["lv95"][1]))
+        witness = ctx.ledger.by_id(landmarks[0]["evidence_id"])
+        placed_by = "identified"
+    elif (proposed := _proposed_building(ctx)) is not None:
+        point = proposed.lv95
+        placed_by = "candidate"
     elif anchors:
         point = anchors[0].lv95
+        placed_by = "anchor"
 
     if point is None:
         ctx.ledger.note(AgentId.GEO, "Kein Motivpunkt bestimmbar — Ortsfelder bleiben offen")
@@ -139,7 +197,20 @@ async def run(ctx: RunContext) -> None:
 
     locality: ToolHit | None = await lookup("Ortschaftenverzeichnis", sw.locality_at(*point))
     municipality: ToolHit | None = await lookup("swissBOUNDARIES3D", sw.municipality_at(*point))
-    spatial = strength_for_match(MatchKind.SPATIAL)
+    spatial = {
+        "identified": strength_for_match(MatchKind.SPATIAL),
+        "candidate": POINT_FROM_CANDIDATE,
+        "anchor": REGISTER_EXISTENCE,
+    }[placed_by]
+    subject = (
+        f"Gebäude «{building.name}»"
+        if building
+        else f"Wahrzeichen «{landmarks[0]['name']}»"
+        if landmarks
+        else "Motiv"
+    )
+    if municipality is not None and municipality.attrs.get("canton"):
+        ctx.facts["outside_canton"] = str(municipality.attrs["canton"]).upper() != "SZ"
 
     if locality is not None:
         ctx.ledger.add_from_hit(
@@ -154,13 +225,13 @@ async def run(ctx: RunContext) -> None:
             value=locality.label,
             typed_value={"name": locality.label, "plz": locality.attrs.get("plz"), "lv95": point},
         )
-        if witness and building:
+        if witness:
             _restate(
                 ctx,
                 witness,
                 "locality",
                 locality.label,
-                f"Gebäude «{building.name}» bestätigt; es liegt in {locality.label}",
+                f"{subject} bestätigt; es liegt in {locality.label}",
             )
     if municipality is not None:
         ctx.ledger.add_from_hit(
@@ -175,14 +246,13 @@ async def run(ctx: RunContext) -> None:
             value=municipality.label,
             typed_value={"name": municipality.label, "bfs_nr": municipality.attrs.get("bfs_nr")},
         )
-        if witness and building:
+        if witness:
             _restate(
                 ctx,
                 witness,
                 "municipality",
                 municipality.label,
-                f"Gebäude «{building.name}» bestätigt; "
-                f"es liegt in der Gemeinde {municipality.label}",
+                f"{subject} bestätigt; es liegt in der Gemeinde {municipality.label}",
             )
 
     if building is not None and witness is not None:
@@ -286,10 +356,11 @@ async def run(ctx: RunContext) -> None:
             )
             suggested.pop(feature_key(label), None)
 
+    output["placed_by"] = placed_by
     ctx.facts["subject_point"] = {
         "lv95": list(point),
         "precision_m": 30 if building else 500,
-        "confidence": witness.strength if witness else 0.5,
+        "confidence": witness.strength if witness else spatial,
         "source_class": (witness.source_class.value if witness else "geodata_layer"),
         "evidence": witness.local_id if witness else (anchors[0].evidence_id if anchors else ""),
         "object": building.name if building else None,

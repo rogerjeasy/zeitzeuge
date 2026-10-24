@@ -46,6 +46,7 @@ from zeitzeuge_api.investigation.contracts import RANKED_FIELDS
 from zeitzeuge_api.investigation.models import ModelClient
 from zeitzeuge_api.investigation.pipeline import Deps, LocalImageStore, investigate
 from zeitzeuge_api.investigation.toolbox import Toolbox
+from zeitzeuge_api.investigation.tools.keys import ExternalKeys
 from zeitzeuge_api.services.exporters.xlsx import build_workbook
 from zeitzeuge_api.services.investigation_service import InvestigationService
 
@@ -131,9 +132,20 @@ async def run(
         batch.asset_count = len(files)
         batch_id = batch.id
 
-    tools = Toolbox(cache_dir=cache)
+    keys = ExternalKeys(
+        openai=settings.openai_api_key,
+        gemini=settings.gemini_api_key,
+        serpapi=settings.serpapi_api_key,
+        google=settings.google_api_key,
+    )
+    tools = Toolbox(
+        cache_dir=cache,
+        keys=keys,
+        research_models=(settings.research_openai_model, settings.research_gemini_model),
+        research_effort=settings.research_effort,
+    )
     deps = Deps(
-        models=ModelClient(region=settings.region),
+        models=ModelClient(region=settings.region, openai_key=keys.openai),
         tools=tools,
         images=LocalImageStore(Path("/")),
         code_version="cli",
