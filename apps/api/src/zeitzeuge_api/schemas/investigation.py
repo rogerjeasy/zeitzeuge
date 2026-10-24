@@ -91,6 +91,7 @@ class BatchAsset(Schema):
     captured_at: datetime | None = None
     deleted_at: datetime | None = None
     deletion_reason: str | None = None
+    deleted_by_name: str | None = None
 
 
 class BatchCounts(Schema):

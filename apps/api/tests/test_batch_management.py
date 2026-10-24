@@ -77,6 +77,7 @@ async def test_withdraw_hides_cancels_and_restore_requeues(
     trash = (await client.get(f"/api/v1/batches/{batch_id}?include_deleted=true")).json()
     gone = next(a for a in trash["assets"] if a["asset_id"] == first["asset_id"])
     assert gone["deleted_at"] and gone["deletion_reason"] == "Doppel"
+    assert gone["deleted_by_name"]  # the Papierkorb says who
     assert trash["counts"]["total"] == 1  # listed, never counted
 
     async with investigation.state.database.session(TenantContext(role="worker")) as session:

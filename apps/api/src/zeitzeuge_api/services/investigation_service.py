@@ -355,6 +355,12 @@ class InvestigationService:
         batch = await self._batch(session, batch_id)
         everything = list(await session.scalars(select(Asset).where(Asset.batch_id == batch.id)))
         withdrawn = sum(1 for a in everything if a.deleted_at is not None)
+        withdrawers = {
+            u.id: u.full_name or u.email
+            for u in await session.scalars(
+                select(User).where(User.id.in_({a.deleted_by for a in everything if a.deleted_by}))
+            )
+        }
         assets = sorted(
             (a for a in everything if include_deleted or a.deleted_at is None),
             key=lambda a: natural_key(a.external_ref),
@@ -441,6 +447,7 @@ class InvestigationService:
                     captured_at=asset.captured_at,
                     deleted_at=asset.deleted_at,
                     deletion_reason=asset.deletion_reason,
+                    deleted_by_name=withdrawers.get(asset.deleted_by) if asset.deleted_by else None,
                 )
             )
         if (
