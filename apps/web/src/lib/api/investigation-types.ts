@@ -334,6 +334,8 @@ export type BulkRequest = { action: BulkAction; asset_ids: string[]; reason?: st
 export type WithdrawRequest = { reason?: string };
 
 export type BatchDeleteResult = { batch_id: string; deleted_at: string; assets: number };
+/** Failed runs deleted for good (API `DELETE /runs/failed`); finished runs are never touched. */
+export type PurgeResult = { purged: number; batch_id: string | null };
 export type BatchRestoreResult = { batch_id: string; assets: number };
 
 /** The contract's limits: 1–600 photos per bulk call, a reason of at most 500 characters. */

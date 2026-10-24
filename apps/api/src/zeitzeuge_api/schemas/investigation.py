@@ -319,3 +319,9 @@ class BatchWithdrawResult(Schema):
     batch_id: str
     deleted_at: datetime | None = None
     assets: int
+
+
+class PurgeResult(Schema):
+    purged: int
+    """Failed runs removed, with their partial ledger. Finished runs are never touched."""
+    batch_id: str | None = None

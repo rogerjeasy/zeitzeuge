@@ -302,6 +302,18 @@ async def restore_batch(
     return await service.restore_batch(identity.session, user=identity.user, batch_id=batch_id)
 
 
+@router.delete(
+    "/runs/failed",
+    response_model=schemas.PurgeResult,
+    summary="Delete failed runs for good (all, or one batch's); finished runs are never touched",
+)
+async def purge_failed_runs(
+    identity: WriteIdentity, service: Service, batch_id: uuid.UUID | None = None
+) -> schemas.PurgeResult:
+    _approver(identity)
+    return await service.purge_failed_runs(identity.session, user=identity.user, batch_id=batch_id)
+
+
 # The identity's transaction must end before the stream starts: an open
 # transaction per viewer would pin a pooled connection for the life of the tab.
 StreamIdentity = Annotated[Identity, Depends(resolve_identity, scope="function")]

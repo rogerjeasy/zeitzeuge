@@ -21,6 +21,7 @@ import {
   type InvestigationResult,
   type RegisterFilesResponse,
   type RunMode,
+  PurgeResult,
 } from "@/lib/api/investigation";
 import type { ApiResult } from "@/lib/api/server";
 
@@ -172,6 +173,12 @@ export async function withdrawBatchAction(
 ): Promise<InvestigationResult<BatchDeleteResult>> {
   if (!isUuid(String(batchId))) return INVALID;
   return call((a) => investigationApi.withdrawBatch(a, batchId, { reason: cleanReason(reason) }));
+}
+
+/** Delete this batch's failed runs for good. The API keeps every run a record cites. */
+export async function purgeFailedRunsAction(batchId: string): Promise<InvestigationResult<PurgeResult>> {
+  if (!isUuid(String(batchId))) return INVALID;
+  return call((a) => investigationApi.purgeFailedRuns(a, batchId));
 }
 
 export async function restoreBatchAction(

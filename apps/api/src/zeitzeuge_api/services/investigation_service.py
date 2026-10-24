@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from zeitzeuge_api.core import errors
@@ -1232,6 +1232,52 @@ class InvestigationService:
         )
         await session.flush()
         return schemas.BatchWithdrawResult(batch_id=str(batch.id), assets=len(assets))
+
+    async def purge_failed_runs(
+        self, session: AsyncSession, *, user: User, batch_id: uuid.UUID | None
+    ) -> schemas.PurgeResult:
+        """Remove this archive's failed runs for good (migration 0006).
+
+        Only runs whose status is `failed` and that no record version cites; their
+        partial ledger goes with them. On Postgres the database function decides
+        what qualifies, so no code path can widen it. On SQLite (the unit suite)
+        the same selection runs through the ORM.
+        """
+        if batch_id is not None:
+            await self._batch(session, batch_id)
+        connection = await session.connection()
+        if connection.dialect.name == "postgresql":
+            removed = list(
+                (
+                    await session.execute(
+                        text("SELECT purge_failed_runs(CAST(:batch AS uuid))"),
+                        {"batch": str(batch_id) if batch_id else None},
+                    )
+                ).scalars()
+            )
+        else:
+            cited = select(RecordVersion.run_id).where(RecordVersion.run_id.is_not(None))
+            query = select(Run).where(Run.status == RunStatus.FAILED, Run.id.not_in(cited))
+            if batch_id is not None:
+                query = query.where(Run.batch_id == batch_id)
+            runs = list(await session.scalars(query))
+            removed = [run.id for run in runs]
+            for run in runs:
+                await session.delete(run)
+        session.add(
+            AuditLog(
+                org_id=user.org_id,
+                actor_user_id=user.id,
+                action=AuditAction.RUNS_PURGED,
+                target_type="upload_batch" if batch_id else "organization",
+                target_id=str(batch_id or user.org_id),
+                details={"runs": len(removed), "run_ids": [str(r) for r in removed[:500]]},
+            )
+        )
+        await session.flush()
+        return schemas.PurgeResult(
+            purged=len(removed), batch_id=str(batch_id) if batch_id else None
+        )
 
     # --- export and QC ------------------------------------------------------------
 

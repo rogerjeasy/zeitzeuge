@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -33,6 +34,7 @@ import {
   restoreBatchAction,
   withdrawAssetAction,
   withdrawBatchAction,
+  purgeFailedRunsAction,
 } from "@/lib/investigation/actions";
 import {
   DEFAULT_FILTER,
@@ -66,7 +68,8 @@ type Pending =
   | { kind: "withdraw"; ids: string[] }
   | { kind: "accept"; ids: string[]; skipped: number }
   | { kind: "rerun"; ids: string[] }
-  | { kind: "batchDelete" };
+  | { kind: "batchDelete" }
+  | { kind: "purgeFailed" };
 
 /** An optimistic overlay: what the screen shows before the API has confirmed it. */
 type Overlay = Map<string, { state: "withdrawn" | "restored"; asset: BatchAsset }>;
@@ -104,6 +107,7 @@ export function BatchView({
   });
   const batch = live ?? initial;
   const c = batch.counts;
+  const router = useRouter();
 
   const [selection, setSelection] = useState<Set<string>>(() => new Set());
   const [overlay, setOverlay] = useState<Overlay>(() => new Map());
@@ -286,6 +290,19 @@ export function BatchView({
     if (code) failToast(code);
   }
 
+  async function purgeFailed() {
+    setBusy(true);
+    const result = await purgeFailedRunsAction(batch.id);
+    setBusy(false);
+    setPending(null);
+    if (!result.ok) {
+      failToast(result.code);
+      return;
+    }
+    push({ tone: "success", message: tm("purgedFailed", { count: result.data.purged }) });
+    router.refresh();
+  }
+
   async function deleteBatch(why: string) {
     setBusy(true);
     const result = await withdrawBatchAction(batch.id, why.trim() || undefined);
@@ -408,6 +425,16 @@ export function BatchView({
                   {trashCount}
                 </span>
               </button>
+              {c.failed > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setPending({ kind: "purgeFailed" })}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-refuted/45 bg-surface px-3.5 text-[0.8125rem] font-medium text-refuted transition-colors hover:bg-refuted-soft"
+                >
+                  <Trash2 aria-hidden className="size-4" strokeWidth={2} />
+                  {tm("purgeFailed", { count: c.failed })}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setPending({ kind: "batchDelete" })}
@@ -707,6 +734,23 @@ export function BatchView({
         title={tm("rerunTitle", { count: pending?.kind === "rerun" ? pending.ids.length : 0 })}
         description={<p>{tm("rerunBody")}</p>}
         confirmLabel={tm("rerunConfirm")}
+        cancelLabel={tm("cancel")}
+      />
+
+      <ConfirmDialog
+        open={pending?.kind === "purgeFailed"}
+        onClose={() => setPending(null)}
+        onConfirm={() => void purgeFailed()}
+        busy={busy}
+        tone="danger"
+        title={tm("purgeFailedTitle", { count: c.failed })}
+        description={
+          <>
+            <p>{tm("purgeFailedBody")}</p>
+            <p className="font-medium text-foreground">{tm("purgeFailedKept")}</p>
+          </>
+        }
+        confirmLabel={tm("purgeFailedConfirm")}
         cancelLabel={tm("cancel")}
       />
 

@@ -19,6 +19,7 @@ import type {
   RegisterFilesRequest,
   RegisterFilesResponse,
   WithdrawRequest,
+  PurgeResult,
 } from "./investigation-types";
 
 export * from "./investigation-types";
@@ -134,6 +135,14 @@ export const investigationApi = {
     return apiRequest(`/batches/${id(batchId)}`, {
       method: "DELETE",
       body: body.reason ? body : undefined,
+      timeoutMs: 30_000,
+      ...auth(a),
+    });
+  },
+
+  purgeFailedRuns(a: ApiAuth, batchId: string): Promise<ApiResult<PurgeResult>> {
+    return apiRequest(`/runs/failed?batch_id=${id(batchId)}`, {
+      method: "DELETE",
       timeoutMs: 30_000,
       ...auth(a),
     });

@@ -99,6 +99,8 @@ class AuditAction(StrEnum):
     ASSET_RESTORED = "asset.restored"
     BATCH_WITHDRAWN = "batch.withdrawn"
     BATCH_RESTORED = "batch.restored"
+    RUNS_PURGED = "runs.purged_failed"
+    """Failed runs removed for good (migration 0006): the only hard delete."""
 
 
 # --- Holdings, investigation, catalogue (data-model §19) ----------------------

@@ -280,3 +280,40 @@ async def test_timing_reaches_the_batch_the_case_and_the_workbook(
     assert took == round(row["duration_ms"] / 1000, 1)
     assert values["SG.CIV.17.3.jpg"]["Untersuchung_Beginn"].endswith("Z")
     assert values["SG.CIV.17.11.jpg"]["Untersuchung_Dauer_s"] is None  # not investigated yet
+
+
+async def _fail(app, run_public_id: str) -> None:
+    async with app.state.database.session(TenantContext(role="worker")) as session:
+        run = await session.scalar(select(Run).where(Run.public_id == run_public_id))
+        assert run is not None
+        run.status = RunStatus.FAILED
+
+
+async def test_failed_runs_are_deleted_for_good_and_finished_work_is_kept(
+    investigation, client, as_user
+) -> None:
+    await _set_role(investigation, as_user["email"], UserRole.ARCHIVIST)
+    batch_id, (first, second) = await _batch_with_two(client)
+    await _fail(investigation, first["run_id"])
+    # The second run wrote a record, then failed on a later attempt's bookkeeping:
+    # a run a record version cites is never purged.
+    await _machine_run(investigation, second["run_id"])
+    await _fail(investigation, second["run_id"])
+
+    purged = await client.delete(f"/api/v1/runs/failed?batch_id={batch_id}")
+    assert purged.status_code == 200, purged.text
+    assert purged.json()["purged"] == 1
+
+    async with investigation.state.database.session(TenantContext(role="worker")) as session:
+        left = {r.public_id for r in await session.scalars(select(Run))}
+    assert first["run_id"] not in left
+    assert second["run_id"] in left
+
+    again = await client.delete("/api/v1/runs/failed")
+    assert again.json()["purged"] == 0
+
+
+async def test_only_archivists_purge_failed_runs(investigation, client, as_user) -> None:
+    await _set_role(investigation, as_user["email"], UserRole.REVIEWER)
+    refused = await client.delete("/api/v1/runs/failed")
+    assert refused.status_code == 403
