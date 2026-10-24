@@ -24,7 +24,7 @@ export * from "./investigation-types";
  *
  * Server-only. The bearer comes from the HttpOnly `zz_at` cookie and never
  * reaches browser JavaScript; server actions (`lib/investigation/actions.ts`)
- * and the two proxy route handlers (`app/api/batches/[id]/*`) are the only
+ * and the two proxy route handlers (`app/bff/batches/[id]/*`) are the only
  * doors from the browser to these functions.
  */
 

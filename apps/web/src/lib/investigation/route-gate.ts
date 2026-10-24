@@ -3,7 +3,7 @@ import "server-only";
 import { isUuid, resolveAuth, type ApiAuth } from "@/lib/api/investigation";
 
 /**
- * Shared by the two route handlers under `/api/batches/[id]/*`.
+ * Shared by the two route handlers under `/bff/batches/[id]/*`.
  *
  * These sit outside the `[locale]` segment, and `proxy.ts` skips `/api/*`
  * entirely (its matcher), so neither the locale negotiation nor the session

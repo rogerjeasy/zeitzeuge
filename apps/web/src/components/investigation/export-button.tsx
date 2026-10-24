@@ -20,7 +20,7 @@ export function ExportButton({ batchId, className }: { batchId: string; classNam
     setBusy(true);
     setFailed(null);
     try {
-      const response = await fetch(`/api/batches/${encodeURIComponent(batchId)}/export`, {
+      const response = await fetch(`/bff/batches/${encodeURIComponent(batchId)}/export`, {
         cache: "no-store",
       });
       if (!response.ok) {

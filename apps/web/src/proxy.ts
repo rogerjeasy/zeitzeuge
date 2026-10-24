@@ -60,5 +60,7 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   // Skip Next internals, API routes and anything with a file extension.
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  // `bff` = the web tier's own route handlers (stream, export). They must not sit
+  // under /api: CloudFront sends every /api/* request to the FastAPI origin.
+  matcher: ["/((?!api|bff|_next|_vercel|.*\\..*).*)"],
 };

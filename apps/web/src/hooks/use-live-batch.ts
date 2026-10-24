@@ -12,7 +12,7 @@ const POLL_MS = 15_000;
 /**
  * One batch, kept current (design note D8).
  *
- * `EventSource` opens the same-origin proxy (`/api/batches/{id}/stream`),
+ * `EventSource` opens the same-origin proxy (`/bff/batches/{id}/stream`),
  * which carries the session cookie; the browser never sees a token. Every
  * `run` event triggers a re-fetch of the whole batch, debounced so a burst of
  * stage events costs one request. If the stream cannot be opened, drops, or
@@ -81,7 +81,7 @@ export function useLiveBatch(batchId: string | null, initial: BatchOut | null = 
     if (typeof EventSource === "undefined") {
       startPolling();
     } else {
-      source = new EventSource(`/api/batches/${encodeURIComponent(batchId)}/stream`);
+      source = new EventSource(`/bff/batches/${encodeURIComponent(batchId)}/stream`);
       source.addEventListener("hello", (event) => {
         let live = false;
         try {
