@@ -26,16 +26,16 @@
     "eyebrow": "Pilot · State Archive of the Canton of Schwyz",
     "titleLine1": "A historical photograph",
     "titleLine2": "is a witness.",
-    "subtitle": "ZEITZEUGE doesn't ask the photograph a question — it cross-examines it. Eighteen specialised agents, six model families, grounded in official Swiss geodata. Every claim names its evidence. What cannot be evidenced is not asserted.",
+    "subtitle": "ZEITZEUGE doesn't ask the photograph a question — it cross-examines it. Fifteen specialised roles, five model families, grounded in official Swiss geodata. Every claim names its evidence. What cannot be evidenced is not asserted.",
     "motto": "«We cross-examine the photograph.»",
     "primaryCta": "Start demo",
     "secondaryCta": "View as guest",
     "ctaNote": "No account needed. «Start demo» opens an archive of your own with full rights; «View as guest» opens the prepared collection.",
     "metrics": {
-      "described": "images catalogued",
-      "minutesSaved": "avg. time saved per image",
-      "precision": "precision on the gold set",
-      "abstention": "deliberate abstention"
+      "described": "Prio-1 photos investigated",
+      "runMinutes": "avg. machine investigation per photo",
+      "precision": "correct when filled · team-labelled set",
+      "abstention": "of fields deliberately left open"
     },
     "agentsLabel": "agents",
     "familiesLabel": "model families"
@@ -122,7 +122,7 @@
     "invariantLabel": "Invariant, enforced in the schema",
     "invariantCaption": "A field that cannot name its evidence never reaches the database. Hallucination is made structurally impossible, not merely discouraged.",
     "recordTitle": "Catalogue record",
-    "recordSubtitle": "ISAD(G) · Goetz collection",
+    "recordSubtitle": "Prio-1 run · 24.10.2026 · the five ranked fields",
     "beforeLabel": "Before",
     "afterLabel": "After",
     "beforeValue": "unknown",
@@ -140,9 +140,14 @@
       "date": "Date of creation",
       "subject": "Subject",
       "process": "Process",
-      "photographer": "Photographer"
+      "photographer": "Photographer",
+      "locality": "Locality",
+      "municipality": "Municipality",
+      "building": "Building",
+      "landscape_feature": "Lake / river / mountain",
+      "street": "Street"
     },
-    "abstainReason": "No studio stamp, no annotated verso, no match in collection memory. The system abstains.",
+    "abstainReason": "No street name or house number is legible, and no source names one for this view. The system leaves the field open rather than guess.",
     "evidenceHint": "Select an item to see how it was derived",
     "kinds": {
       "visual": "visual",
@@ -158,7 +163,18 @@
       "axenstrasse": "Shoreline development and hotel buildings match the state after the quay was extended; first shown on the Siegfried map from the 1893 revision.",
       "printCaption": "Caption printed in the image: «6319 P.Z. — BRUNNEN MIT MYTHEN»; publisher code P.Z. = Photoglob Zürich.",
       "photochrom": "Colour layering and screen structure match the photochrom process; paper and trim are consistent with the publisher's format.",
-      "quaiObjection": "Objection: the promenade does not yet show the 1900 extension. The upper date bound is revised downward."
+      "quaiObjection": "Objection: the promenade does not yet show the 1900 extension. The upper date bound is revised downward.",
+      "localityRegister": "swisstopo, official locality register: the motif point lies in the locality «Gersau» (postcode 6442).",
+      "municipalityBoundary": "swisstopo, swissBOUNDARIES3D: the motif point lies in the municipality «Gersau» (BFS 1311).",
+      "openai": "GPT-5.5 with web search: «Seehotel Schwert, Seestrasse 29, 6442 Gersau», on Lake Lucerne — source page fetched and verified. Both model families agree.",
+      "gemini": "Gemini with Google Search, asked independently: «Seehotel Schwert» in Gersau, on Lake Lucerne.",
+      "wikidata": "Wikidata Q112013887: «Seehotel Schwert» (hotel) is recorded at this point.",
+      "placesPhoto": "Reference photo from Google Places shows the same building: the same lakeside terrace and white façade.",
+      "archivePostcard": "Staatsarchiv Schwyz online catalogue: the postcard «Seehotel Schwert und Hotel Müller, Gersau» shows the same building, labelled «SCHWERT».",
+      "streetView": "Google Street View (November 2014, heading 222°) shows the street-side façade with the same «SCHWERT» lettering.",
+      "lens": "Google Lens: 6 web pages carry a similar image, e.g. «Seehotel Schwert – Gersau». A similar image only, so a weak source.",
+      "lakeDistance": "swisstopo, swissNAMES3D: «Vierwaldstättersee» lies 21 m from the motif point — plausibly in view.",
+      "lakeSeen": "In the image: a large lake with steep forested slopes rising straight from the shore, typical of Lake Lucerne."
     },
     "hypotheses": {
       "brunnen": "Brunnen SZ, looking east toward the Mythen",
@@ -170,12 +186,24 @@
     "posterior": "Posterior",
     "refutedBy": "refuted by",
     "refuted": "refuted",
-    "surviving": "surviving"
+    "surviving": "surviving",
+    "classes": {
+      "geodata": "Geodata",
+      "reference": "Reference image",
+      "research": "AI research",
+      "webImage": "Image on the web",
+      "imageContent": "Image content",
+      "streetView": "Street View"
+    },
+    "noCandidate": "no candidate",
+    "noCandidateBody": "No source named a street for this view, so there was nothing to prove. Abstaining is a result.",
+    "confirmedBy": "{count} source classes confirm",
+    "objections": "{count} objections upheld"
   },
   "orchestra": {
     "eyebrow": "The architecture",
-    "title": "Eighteen roles. Six model families. One router.",
-    "body": "The expensive model reasons. The cheap model formats. The segmentation model segments. And the component that decides whether we're right isn't a model at all — it's the Alps.",
+    "title": "Fifteen roles. Five model families. One ledger.",
+    "body": "Claude looks and decides. GPT and Gemini research independently — a claim counts most when both agree. Google's vision services find the same view on the web. And what must be right every time — the official geodata, the registers, the confidence formula — is not a model at all.",
     "hint": "Select an agent to see why that model",
     "modelLabel": "Model",
     "whyLabel": "Why this model",
@@ -191,15 +219,15 @@
     "agents": {
       "forensics": {
         "name": "Forensics",
-        "why": "Image facts are arithmetic, not interpretation. Aspect ratio, border geometry, grain and perceptual hash must never be hallucinated."
+        "why": "Fingerprints the file (SHA-256), reads the EXIF date and position, and prepares the access copy. No model: a hash is either right or wrong."
       },
       "scene": {
         "name": "Scene analysis",
-        "why": "Best-in-class structured visual inventory at a price that survives a 100,000-image backlog — strict JSON rather than prose."
+        "why": "One careful look at the photograph: which place, which buildings, which streets and signs. It only names candidates — nothing it says is accepted until a register or a second source agrees. Falls back to Claude Opus 4.5."
       },
       "heritage": {
         "name": "Built heritage",
-        "why": "Roof pitch, Klebdach, timber frame, onion dome: fine-grained typology combined with retrieval over a Schwyz heritage index."
+        "why": "Buildings are matched against the canton's heritage inventory (KSI), Wikidata and Google Places — and only in a town the research agreed on, so a namesake elsewhere cannot win."
       },
       "materiality": {
         "name": "Materiality",
@@ -211,19 +239,19 @@
       },
       "text-in-image": {
         "name": "Text in image",
-        "why": "Shop signs, street plates, boat names. Textract localises, Sonnet reads the half-legible Swiss-German toponym."
+        "why": "Shop signs, hotel names, house numbers: Google Cloud Vision reads every line of text in the pixels. In a 21st-century photograph, text is often the strongest single clue."
       },
       "skyline": {
-        "name": "Skyline extraction",
-        "why": "A pixel-accurate horizon curve is dense prediction. A language model cannot produce one; a segmentation model does it in 200 ms."
+        "name": "Skyline & water",
+        "why": "Names the peaks, lakes and rivers on the horizon. Every name is then checked against swisstopo's official names before it may count. Falls back to Claude Opus 4.5."
       },
       "geo": {
         "name": "Geo-grounding",
-        "why": "Multi-step tool use over federal geodata with Swiss-German toponym fuzziness. Rerank turns fifty candidates into three defensible ones."
+        "why": "swisstopo's locality register, municipal boundaries (BFS number), swissNAMES3D, the building register GWR and OpenStreetMap: every place name is resolved to a coordinate and an official municipality — alpine names (Alp, Flur, Pass) included."
       },
       "memory": {
         "name": "Collection memory",
-        "why": "«Have we seen this before?» is a nearest-neighbour problem, not a reasoning problem. Catches series, duplicates and same-day shoots across the whole fonds."
+        "why": "Compares the photograph with the candidate's own pictures — the heritage inventory, Wikidata, Places, research finds and the Staatsarchiv's online catalogue — and decides: same building or not. Counter-evidence only counts against the candidate's own pictures."
       },
       "chronology": {
         "name": "Chronology",
@@ -231,7 +259,7 @@
       },
       "synthesiser": {
         "name": "Hypothesis synthesis",
-        "why": "Must hold the whole evidence ledger in view and produce two to four genuinely competing hypotheses — not one answer with hedges."
+        "why": "Groups all evidence per field into hypotheses and computes the confidence — a noisy-OR over independent source classes. The number is calculated, never asked of a model."
       },
       "falsifier": {
         "name": "Terrain falsifier",
@@ -239,15 +267,15 @@
       },
       "redteam": {
         "name": "Red-team verification",
-        "why": "Deliberately a different model family. A Claude reviewing Claude shares its blind spots. Independence is the entire point of a second opinion."
+        "why": "A different model family tries to break the leading hypothesis. Objections it can support count against it. Falls back to Claude Haiku 4.5."
       },
       "adjudicator": {
         "name": "Adjudicator",
-        "why": "Weighs surviving hypotheses against objections, assigns calibrated confidence, and decides per field: emit or stay silent."
+        "why": "Reads the whole ledger and decides each field: accept, flag for review, or abstain. Nothing below 0.7 is confirmed. Falls back to Claude Opus 4.5."
       },
       "cartographer": {
-        "name": "Metadata cartography",
-        "why": "Mechanical mapping of the adjudication onto ISAD(G), Dublin Core and RiC-O, then schema-validated. Fast, cheap, reproducible."
+        "name": "Record & export",
+        "why": "Writes the versioned catalogue record and the Excel row — values, confidence and sources per field. Every human correction becomes a new version, never an overwrite."
       },
       "multilingual": {
         "name": "Multilingual & a11y",
@@ -260,6 +288,22 @@
       "curator": {
         "name": "Curator feedback",
         "why": "Every correction becomes a gazetteer alias, a few-shot exemplar and a regression case. Learning without fine-tuning and without silent drift."
+      },
+      "research": {
+        "name": "Open research · OpenAI",
+        "why": "GPT-5.5 searches the web for this photograph's place and buildings. Every page it cites is fetched and checked: a claim whose source does not name the value counts for less."
+      },
+      "research-google": {
+        "name": "Open research · Google",
+        "why": "Gemini searches with Google Search, independently of GPT. When both model families arrive at the same answer — and one source verifies it — the claim counts most."
+      },
+      "sighting": {
+        "name": "Reverse image search",
+        "why": "Google Cloud Vision web detection and Google Lens look for the same view published elsewhere. A full match is strong evidence; a merely similar image is weak."
+      },
+      "streetlevel": {
+        "name": "Street level",
+        "why": "Official Google Street View panoramas near the candidate (user uploads excluded). Claude Sonnet compares the façade with the photograph."
       }
     },
     "spine": {
@@ -465,7 +509,8 @@
       "schule": "Einsiedeln, schoolhouse and monastery",
       "lauterbrunnen": "A valley floor with a single farmstead and a waterfall",
       "bahngebiet": "A railway cutting beneath a masonry arch",
-      "mythenLuft": "A mountain summit photographed from the air"
+      "mythenLuft": "A mountain summit photographed from the air",
+      "gersauSchwert": "Seehotel Schwert in Gersau on Lake Lucerne (Staatsarchiv Schwyz, SG.CIV.17.94, EXIF 2011)"
     }
   },
   "common": {
@@ -1154,7 +1199,7 @@
       },
       "investigate": {
         "title": "2 · Investigate",
-        "body": "Eighteen agents across five tiers work the photograph in parallel, writing every finding into an evidence ledger. The run is watchable while it happens and replayable afterwards."
+        "body": "Fifteen roles across five tiers work the photograph, writing every finding into an evidence ledger. The run is watchable while it happens and replayable afterwards."
       },
       "review": {
         "title": "3 · Review",

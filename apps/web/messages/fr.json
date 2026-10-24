@@ -26,16 +26,16 @@
     "eyebrow": "Pilote · Archives d'État du canton de Schwyz",
     "titleLine1": "Une photographie ancienne",
     "titleLine2": "est un témoin.",
-    "subtitle": "ZEITZEUGE ne pose pas une question à la photographie — il la contre-interroge. Dix-huit agents spécialisés, six familles de modèles, ancrés dans les géodonnées officielles suisses. Chaque affirmation cite ses preuves. Ce qui ne peut être prouvé n'est pas affirmé.",
+    "subtitle": "ZEITZEUGE ne pose pas une question à la photographie — il la contre-interroge. Quinze rôles spécialisés, cinq familles de modèles, ancrés dans les géodonnées officielles suisses. Chaque affirmation cite ses preuves. Ce qui ne peut être prouvé n'est pas affirmé.",
     "motto": "«Nous interrogeons l'image.»",
     "primaryCta": "Lancer la démo",
     "secondaryCta": "Voir en tant qu'invité",
     "ctaNote": "Aucun compte requis. «Lancer la démo» ouvre une archive à vous, avec tous les droits ; «Voir en tant qu'invité» ouvre la collection préparée.",
     "metrics": {
-      "described": "images cataloguées",
-      "minutesSaved": "temps moyen gagné par image",
-      "precision": "précision sur le jeu de référence",
-      "abstention": "abstention délibérée"
+      "described": "photos Prio-1 examinées",
+      "runMinutes": "examen automatique moyen par photo",
+      "precision": "justes lorsque remplis · jeu vérifié par l'équipe",
+      "abstention": "des champs laissés ouverts à dessein"
     },
     "agentsLabel": "agents",
     "familiesLabel": "familles de modèles"
@@ -122,7 +122,7 @@
     "invariantLabel": "Invariant, imposé par le schéma",
     "invariantCaption": "Un champ incapable de nommer ses preuves n'atteint jamais la base de données. L'hallucination devient structurellement impossible, et non simplement déconseillée.",
     "recordTitle": "Notice de catalogue",
-    "recordSubtitle": "ISAD(G) · fonds Goetz",
+    "recordSubtitle": "Traitement Prio-1 · 24.10.2026 · les cinq champs prioritaires",
     "beforeLabel": "Avant",
     "afterLabel": "Après",
     "beforeValue": "inconnu",
@@ -140,9 +140,14 @@
       "date": "Date de création",
       "subject": "Sujet",
       "process": "Procédé",
-      "photographer": "Photographe"
+      "photographer": "Photographe",
+      "locality": "Localité",
+      "municipality": "Commune politique",
+      "building": "Bâtiment",
+      "landscape_feature": "Lac / rivière / montagne",
+      "street": "Rue"
     },
-    "abstainReason": "Aucun timbre d'atelier, aucun verso annoté, aucune correspondance dans la mémoire du fonds. Le système s'abstient.",
+    "abstainReason": "Aucun nom de rue ni numéro n'est lisible, et aucune source n'en cite pour cette vue. Le système laisse le champ ouvert plutôt que de deviner.",
     "evidenceHint": "Sélectionnez une preuve pour voir sa dérivation",
     "kinds": {
       "visual": "visuelle",
@@ -158,7 +163,18 @@
       "axenstrasse": "Le bâti riverain et les hôtels correspondent à l'état postérieur à l'aménagement du quai ; figurent sur la carte Siegfried à partir de la révision de 1893.",
       "printCaption": "Légende imprimée dans l'image : «6319 P.Z. — BRUNNEN MIT MYTHEN» ; sigle d'éditeur P.Z. = Photoglob Zürich.",
       "photochrom": "La superposition des couleurs et la trame correspondent au procédé photochrome ; le papier et la coupe sont conformes au format de l'éditeur.",
-      "quaiObjection": "Objection : la promenade ne montre pas encore l'agrandissement de 1900. La borne supérieure est revue à la baisse."
+      "quaiObjection": "Objection : la promenade ne montre pas encore l'agrandissement de 1900. La borne supérieure est revue à la baisse.",
+      "localityRegister": "swisstopo, répertoire officiel des localités : le point du motif se trouve dans la localité «Gersau» (NPA 6442).",
+      "municipalityBoundary": "swisstopo, swissBOUNDARIES3D : le point du motif se trouve dans la commune «Gersau» (OFS 1311).",
+      "openai": "GPT-5.5 avec recherche web : «Seehotel Schwert, Seestrasse 29, 6442 Gersau», au bord du lac des Quatre-Cantons — page source récupérée et vérifiée. Les deux familles de modèles concordent.",
+      "gemini": "Gemini avec Google Search, interrogé indépendamment : «Seehotel Schwert» à Gersau, au bord du lac des Quatre-Cantons.",
+      "wikidata": "Wikidata Q112013887 : «Seehotel Schwert» (hôtel) est répertorié à cet endroit.",
+      "placesPhoto": "Une photo de référence de Google Places montre le même bâtiment : la même terrasse au bord du lac et la même façade blanche.",
+      "archivePostcard": "Catalogue en ligne des Archives d'État de Schwyz : la carte postale «Seehotel Schwert und Hotel Müller, Gersau» montre le même bâtiment, marqué «SCHWERT».",
+      "streetView": "Google Street View (novembre 2014, orientation 222°) montre la façade côté rue avec la même inscription «SCHWERT».",
+      "lens": "Google Lens : 6 pages web portent une image semblable, p. ex. «Seehotel Schwert – Gersau». Seulement semblable, donc une source faible.",
+      "lakeDistance": "swisstopo, swissNAMES3D : le «Vierwaldstättersee» se trouve à 21 m du point du motif — plausiblement visible.",
+      "lakeSeen": "Dans l'image : un grand lac bordé de pentes boisées abruptes qui plongent dans l'eau, typique du lac des Quatre-Cantons."
     },
     "hypotheses": {
       "brunnen": "Brunnen SZ, vue vers l'est sur les Mythen",
@@ -170,12 +186,24 @@
     "posterior": "A posteriori",
     "refutedBy": "réfutée par",
     "refuted": "réfutée",
-    "surviving": "retenue"
+    "surviving": "retenue",
+    "classes": {
+      "geodata": "Géodonnées",
+      "reference": "Image de référence",
+      "research": "Recherche IA",
+      "webImage": "Image sur le web",
+      "imageContent": "Contenu de l'image",
+      "streetView": "Vue de rue"
+    },
+    "noCandidate": "aucun candidat",
+    "noCandidateBody": "Aucune source n'a cité de rue pour cette vue — il n'y avait rien à prouver. S'abstenir est un résultat.",
+    "confirmedBy": "{count} classes de sources confirment",
+    "objections": "{count} objections retenues"
   },
   "orchestra": {
     "eyebrow": "L'architecture",
-    "title": "Dix-huit rôles. Six familles de modèles. Un routeur.",
-    "body": "Le modèle coûteux raisonne. Le modèle bon marché met en forme. Le modèle de segmentation segmente. Et le composant qui décide si nous avons raison n'est pas un modèle du tout — ce sont les Alpes.",
+    "title": "Quinze rôles. Cinq familles de modèles. Un journal de preuves.",
+    "body": "Claude regarde et décide. GPT et Gemini cherchent indépendamment — une affirmation compte le plus quand les deux concordent. Les services de vision de Google retrouvent la même vue sur le web. Et ce qui doit être juste à chaque fois — les géodonnées officielles, les registres, la formule de confiance — n'est pas un modèle du tout.",
     "hint": "Sélectionnez un agent pour voir le choix du modèle",
     "modelLabel": "Modèle",
     "whyLabel": "Pourquoi ce modèle",
@@ -190,16 +218,16 @@
     "legendTitle": "Familles de modèles",
     "agents": {
       "forensics": {
-        "name": "Criminalistique",
-        "why": "Les faits de l'image relèvent de l'arithmétique, non de l'interprétation. Format, géométrie des bords, grain et empreinte perceptuelle ne doivent jamais être hallucinés."
+        "name": "Forensique",
+        "why": "Calcule l'empreinte du fichier (SHA-256), lit la date et la position EXIF et prépare la copie de travail. Aucun modèle : un hachage est juste ou faux."
       },
       "scene": {
         "name": "Analyse de scène",
-        "why": "Le meilleur inventaire visuel structuré à un prix qui survit à un arriéré de 100 000 images — du JSON strict plutôt que de la prose."
+        "why": "Un regard attentif sur la photographie : quel lieu, quels bâtiments, quelles rues et enseignes. Elle ne nomme que des candidats — rien n'est retenu avant qu'un registre ou une seconde source confirme. Modèle de secours : Claude Opus 4.5."
       },
       "heritage": {
         "name": "Patrimoine bâti",
-        "why": "Pente de toit, Klebdach, pan de bois, bulbe baroque : typologie fine combinée à une recherche dans un index patrimonial schwyzois."
+        "why": "Les bâtiments sont comparés à l'inventaire cantonal du patrimoine (KSI), à Wikidata et à Google Places — uniquement dans une localité sur laquelle la recherche s'accorde, afin qu'aucun homonyme ailleurs ne l'emporte."
       },
       "materiality": {
         "name": "Matérialité",
@@ -211,19 +239,19 @@
       },
       "text-in-image": {
         "name": "Texte dans l'image",
-        "why": "Enseignes, plaques de rue, noms de bateaux. Textract localise, Sonnet lit le toponyme suisse allemand à demi lisible."
+        "why": "Enseignes, noms d'hôtels, numéros de maison : Google Cloud Vision lit chaque ligne de texte dans l'image. Dans une photographie du XXIe siècle, le texte est souvent l'indice le plus fort."
       },
       "skyline": {
-        "name": "Extraction d'horizon",
-        "why": "Une courbe d'horizon au pixel près relève de la prédiction dense. Un modèle de langue ne sait pas la produire ; un modèle de segmentation le fait en 200 ms."
+        "name": "Horizon et eaux",
+        "why": "Nomme les sommets, lacs et rivières à l'horizon. Chaque nom est vérifié dans les noms officiels de swisstopo avant de compter. Modèle de secours : Claude Opus 4.5."
       },
       "geo": {
-        "name": "Ancrage géographique",
-        "why": "Usage d'outils en plusieurs étapes sur les géodonnées fédérales, avec le flou des toponymes suisses allemands. Le reclassement transforme cinquante candidats en trois défendables."
+        "name": "Géo-ancrage",
+        "why": "Répertoire officiel des localités, limites communales (numéro OFS), swissNAMES3D, registre des bâtiments RegBL et OpenStreetMap : chaque nom de lieu est ramené à une coordonnée et à une commune politique — y compris les noms alpins (alpe, lieu-dit, col)."
       },
       "memory": {
-        "name": "Mémoire du fonds",
-        "why": "«L'avons-nous déjà vu ?» est un problème de plus proche voisin, pas de raisonnement. Détecte séries, doublons et prises du même jour dans tout le fonds."
+        "name": "Mémoire des collections",
+        "why": "Compare la photographie aux images propres du candidat — inventaire du patrimoine, Wikidata, Places, trouvailles de la recherche et catalogue en ligne des Archives d'État — et tranche : même bâtiment ou non. Les contre-preuves ne comptent que contre les images propres du candidat."
       },
       "chronology": {
         "name": "Chronologie",
@@ -231,23 +259,23 @@
       },
       "synthesiser": {
         "name": "Synthèse d'hypothèses",
-        "why": "Doit embrasser tout le registre de preuves et produire deux à quatre hypothèses réellement concurrentes — et non une réponse assortie de précautions."
+        "why": "Regroupe toutes les preuves par champ en hypothèses et calcule la confiance — un OU bruité sur des classes de sources indépendantes. Le chiffre est calculé, jamais demandé à un modèle."
       },
       "falsifier": {
         "name": "Falsificateur de terrain",
         "why": "Le cœur du système. Recalcule le véritable horizon depuis la position supposée et le confronte à la photographie. La seule chose capable de donner tort à un modèle de langue."
       },
       "redteam": {
-        "name": "Vérification adverse",
-        "why": "Délibérément une autre famille de modèles. Un Claude qui relit Claude partage ses angles morts. L'indépendance est tout l'intérêt d'un second avis."
+        "name": "Vérification red team",
+        "why": "Une autre famille de modèles tente de réfuter l'hypothèse en tête. Les objections étayées comptent contre elle. Modèle de secours : Claude Haiku 4.5."
       },
       "adjudicator": {
-        "name": "Instance d'arbitrage",
-        "why": "Pèse les hypothèses survivantes face aux objections, attribue une confiance calibrée et décide champ par champ : publier ou se taire."
+        "name": "Arbitre",
+        "why": "Lit tout le journal de preuves et décide pour chaque champ : retenir, signaler pour vérification ou s'abstenir. Rien en dessous de 0,7 n'est confirmé. Modèle de secours : Claude Opus 4.5."
       },
       "cartographer": {
-        "name": "Cartographie des métadonnées",
-        "why": "Report mécanique de l'arbitrage vers ISAD(G), Dublin Core et RiC-O, puis validation de schéma. Rapide, économique, reproductible."
+        "name": "Notice et export",
+        "why": "Écrit la notice versionnée et la ligne Excel — valeur, confiance et sources par champ. Chaque correction humaine devient une nouvelle version, jamais un écrasement."
       },
       "multilingual": {
         "name": "Multilingue & accessibilité",
@@ -260,6 +288,22 @@
       "curator": {
         "name": "Retour du curateur",
         "why": "Chaque correction devient un alias de répertoire, un exemple few-shot et un cas de non-régression. Apprendre sans fine-tuning et sans dérive silencieuse."
+      },
+      "research": {
+        "name": "Recherche ouverte · OpenAI",
+        "why": "GPT-5.5 cherche sur le web le lieu et les bâtiments de la photographie. Chaque page citée est récupérée et vérifiée : une affirmation dont la source ne nomme pas la valeur compte moins."
+      },
+      "research-google": {
+        "name": "Recherche ouverte · Google",
+        "why": "Gemini cherche avec Google Search, indépendamment de GPT. Lorsque les deux familles de modèles arrivent à la même réponse — et qu'une source la confirme —, l'affirmation compte le plus."
+      },
+      "sighting": {
+        "name": "Recherche d'image inversée",
+        "why": "La détection web de Google Cloud Vision et Google Lens cherchent la même vue publiée ailleurs. Une correspondance complète est une preuve forte ; une image seulement semblable, une preuve faible."
+      },
+      "streetlevel": {
+        "name": "Vue de rue",
+        "why": "Panoramas Google Street View officiels près du candidat (sans contributions d'utilisateurs). Claude Sonnet compare la façade à la photographie."
       }
     },
     "spine": {
@@ -465,7 +509,8 @@
       "schule": "Einsiedeln, école et abbaye",
       "lauterbrunnen": "Fond de vallée avec une ferme isolée et une cascade",
       "bahngebiet": "Tranchée ferroviaire sous une arche maçonnée",
-      "mythenLuft": "Sommet de montagne photographié d’avion"
+      "mythenLuft": "Sommet de montagne photographié d’avion",
+      "gersauSchwert": "Seehotel Schwert à Gersau, au bord du lac des Quatre-Cantons (Archives d'État de Schwyz, SG.CIV.17.94, EXIF 2011)"
     }
   },
   "common": {
@@ -1154,7 +1199,7 @@
       },
       "investigate": {
         "title": "2 · Investigation",
-        "body": "Dix-huit agents répartis sur cinq paliers traitent la photographie en parallèle et inscrivent chaque constat dans un journal de preuves. Le traitement se suit en direct et se rejoue ensuite."
+        "body": "Quinze rôles répartis sur cinq paliers traitent la photographie et inscrivent chaque constat dans un journal de preuves. Le traitement se suit en direct et se rejoue ensuite."
       },
       "review": {
         "title": "3 · Vérification",

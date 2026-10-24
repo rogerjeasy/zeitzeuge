@@ -13,7 +13,7 @@ import { cn } from "@/lib/cn";
  */
 export function AgentGraph() {
   const t = useTranslations("orchestra");
-  const [selectedId, setSelectedId] = useState("falsifier");
+  const [selectedId, setSelectedId] = useState("research");
   const selected = AGENTS.find((a) => a.id === selectedId) ?? AGENTS[0];
 
   return (

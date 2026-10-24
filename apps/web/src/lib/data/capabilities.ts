@@ -24,9 +24,17 @@ export const SOVEREIGNTY = [
 ] as const;
 
 /** The counters in the hero. */
+/**
+ * Measured on the Prio-1 run, 24.10.2026 (production export, 11:31):
+ * - described: photos with a finished investigation (49 of 50; one run failed);
+ * - runMinutes: mean wall-clock investigation per photo, 422 s (median 294 s);
+ * - precision: of the fields the team labelled and the system filled, the share
+ *   that names the labelled value — 34 of 43 on 17 photos (evaluate.py);
+ * - abstention: ranked fields left open on purpose — 105 of 245.
+ */
 export const METRICS = [
-  { id: "described", value: 12438, suffix: "", decimals: 0 },
-  { id: "minutesSaved", value: 3.2, suffix: " Min", decimals: 1 },
-  { id: "precision", value: 94, suffix: " %", decimals: 0 },
-  { id: "abstention", value: 11, suffix: " %", decimals: 0 },
+  { id: "described", value: 49, suffix: "", decimals: 0 },
+  { id: "runMinutes", value: 7.0, suffix: " Min", decimals: 1 },
+  { id: "precision", value: 79, suffix: " %", decimals: 0 },
+  { id: "abstention", value: 43, suffix: " %", decimals: 0 },
 ] as const;

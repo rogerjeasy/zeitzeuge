@@ -31,6 +31,18 @@ export const HERO_PHOTO: ArchivePhoto = {
   height: 1267,
 };
 
+/**
+ * The case-file example: a Prio-1 photograph of the Staatsarchiv Schwyz
+ * (SG.CIV.17.94, Gersau, EXIF 2011), not one of the public-domain prints above.
+ */
+export const RECORD_PHOTO: ArchivePhoto = {
+  src: "/archive/sg-civ-17-94.jpg",
+  key: "gersauSchwert",
+  signature: "SG.CIV.17.94",
+  width: 1700,
+  height: 956,
+};
+
 export const GALLERY: ArchivePhoto[] = [
   { src: "/archive/goldau-mythen.jpg", key: "goldau", signature: "StASZ Foto/Bettschart/0117", width: 1700, height: 1277 },
   { src: "/archive/einsiedeln-kloster.jpg", key: "einsiedeln", signature: "StASZ Foto/Bettschart/0308", width: 1700, height: 1271 },

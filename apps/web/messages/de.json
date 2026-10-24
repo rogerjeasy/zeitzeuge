@@ -26,16 +26,16 @@
     "eyebrow": "Pilot · Staatsarchiv des Kantons Schwyz",
     "titleLine1": "Ein historisches Foto",
     "titleLine2": "ist ein Zeuge.",
-    "subtitle": "ZEITZEUGE stellt keine Frage — es führt ein Kreuzverhör. 18 spezialisierte Agenten, sechs Modellfamilien, verankert in amtlichen Schweizer Geodaten. Jede Aussage nennt ihre Belege. Was sich nicht belegen lässt, wird nicht behauptet.",
+    "subtitle": "ZEITZEUGE stellt keine Frage — es führt ein Kreuzverhör. 15 spezialisierte Rollen, fünf Modellfamilien, verankert in amtlichen Schweizer Geodaten. Jede Aussage nennt ihre Belege. Was sich nicht belegen lässt, wird nicht behauptet.",
     "motto": "«Wir befragen das Bild.»",
     "primaryCta": "Demo starten",
     "secondaryCta": "Als Gast ansehen",
     "ctaNote": "Kein Konto nötig. «Demo starten» öffnet ein eigenes Archiv mit allen Rechten, «Als Gast ansehen» die vorbereitete Sammlung.",
     "metrics": {
-      "described": "Bilder erschlossen",
-      "minutesSaved": "Ø Zeit pro Bild gespart",
-      "precision": "Präzision auf dem Gold-Set",
-      "abstention": "bewusste Enthaltung"
+      "described": "Prio-1-Fotos untersucht",
+      "runMinutes": "Ø maschinelle Untersuchung pro Foto",
+      "precision": "richtig, wo ausgefüllt · vom Team geprüft",
+      "abstention": "der Felder bewusst offen gelassen"
     },
     "agentsLabel": "Agenten",
     "familiesLabel": "Modellfamilien"
@@ -122,7 +122,7 @@
     "invariantLabel": "Invariante, im Schema erzwungen",
     "invariantCaption": "Ein Feld, das seine Belege nicht benennen kann, erreicht die Datenbank nicht. Halluzination wird strukturell unmöglich, nicht bloss unerwünscht.",
     "recordTitle": "Katalogeintrag",
-    "recordSubtitle": "ISAD(G) · Bestand Goetz",
+    "recordSubtitle": "Prio-1-Lauf · 24.10.2026 · die fünf priorisierten Felder",
     "beforeLabel": "Vorher",
     "afterLabel": "Nachher",
     "beforeValue": "unbekannt",
@@ -140,9 +140,14 @@
       "date": "Entstehungszeit",
       "subject": "Bildinhalt",
       "process": "Verfahren",
-      "photographer": "Fotograf/in"
+      "photographer": "Fotograf/in",
+      "locality": "Ortschaft",
+      "municipality": "Politische Gemeinde",
+      "building": "Gebäude",
+      "landscape_feature": "See / Fluss / Berg",
+      "street": "Strasse"
     },
-    "abstainReason": "Kein Signaturstempel, kein beschriftetes Verso, kein Treffer im Bestandsgedächtnis. Das System enthält sich.",
+    "abstainReason": "Kein Strassenname und keine Hausnummer sind lesbar, und keine Quelle nennt eine für diese Ansicht. Das System lässt das Feld offen, statt zu raten.",
     "evidenceHint": "Beleg wählen, um die Herleitung zu sehen",
     "kinds": {
       "visual": "visuell",
@@ -158,7 +163,18 @@
       "axenstrasse": "Uferbebauung und Hotelbauten entsprechen dem Zustand nach dem Ausbau der Quaianlage; auf der Siegfriedkarte erst ab Revision 1893 verzeichnet.",
       "printCaption": "Im Druck stehende Bildlegende «6319 P.Z. — BRUNNEN MIT MYTHEN»; Verlegerkürzel P.Z. = Photoglob Zürich.",
       "photochrom": "Farbschichtung und Rasterstruktur entsprechen dem Photochromverfahren; Papier und Randbeschnitt passen zum Verlagsformat.",
-      "quaiObjection": "Einwand: Die Uferpromenade zeigt noch nicht den Ausbau von 1900. Die obere Datumsgrenze wird nach unten korrigiert."
+      "quaiObjection": "Einwand: Die Uferpromenade zeigt noch nicht den Ausbau von 1900. Die obere Datumsgrenze wird nach unten korrigiert.",
+      "localityRegister": "swisstopo, Amtliches Ortschaftenverzeichnis: Der Motivpunkt liegt in der Ortschaft «Gersau» (PLZ 6442).",
+      "municipalityBoundary": "swisstopo, swissBOUNDARIES3D: Der Motivpunkt liegt in der Gemeinde «Gersau» (BFS 1311).",
+      "openai": "GPT-5.5 mit Websuche: «Seehotel Schwert, Seestrasse 29, 6442 Gersau», am Vierwaldstättersee — Quellseite abgerufen und geprüft. Beide Modellfamilien einig.",
+      "gemini": "Gemini mit Google-Suche, unabhängig befragt: «Seehotel Schwert» in Gersau am Vierwaldstättersee.",
+      "wikidata": "Wikidata Q112013887: «Seehotel Schwert» (Hotel) ist an diesem Punkt verzeichnet.",
+      "placesPhoto": "Referenzbild aus Google Places zeigt dasselbe Gebäude: dieselbe Seeterrasse und weisse Fassade.",
+      "archivePostcard": "Online-Archivkatalog des Staatsarchivs Schwyz: Die Postkarte «Seehotel Schwert und Hotel Müller, Gersau» zeigt dasselbe Gebäude, beschriftet «SCHWERT».",
+      "streetView": "Google Street View (November 2014, Blickrichtung 222°) zeigt die strassenseitige Fassade mit demselben Schriftzug «SCHWERT».",
+      "lens": "Google Lens: 6 Webseiten zeigen ein ähnliches Bild, z. B. «Seehotel Schwert – Gersau». Nur ähnlich, daher eine schwache Quelle.",
+      "lakeDistance": "swisstopo, swissNAMES3D: Der «Vierwaldstättersee» liegt 21 m vom Motivpunkt — in Sichtweite plausibel.",
+      "lakeSeen": "Im Bild: ein grosser See mit steilen, bewaldeten Hängen direkt am Ufer, typisch für den Vierwaldstättersee."
     },
     "hypotheses": {
       "brunnen": "Brunnen SZ, Blick ostwärts auf die Mythen",
@@ -170,12 +186,24 @@
     "posterior": "A posteriori",
     "refutedBy": "widerlegt durch",
     "refuted": "widerlegt",
-    "surviving": "überlebt"
+    "surviving": "überlebt",
+    "classes": {
+      "geodata": "Geodaten",
+      "reference": "Referenzbild",
+      "research": "KI-Recherche",
+      "webImage": "Bild im Web",
+      "imageContent": "Bildinhalt",
+      "streetView": "Strassenansicht"
+    },
+    "noCandidate": "kein Kandidat",
+    "noCandidateBody": "Keine Quelle nannte eine Strasse für diese Ansicht — es gab nichts zu beweisen. Offen lassen ist ein Ergebnis.",
+    "confirmedBy": "{count} Quellenarten bestätigen",
+    "objections": "{count} anerkannte Einwände"
   },
   "orchestra": {
     "eyebrow": "Die Architektur",
-    "title": "18 Rollen. 6 Modellfamilien. Ein Router.",
-    "body": "Das teure Modell denkt. Das günstige formatiert. Das Segmentierungsmodell segmentiert. Und die Komponente, die entscheidet, ob wir richtig liegen, ist gar kein Modell — es sind die Alpen.",
+    "title": "15 Rollen. 5 Modellfamilien. Ein Belegjournal.",
+    "body": "Claude schaut hin und entscheidet. GPT und Gemini recherchieren unabhängig — eine Aussage zählt am meisten, wenn beide übereinstimmen. Googles Bilddienste finden dieselbe Ansicht im Web. Und was jedes Mal stimmen muss — amtliche Geodaten, Register, die Konfidenzformel — ist gar kein Modell.",
     "hint": "Agent wählen, um die Modellbegründung zu sehen",
     "modelLabel": "Modell",
     "whyLabel": "Warum dieses Modell",
@@ -191,15 +219,15 @@
     "agents": {
       "forensics": {
         "name": "Forensik",
-        "why": "Bildfakten sind Arithmetik, keine Interpretation. Seitenverhältnis, Randgeometrie, Korn und Prüfsumme dürfen nie halluziniert werden."
+        "why": "Erzeugt den Fingerabdruck der Datei (SHA-256), liest EXIF-Datum und -Position und bereitet die Arbeitskopie vor. Kein Modell: Ein Hash stimmt oder stimmt nicht."
       },
       "scene": {
         "name": "Szenenanalyse",
-        "why": "Bestes strukturiertes Bildinventar zu einem Preis, der einen Rückstand von 100'000 Bildern überlebt — striktes JSON statt Prosa."
+        "why": "Ein genauer Blick auf die Aufnahme: welcher Ort, welche Gebäude, welche Strassen und Schilder. Sie nennt nur Kandidaten — nichts gilt, bevor ein Register oder eine zweite Quelle zustimmt. Ausweichmodell: Claude Opus 4.5."
       },
       "heritage": {
         "name": "Baukultur",
-        "why": "Dachneigung, Klebdach, Ständerbau, Zwiebelturm: feinkörnige Typologie, kombiniert mit Retrieval über einen Schwyzer Denkmalindex."
+        "why": "Gebäude werden mit dem Kantonalen Schutzinventar (KSI), Wikidata und Google Places abgeglichen — und nur in einem Ort, auf den sich die Recherche geeinigt hat. So kann kein Namensvetter anderswo gewinnen."
       },
       "materiality": {
         "name": "Materialität",
@@ -210,20 +238,20 @@
         "why": "Kurrent und Sütterlin brechen jede Standard-OCR. Zwei unabhängige Leser; ihre Uneinigkeit ist selbst ein Konfidenzsignal."
       },
       "text-in-image": {
-        "name": "Text im Bild",
-        "why": "Firmenschilder, Strassentafeln, Schiffsnamen. Textract lokalisiert, Sonnet liest den halb lesbaren schweizerdeutschen Flurnamen."
+        "name": "Schrift im Bild",
+        "why": "Ladenschilder, Hotelnamen, Hausnummern: Google Cloud Vision liest jede Textzeile im Bild. In einer Aufnahme aus dem 21. Jahrhundert ist Schrift oft der stärkste einzelne Hinweis."
       },
       "skyline": {
-        "name": "Horizont-Extraktion",
-        "why": "Eine pixelgenaue Horizontkurve ist dichte Prädiktion. Ein Sprachmodell kann sie nicht erzeugen; ein Segmentierungsmodell in 200 ms."
+        "name": "Horizont & Gewässer",
+        "why": "Benennt Gipfel, Seen und Flüsse am Horizont. Jeder Name wird gegen die amtlichen Namen von swisstopo geprüft, bevor er zählt. Ausweichmodell: Claude Opus 4.5."
       },
       "geo": {
         "name": "Geo-Verankerung",
-        "why": "Mehrstufige Werkzeugnutzung über Bundesgeodaten mit schweizerdeutscher Toponym-Unschärfe. Rerank macht aus 50 Kandidaten drei belegbare."
+        "why": "Amtliches Ortschaftenverzeichnis, Gemeindegrenzen (BFS-Nummer), swissNAMES3D, Gebäuderegister GWR und OpenStreetMap: Jeder Ortsname wird auf eine Koordinate und eine politische Gemeinde zurückgeführt — auch alpine Namen (Alp, Flur, Pass)."
       },
       "memory": {
-        "name": "Bestandsgedächtnis",
-        "why": "«Kennen wir das schon?» ist ein Nachbarschaftsproblem, kein Denkproblem. Findet Serien, Dubletten und Aufnahmen desselben Tages im ganzen Bestand."
+        "name": "Sammlungsgedächtnis",
+        "why": "Vergleicht die Aufnahme mit den eigenen Bildern des Kandidaten — Schutzinventar, Wikidata, Places, Recherchefunde und Online-Archivkatalog des Staatsarchivs — und entscheidet: dasselbe Gebäude oder nicht. Gegenbelege zählen nur gegen die eigenen Bilder des Kandidaten."
       },
       "chronology": {
         "name": "Chronologie",
@@ -231,7 +259,7 @@
       },
       "synthesiser": {
         "name": "Hypothesen-Synthese",
-        "why": "Muss das ganze Beweisbuch überblicken und zwei bis vier echt konkurrierende Hypothesen erzeugen — nicht eine Antwort mit Weichmachern."
+        "why": "Fasst alle Belege je Feld zu Hypothesen zusammen und berechnet die Konfidenz — ein Noisy-OR über unabhängige Quellenarten. Die Zahl wird berechnet, nie von einem Modell erfragt."
       },
       "falsifier": {
         "name": "Terrain-Falsifikator",
@@ -239,15 +267,15 @@
       },
       "redteam": {
         "name": "Red-Team-Prüfung",
-        "why": "Bewusst eine andere Modellfamilie. Ein Claude, der Claude prüft, teilt dessen blinde Flecken. Unabhängigkeit ist der ganze Zweck der Zweitmeinung."
+        "why": "Eine andere Modellfamilie versucht, die führende Hypothese zu widerlegen. Belegbare Einwände zählen dagegen. Ausweichmodell: Claude Haiku 4.5."
       },
       "adjudicator": {
-        "name": "Urteilsinstanz",
-        "why": "Wägt überlebende Hypothesen gegen Einwände, vergibt kalibrierte Konfidenz und entscheidet pro Feld: ausgeben oder schweigen."
+        "name": "Schiedsinstanz",
+        "why": "Liest das ganze Belegjournal und entscheidet je Feld: übernehmen, zur Prüfung markieren oder offen lassen. Unter 0,7 wird nichts bestätigt. Ausweichmodell: Claude Opus 4.5."
       },
       "cartographer": {
-        "name": "Metadaten-Kartografie",
-        "why": "Mechanische Abbildung des Urteils auf ISAD(G), Dublin Core und RiC-O, danach Schema-validiert. Schnell, günstig, reproduzierbar."
+        "name": "Datensatz & Export",
+        "why": "Schreibt den versionierten Katalogdatensatz und die Excel-Zeile — Wert, Konfidenz und Quellen je Feld. Jede menschliche Korrektur wird eine neue Version, nie ein Überschreiben."
       },
       "multilingual": {
         "name": "Mehrsprachigkeit & A11y",
@@ -260,6 +288,22 @@
       "curator": {
         "name": "Kurator-Rückkopplung",
         "why": "Jede Korrektur wird zu einem Gazetteer-Alias, einem Few-Shot-Beispiel und einem Regressionsfall. Lernen ohne Fine-Tuning und ohne stilles Abdriften."
+      },
+      "research": {
+        "name": "Offene Recherche · OpenAI",
+        "why": "GPT-5.5 sucht im Web nach Ort und Gebäuden der Aufnahme. Jede genannte Seite wird abgerufen und geprüft: Nennt die Quelle den Wert nicht, zählt die Aussage weniger."
+      },
+      "research-google": {
+        "name": "Offene Recherche · Google",
+        "why": "Gemini sucht mit der Google-Suche, unabhängig von GPT. Kommen beide Modellfamilien zum selben Ergebnis — und bestätigt eine Quelle es —, zählt die Aussage am meisten."
+      },
+      "sighting": {
+        "name": "Umgekehrte Bildsuche",
+        "why": "Google Cloud Vision (Web-Erkennung) und Google Lens suchen dieselbe Ansicht anderswo im Web. Ein voller Treffer ist ein starker Beleg, ein bloss ähnliches Bild ein schwacher."
+      },
+      "streetlevel": {
+        "name": "Strassenansicht",
+        "why": "Amtliche Google-Street-View-Panoramen beim Kandidaten (keine Nutzer-Uploads). Claude Sonnet vergleicht die Fassade mit der Aufnahme."
       }
     },
     "spine": {
@@ -465,7 +509,8 @@
       "schule": "Einsiedeln, Schulhaus und Kloster",
       "lauterbrunnen": "Talboden mit einzelnem Hof und Wasserfall",
       "bahngebiet": "Bahneinschnitt unter einem Gewölbebogen",
-      "mythenLuft": "Berggipfel aus der Luft aufgenommen"
+      "mythenLuft": "Berggipfel aus der Luft aufgenommen",
+      "gersauSchwert": "Seehotel Schwert in Gersau am Vierwaldstättersee (Staatsarchiv Schwyz, SG.CIV.17.94, EXIF 2011)"
     }
   },
   "common": {
@@ -1154,7 +1199,7 @@
       },
       "investigate": {
         "title": "2 · Untersuchung",
-        "body": "Achtzehn Agenten über fünf Stufen bearbeiten die Aufnahme parallel und schreiben jeden Befund in ein Belegjournal. Der Lauf ist live zu verfolgen und danach abspielbar."
+        "body": "Fünfzehn Rollen über fünf Stufen bearbeiten die Aufnahme und schreiben jeden Befund in ein Belegjournal. Der Lauf ist live zu verfolgen und danach abspielbar."
       },
       "review": {
         "title": "3 · Prüfung",

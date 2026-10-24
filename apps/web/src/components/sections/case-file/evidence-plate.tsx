@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { HERO_PHOTO } from "@/lib/data/archive";
+import { RECORD_PHOTO } from "@/lib/data/archive";
 import type { EvidenceItem } from "@/lib/data/record";
 import { cn } from "@/lib/cn";
 
@@ -28,14 +28,17 @@ export function EvidencePlate({
   return (
     <figure className="flex flex-col gap-2.5">
       <div className="relative overflow-hidden rounded-[0.625rem] border border-line-strong bg-surface shadow-plate">
-        <div className="relative aspect-[1700/1267] w-full">
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: `${RECORD_PHOTO.width} / ${RECORD_PHOTO.height}` }}
+        >
           <Image
-            src={HERO_PHOTO.src}
-            alt={tPhotos(HERO_PHOTO.key)}
+            src={RECORD_PHOTO.src}
+            alt={tPhotos(RECORD_PHOTO.key)}
             fill
             sizes="(max-width: 1024px) 100vw, 42vw"
             className={cn(
-              "photo-archival object-cover transition-[filter] duration-500",
+              "object-cover transition-[filter] duration-500",
               dimmed && "brightness-[0.82]",
             )}
           />
@@ -83,7 +86,7 @@ export function EvidencePlate({
 
       <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 font-mono text-[0.625rem] text-muted-2">
         <span>
-          {tCommon("signature")} {HERO_PHOTO.signature}
+          {tCommon("signature")} {RECORD_PHOTO.signature}
         </span>
         <span>{t("evidenceHint")}</span>
       </figcaption>

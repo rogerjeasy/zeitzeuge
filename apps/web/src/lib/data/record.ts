@@ -1,12 +1,19 @@
 /**
- * The worked example rendered in the Evidence Ledger section — the shape of a
- * real adjudication (§5.3), including one field that deliberately abstains.
+ * The worked example rendered in the Evidence Ledger section: a real record
+ * from the Prio-1 run on 24.10.2026 — SG.CIV.17.94 (Gersau), run
+ * run_01M5PDA916J7NS0M1D2NZTG88M, taken from the «Ergebnisse» and «Belege»
+ * sheets of the production export. Values, confidences, decisions, source
+ * classes, strengths, agents and models are as the pipeline wrote them; the
+ * evidence texts are short translations of its observations. All four filled
+ * fields match the team's QC labels; the street was deliberately left open.
+ * The ids (B01…) number the rows shown here, not ledger ids.
  */
 export type Decision = "emit" | "emit_with_review" | "abstain";
 
 export interface RecordField {
   /** i18n key under `ledger.fields.<key>` */
   key: string;
+  /** The brief's rank (Ortschaft → Gemeinde → Gebäude → See/Fluss/Berg → Strasse). */
   isadTag: string;
   value?: string;
   confidence?: number;
@@ -26,6 +33,8 @@ export interface EvidenceItem {
   id: string;
   kind: "visual" | "textual" | "geometric" | "external" | "archival" | "human";
   agent: string;
+  /** The model that produced it, as the ledger names it; absent for a register lookup. */
+  model?: string;
   strength: number;
   /** i18n key under `ledger.evidence.<key>` */
   key: string;
@@ -36,36 +45,46 @@ export interface EvidenceItem {
 }
 
 export const RECORD_FIELDS: RecordField[] = [
-  { key: "place", isadTag: "3.1.1", value: "Brunnen, Gemeinde Ingenbohl SZ", confidence: 0.94, decision: "emit", evidence: ["ev_001", "ev_007", "ev_012"] },
-  { key: "date", isadTag: "3.1.3", value: "1893–1900", confidence: 0.71, decision: "emit_with_review", evidence: ["ev_011", "ev_014", "ev_018"] },
-  { key: "subject", isadTag: "3.3.1", value: "Grosser & Kleiner Mythen, Urmiberg", confidence: 0.92, decision: "emit", evidence: ["ev_001", "ev_007"] },
-  { key: "process", isadTag: "3.4.4", value: "Photochromdruck", confidence: 0.88, decision: "emit", evidence: ["ev_014"] },
-  { key: "photographer", isadTag: "3.2.1", decision: "abstain", evidence: [] },
+  { key: "locality", isadTag: "#1", value: "Gersau", confidence: 0.952, decision: "emit", evidence: ["B01", "B03", "B04", "B11", "B09"] },
+  { key: "municipality", isadTag: "#2", value: "Gersau (BFS 1311)", confidence: 0.894, decision: "emit_with_review", evidence: ["B02", "B03", "B04"] },
+  { key: "building", isadTag: "#3", value: "Seehotel Schwert", confidence: 0.958, decision: "emit", evidence: ["B03", "B04", "B05", "B06", "B07", "B08", "B09"] },
+  { key: "landscape_feature", isadTag: "#4", value: "Vierwaldstättersee", confidence: 0.907, decision: "emit", evidence: ["B10", "B11", "B03"] },
+  { key: "street", isadTag: "#5", decision: "abstain", evidence: [] },
 ];
 
 export const EVIDENCE: EvidenceItem[] = [
-  { id: "ev_001", kind: "visual", agent: "scene", strength: 0.78, key: "twinPeak", region: { x: 0.47, y: 0.035, w: 0.29, h: 0.175 }, supports: ["hyp_A"] },
-  { id: "ev_007", kind: "geometric", agent: "falsifier", strength: 0.94, key: "horizonMatch", region: { x: 0.035, y: 0.03, w: 0.94, h: 0.165 }, supports: ["hyp_A"], refutes: ["hyp_B", "hyp_C"] },
-  { id: "ev_011", kind: "external", agent: "chronology", strength: 0.97, key: "axenstrasse", region: { x: 0.2, y: 0.52, w: 0.42, h: 0.13 }, supports: ["hyp_A"] },
-  { id: "ev_012", kind: "textual", agent: "text-in-image", strength: 0.83, key: "printCaption", region: { x: 0.05, y: 0.915, w: 0.31, h: 0.045 }, supports: ["hyp_A"] },
-  { id: "ev_014", kind: "visual", agent: "materiality", strength: 0.88, key: "photochrom", region: { x: 0.015, y: 0.015, w: 0.14, h: 0.17 }, supports: ["hyp_A"] },
-  { id: "ev_018", kind: "external", agent: "redteam", strength: 0.66, key: "quaiObjection", region: { x: 0.28, y: 0.575, w: 0.3, h: 0.085 }, refutes: ["hyp_A"] },
+  { id: "B01", kind: "geometric", agent: "geo", strength: 0.9, key: "localityRegister", supports: ["H1"] },
+  { id: "B02", kind: "geometric", agent: "geo", strength: 0.9, key: "municipalityBoundary", supports: ["H2"] },
+  { id: "B03", kind: "external", agent: "research", model: "GPT-5.5", strength: 0.9, key: "openai", supports: ["H1", "H2", "H3", "H4"] },
+  { id: "B04", kind: "external", agent: "research", model: "Gemini 4 Argon", strength: 0.9, key: "gemini", supports: ["H1", "H2", "H3", "H4"] },
+  { id: "B05", kind: "external", agent: "heritage", strength: 0.85, key: "wikidata", supports: ["H3"] },
+  { id: "B06", kind: "visual", agent: "memory", model: "Claude Sonnet 4.6", strength: 0.8, key: "placesPhoto", supports: ["H3"] },
+  { id: "B07", kind: "archival", agent: "memory", model: "Claude Sonnet 4.6", strength: 0.8, key: "archivePostcard", supports: ["H3"] },
+  { id: "B08", kind: "visual", agent: "streetlevel", model: "Claude Sonnet 4.6", strength: 0.8, key: "streetView", supports: ["H3"] },
+  { id: "B09", kind: "external", agent: "research", strength: 0.5, key: "lens", supports: ["H1", "H3"] },
+  { id: "B10", kind: "geometric", agent: "geo", strength: 0.9, key: "lakeDistance", supports: ["H4"] },
+  { id: "B11", kind: "visual", agent: "skyline", model: "Claude Opus 4.5", strength: 0.8, key: "lakeSeen", supports: ["H1", "H4"] },
 ];
 
 export interface Hypothesis {
   id: string;
-  /** i18n key under `ledger.hypotheses.<key>` */
-  key: string;
-  prior: number;
-  posterior: number;
-  refutedBy?: string;
+  /** i18n key under `ledger.fields.<field>` */
+  field: string;
+  /** The surviving value; absent when no candidate survived. */
+  value?: string;
+  /** Independent source classes that confirm it (i18n keys under `ledger.classes`). */
+  classes: string[];
+  objections: number;
+  confidence?: number;
 }
 
+/** One surviving hypothesis per field, as the adjudicator left it. */
 export const HYPOTHESES: Hypothesis[] = [
-  { id: "hyp_A", key: "brunnen", prior: 0.42, posterior: 0.94 },
-  { id: "hyp_B", key: "einsiedeln", prior: 0.31, posterior: 0.02, refutedBy: "ev_007" },
-  { id: "hyp_C", key: "weggis", prior: 0.19, posterior: 0.03, refutedBy: "ev_007" },
-  { id: "hyp_D", key: "unknown", prior: 0.08, posterior: 0.01 },
+  { id: "H1", field: "locality", value: "Gersau", classes: ["geodata", "reference", "research", "webImage", "imageContent"], objections: 0, confidence: 0.952 },
+  { id: "H2", field: "municipality", value: "Gersau", classes: ["geodata", "reference", "research"], objections: 0, confidence: 0.894 },
+  { id: "H3", field: "building", value: "Seehotel Schwert", classes: ["geodata", "reference", "research", "webImage", "streetView"], objections: 0, confidence: 0.958 },
+  { id: "H4", field: "landscape_feature", value: "Vierwaldstättersee", classes: ["geodata", "research", "webImage", "imageContent"], objections: 0, confidence: 0.907 },
+  { id: "H5", field: "street", classes: [], objections: 0 },
 ];
 
 /** The date distribution rendered as the chronology timeline. */

@@ -71,7 +71,10 @@ export function EvidencePanel({
               </p>
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.5625rem] uppercase tracking-[0.08em]">
-                <span className="text-muted-2">{tAgents(`${item.agent}.name`)}</span>
+                <span className="text-muted-2">
+                  {tAgents(`${item.agent}.name`)}
+                  {item.model ? ` · ${item.model}` : ""}
+                </span>
                 {item.supports?.length ? (
                   <span className="text-corroborated">
                     ↑ {item.supports.join(" ")}
