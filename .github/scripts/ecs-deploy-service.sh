@@ -17,11 +17,19 @@ aws ecs update-service --cluster "$cluster" --service "$service" \
   --task-definition "$task_definition" >/dev/null
 aws ecs wait services-stable --cluster "$cluster" --services "$service"
 
-# shellcheck disable=SC2016  # the backticks are JMESPath literals, not shell
-read -r primary rollout desired < <(aws ecs describe-services \
-  --cluster "$cluster" --services "$service" \
-  --query 'services[0].[deployments[?status==`PRIMARY`]|[0].taskDefinition, deployments[?status==`PRIMARY`]|[0].rolloutState, desiredCount]' \
-  --output text)
+# `services-stable` returns once the running count is right, which can be while
+# the old task is still draining (open SSE streams hold it until the target
+# group's deregistration delay ends) and the rollout still reads IN_PROGRESS.
+# Wait for a final rollout state, up to ten minutes.
+for _ in $(seq 1 60); do
+  # shellcheck disable=SC2016  # the backticks are JMESPath literals, not shell
+  read -r primary rollout desired < <(aws ecs describe-services \
+    --cluster "$cluster" --services "$service" \
+    --query 'services[0].[deployments[?status==`PRIMARY`]|[0].taskDefinition, deployments[?status==`PRIMARY`]|[0].rolloutState, desiredCount]' \
+    --output text)
+  [ "$rollout" = "IN_PROGRESS" ] || break
+  sleep 10
+done
 
 if [ "$primary" != "$task_definition" ]; then
   echo "::error::$service rolled back: primary is $primary, not $task_definition" >&2
