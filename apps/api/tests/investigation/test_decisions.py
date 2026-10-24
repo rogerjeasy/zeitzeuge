@@ -188,3 +188,21 @@ def test_only_verified_agreement_of_both_families_fixes_the_town() -> None:
     _add(ctx, "locality", "Lauerz", SourceClass.OPEN_RESEARCH, 0.6, families_agreeing=1)
     _add(ctx, "locality", "Weggis", SourceClass.GEODATA_LAYER, 0.9)
     assert agreed_places(ctx) == ["Küssnacht am Rigi"]
+
+
+def test_an_address_inherited_from_a_building_is_no_surer_than_the_building() -> None:
+    from zeitzeuge_api.investigation.confidence import Support, capped, score
+
+    street = score(
+        [
+            Support(SourceClass.ARCHIVAL, 0.8),
+            Support(SourceClass.GEODATA_LAYER, 1.0),
+            Support(SourceClass.REFERENCE_IMAGE, 0.8),
+        ]
+    )
+    assert street.decision is FieldDecisionKind.EMIT  # 0.93 on its own
+    bounded = capped(street, 0.512, "begrenzt durch die Gebäudebestimmung")
+    assert bounded.raw == pytest.approx(0.512)
+    assert bounded.decision is FieldDecisionKind.EMIT_WITH_REVIEW
+    assert bounded.explanation.endswith("begrenzt durch die Gebäudebestimmung")
+    assert capped(street, 0.4, "x").decision is FieldDecisionKind.ABSTAIN

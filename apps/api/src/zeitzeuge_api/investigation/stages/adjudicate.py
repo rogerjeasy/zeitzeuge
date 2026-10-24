@@ -25,7 +25,7 @@ from zeitzeuge_api.db.models.enums import (
     RunEventKind,
     SourceClass,
 )
-from zeitzeuge_api.investigation.confidence import Objection, Scored, Support, score
+from zeitzeuge_api.investigation.confidence import Objection, Scored, Support, capped, score
 from zeitzeuge_api.investigation.context import RunContext, StageEvent
 from zeitzeuge_api.investigation.contracts import (
     RANKED_FIELDS,
@@ -203,6 +203,54 @@ def decide(
     )
 
 
+def _bounded_by_building(
+    ctx: RunContext,
+    decision: FieldDecision,
+    scored: Scored,
+    building: FieldDecision,
+    building_score: Scored,
+    pick: Any,
+) -> tuple[FieldDecision, Scored]:
+    """An address inherited from a building is no surer than the building.
+
+    The street keeps the better of: what its independent evidence (a sign, a
+    register address of its own, research) supports alone, and its full score
+    capped at the building's confidence.
+    """
+    inherited = frozenset(
+        local_id
+        for local_id in decision.evidence
+        if (item := ctx.ledger.by_id(local_id)) is not None and item.attrs.get("via_building")
+    )
+    if not inherited:
+        return decision, scored
+    ceiling = building_score.raw if building.decision is not FieldDecisionKind.ABSTAIN else 0.0
+    bounded = capped(scored, ceiling, "begrenzt durch die Gebäudebestimmung")
+    alone_decision, alone = decide(
+        ctx,
+        "street",
+        decision.hypothesis,
+        [c for c in decision.evidence if c not in inherited],
+        list(pick.upheld_objections) if pick else [],
+        decision.rationale,
+        inherited,
+    )
+    if alone.raw >= bounded.raw:
+        return alone_decision, alone
+    if bounded.decision is FieldDecisionKind.ABSTAIN:
+        return (
+            FieldDecision(
+                field="street",
+                decision=FieldDecisionKind.ABSTAIN,
+                hypothesis=decision.hypothesis,
+                abstain_reason=AbstainReason.INSUFFICIENT_EVIDENCE,
+                rationale=decision.rationale,
+            ),
+            bounded,
+        )
+    return decision.model_copy(update={"decision": bounded.decision}), bounded
+
+
 async def run(ctx: RunContext) -> None:
     record = ctx.begin(STAGE, AgentId.ADJUDICATOR)
     chosen: dict[str, Any] = {}
@@ -235,6 +283,10 @@ async def run(ctx: RunContext) -> None:
             pick.rationale if pick else "",
             excluded,
         )
+        if field == "street" and decision.decision is not FieldDecisionKind.ABSTAIN:
+            decision, scored = _bounded_by_building(
+                ctx, decision, scored, decisions["building"], scores["building"], pick
+            )
         decisions[field], scores[field] = decision, scored
         summary = (
             f"{FIELD_DE[field]}: «{decision.value}» · {scored.raw:.2f} · {scored.explanation}"

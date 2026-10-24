@@ -336,6 +336,7 @@ async def run(ctx: RunContext) -> None:
                 strength=REFERENCE_TITLE_MATCH,
                 field="street",
                 value=address.group(0),
+                attrs_extra={"via_building": candidate.name},
             )
 
     # --- open web on what is now plausible ------------------------------------

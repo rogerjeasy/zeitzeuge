@@ -35,7 +35,7 @@ judge with a calculator all get the same number from the same inputs.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 
 from zeitzeuge_api.db.models.enums import AbstainReason, FieldDecisionKind, SourceClass
@@ -218,6 +218,28 @@ def score(
         corroborating_count=len(support),
         objection_count=len(objections),
         explanation=_explain(ordered, len(objections), refuted=refuted),
+    )
+
+
+def capped(scored: Scored, ceiling: float, why: str) -> Scored:
+    """The same score, no higher than `ceiling`, with the decision the rule gives it.
+
+    Used for a field that inherits its certainty from another one: an address read
+    off a building can be no surer than the building (SG.CIV.17.139: the wrong
+    chapel at 0.51 gave «Ringstrasse 116» 0.91).
+    """
+    if scored.raw <= ceiling or scored.decision is FieldDecisionKind.ABSTAIN:
+        return scored
+    raw = round(max(0.0, ceiling), 3)
+    if raw >= ACCEPT_AT:
+        decision, reason = FieldDecisionKind.EMIT, None
+    elif raw >= REVIEW_AT:
+        decision, reason = FieldDecisionKind.EMIT_WITH_REVIEW, None
+    else:
+        decision, reason = FieldDecisionKind.ABSTAIN, AbstainReason.INSUFFICIENT_EVIDENCE
+    explanation = f"{scored.explanation} · {why}"
+    return replace(
+        scored, raw=raw, decision=decision, abstain_reason=reason, explanation=explanation
     )
 
 
