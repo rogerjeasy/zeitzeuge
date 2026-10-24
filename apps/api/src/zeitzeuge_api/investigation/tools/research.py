@@ -208,6 +208,7 @@ class OpenAIResearch(_Base):
     ) -> ResearchResult:
         key = self._cache_key(image_sha256)
         cached = self._cache.get(key)
+        replayed = cached is not None
         if cached is None:
             body = {
                 "model": self.model,
@@ -254,7 +255,10 @@ class OpenAIResearch(_Base):
             raw["_latency_ms"] = int((time.monotonic() - started) * 1000)
             cached = raw
             self._cache.put(key, raw)
-        return self._result(cached)
+        result = self._result(cached)
+        if replayed:
+            result.cost_usd = 0.0  # paid on the first run; a replay costs nothing
+        return result
 
     def _result(self, raw: dict[str, Any]) -> ResearchResult:
         text, cited, searches = "", [], 0
@@ -296,6 +300,7 @@ class GeminiResearch(_Base):
     ) -> ResearchResult:
         key = self._cache_key(image_sha256)
         cached = self._cache.get(key)
+        replayed = cached is not None
         if cached is None:
             body = {
                 "contents": [
@@ -338,7 +343,10 @@ class GeminiResearch(_Base):
             raw["_latency_ms"] = int((time.monotonic() - started) * 1000)
             cached = raw
             self._cache.put(key, raw)
-        return self._result(cached)
+        result = self._result(cached)
+        if replayed:
+            result.cost_usd = 0.0  # paid on the first run; a replay costs nothing
+        return result
 
     def _result(self, raw: dict[str, Any]) -> ResearchResult:
         candidates = raw.get("candidates") or []
