@@ -67,6 +67,8 @@ class Binding:
 
 
 OPUS = Binding("eu.anthropic.claude-opus-4-6-v1", "claude-opus", 5.0, 25.0)
+OPUS_45 = Binding("eu.anthropic.claude-opus-4-5-20251101-v1:0", "claude-opus", 5.0, 25.0)
+"""Separate capacity on the EU profile: the fallback when Opus 4.6 stays throttled."""
 SONNET = Binding("eu.anthropic.claude-sonnet-4-6", "claude-sonnet", 3.0, 15.0)
 HAIKU = Binding("eu.anthropic.claude-haiku-4-5-20251001-v1:0", "claude-haiku", 1.0, 5.0)
 OPENAI = Binding("global.openai.gpt-6.1-sol", "openai", 2.5, 10.0)
@@ -94,10 +96,10 @@ DEFAULT_BINDINGS: dict[Task, Binding] = {
     Task.EXTRACT: SONNET,
 }
 FALLBACKS: dict[Task, Binding] = {
-    Task.PERCEIVE: SONNET,
+    Task.PERCEIVE: OPUS_45,
     Task.COMPARE: HAIKU,
     Task.CHALLENGE: HAIKU,
-    Task.ADJUDICATE: SONNET,
+    Task.ADJUDICATE: OPUS_45,
     Task.EXTRACT: HAIKU,
 }
 """Used when the first choice is refused (no model access, a policy, a region).
@@ -117,8 +119,10 @@ _THROTTLED = {
     "ModelNotReadyException",
 }
 """Bedrock is busy, not refusing: wait and try again, then fall back for this call only."""
-_BACKOFF_SECONDS = (4.0, 8.0, 15.0, 25.0, 40.0)
-"""≈ 90 s plus jitter before giving up on one model; the run's heartbeat keeps it alive."""
+_BACKOFF_SECONDS = (4.0, 8.0, 15.0)
+"""≈ 30 s plus jitter before switching to the fallback model. On the prod re-run Opus 4.6
+stayed throttled even at two calls per photo (EU capacity, not our request rate);
+Opus 4.5 has its own capacity and answers at once."""
 REQUESTS_PER_MINUTE: dict[str, float] = {
     "claude-opus": 18.0,
     "claude-sonnet": 45.0,
@@ -213,7 +217,8 @@ class ModelClient:
             self.bindings[Task.CHALLENGE] = OPENAI_DIRECT
         self._refused: dict[str, float] = {}
         """model id → when it was last refused; skipped for a while instead of re-asked."""
-        self._pacers = {family: _Pacer(rpm) for family, rpm in REQUESTS_PER_MINUTE.items()}
+        self._pacers: dict[str, _Pacer] = {}
+        """Per model id: Opus 4.6 and Opus 4.5 have separate quotas."""
         self._client = client or boto3.session.Session(region_name=region).client(
             "bedrock-runtime",
             config=Config(retries={"max_attempts": 2, "mode": "standard"}, read_timeout=180),
@@ -350,7 +355,8 @@ class ModelClient:
         messages: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """One Converse call, paced per model family and patient with throttling."""
-        pacer = self._pacers.get(binding.family)
+        rpm = REQUESTS_PER_MINUTE.get(binding.family)
+        pacer = self._pacers.setdefault(binding.model_id, _Pacer(rpm)) if rpm else None
         for delay in (*_BACKOFF_SECONDS, None):
             if pacer is not None:
                 await pacer.wait()

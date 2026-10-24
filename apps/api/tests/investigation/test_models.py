@@ -7,7 +7,7 @@ from typing import Any
 from botocore.exceptions import ClientError
 
 from zeitzeuge_api.investigation.contracts import Challenge
-from zeitzeuge_api.investigation.models import HAIKU, OPUS, SONNET, ModelClient, Task
+from zeitzeuge_api.investigation.models import HAIKU, OPUS, OPUS_45, ModelClient, Task
 
 
 class FakeBedrock:
@@ -39,10 +39,10 @@ async def test_a_refused_model_falls_back_and_is_then_skipped() -> None:
     client = ModelClient(client=fake)
     for _ in range(2):
         reply = await client.ask(Task.ADJUDICATE, Challenge, system="s", prompt="p")
-        assert reply.model_id == SONNET.model_id
+        assert reply.model_id == OPUS_45.model_id
         assert reply.same_family_fallback is False
-    # the refusal is remembered: Opus is asked once, not on every call
-    assert fake.calls == [OPUS.model_id, SONNET.model_id, SONNET.model_id]
+    # the refusal is remembered: Opus 4.6 is asked once, not on every call
+    assert fake.calls == [OPUS.model_id, OPUS_45.model_id, OPUS_45.model_id]
 
 
 async def test_the_red_team_fallback_says_it_is_same_family() -> None:
@@ -72,7 +72,7 @@ async def test_one_rejected_request_does_not_demote_the_next() -> None:
     client = ModelClient(client=fake)
     first = await client.ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
     second = await client.ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
-    assert first.model_id == SONNET.model_id
+    assert first.model_id == OPUS_45.model_id
     assert second.model_id == OPUS.model_id
 
 
@@ -155,8 +155,8 @@ async def test_a_model_that_stays_busy_falls_back_for_this_call_only(monkeypatch
     fake = ThrottlingBedrock(busy=None)
     client = ModelClient(client=fake)
     reply = await client.ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
-    assert reply.model_id == SONNET.model_id
-    # Busy is not refused: the next call asks Opus again.
+    assert reply.model_id == OPUS_45.model_id
+    # Busy is not refused: the next call asks Opus 4.6 again.
     assert OPUS.model_id not in client._refused
 
 
