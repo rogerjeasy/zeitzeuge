@@ -117,3 +117,56 @@ async def test_an_openai_failure_falls_back_and_says_so() -> None:
     reply = await client.ask(Task.CHALLENGE, Challenge, system="s", prompt="p")
     assert reply.model_id == HAIKU.model_id
     assert reply.same_family_fallback is True
+
+
+class ThrottlingBedrock(FakeBedrock):
+    """Opus is busy for the first `busy` calls (or always), everything else answers."""
+
+    def __init__(self, busy: int | None) -> None:
+        super().__init__(set())
+        self.busy = busy
+
+    def converse(self, **kwargs: Any) -> dict[str, Any]:
+        model = kwargs["modelId"]
+        throttled = sum(1 for m in self.calls if m == OPUS.model_id)
+        if model == OPUS.model_id and (self.busy is None or throttled < self.busy):
+            self.calls.append(model)
+            raise ClientError(
+                {"Error": {"Code": "ThrottlingException", "Message": "Too many requests"}},
+                "Converse",
+            )
+        return super().converse(**kwargs)
+
+
+async def test_a_throttled_model_is_retried_not_failed(monkeypatch) -> None:
+    from zeitzeuge_api.investigation import models
+
+    monkeypatch.setattr(models, "_BACKOFF_SECONDS", (0.0, 0.0, 0.0))
+    fake = ThrottlingBedrock(busy=2)
+    reply = await ModelClient(client=fake).ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
+    assert reply.model_id == OPUS.model_id
+    assert fake.calls == [OPUS.model_id] * 3
+
+
+async def test_a_model_that_stays_busy_falls_back_for_this_call_only(monkeypatch) -> None:
+    from zeitzeuge_api.investigation import models
+
+    monkeypatch.setattr(models, "_BACKOFF_SECONDS", (0.0, 0.0))
+    fake = ThrottlingBedrock(busy=None)
+    client = ModelClient(client=fake)
+    reply = await client.ask(Task.COMPARE, Challenge, system="s", prompt="p")
+    assert reply.model_id == SONNET.model_id
+    # Busy is not refused: the next call asks Opus again.
+    assert OPUS.model_id not in client._refused
+
+
+async def test_the_pacer_spaces_requests_evenly() -> None:
+    import time
+
+    from zeitzeuge_api.investigation.models import _Pacer
+
+    pacer = _Pacer(per_minute=600)  # one every 0.1 s
+    started = time.monotonic()
+    for _ in range(4):
+        await pacer.wait()
+    assert time.monotonic() - started >= 0.29

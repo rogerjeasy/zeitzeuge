@@ -20,10 +20,12 @@ validation error, then the stage fails and the worker records it.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import json
 import os
+import random
 import time
 from dataclasses import dataclass
 from enum import StrEnum
@@ -105,6 +107,40 @@ _REQUEST_REFUSED = {"ValidationException"}
 """This one request was rejected: fall back for it alone. Caching it would let a
 single odd input demote every later call to the weaker model."""
 _REFUSAL_TTL_SECONDS = 600.0
+_THROTTLED = {
+    "ThrottlingException",
+    "TooManyRequestsException",
+    "ServiceUnavailableException",
+    "ModelNotReadyException",
+}
+"""Bedrock is busy, not refusing: wait and try again, then fall back for this call only."""
+_BACKOFF_SECONDS = (4.0, 8.0, 15.0, 25.0, 40.0)
+"""≈ 90 s plus jitter before giving up on one model; the run's heartbeat keeps it alive."""
+REQUESTS_PER_MINUTE: dict[str, float] = {
+    "claude-opus": 22.0,
+    "claude-sonnet": 45.0,
+    "claude-haiku": 45.0,
+}
+"""Below this account's quotas (Opus 4.6: 25 requests/min, Sonnet 4.6: 50 on the EU
+profile). The first prod run of the upgraded pipeline lost 7 photos to throttling:
+four parallel photos fire up to ten Opus calls each within a minute."""
+
+
+class _Pacer:
+    """Spaces requests to one model family evenly across every run of this worker."""
+
+    def __init__(self, per_minute: float) -> None:
+        self._interval = 60.0 / per_minute
+        self._next = 0.0
+        self._lock = asyncio.Lock()
+
+    async def wait(self) -> None:
+        async with self._lock:
+            now = time.monotonic()
+            start = max(now, self._next)
+            self._next = start + self._interval
+        if start > now:
+            await asyncio.sleep(start - now)
 
 
 def _family_of(model_id: str) -> str:
@@ -174,9 +210,10 @@ class ModelClient:
             self.bindings[Task.CHALLENGE] = OPENAI_DIRECT
         self._refused: dict[str, float] = {}
         """model id → when it was last refused; skipped for a while instead of re-asked."""
+        self._pacers = {family: _Pacer(rpm) for family, rpm in REQUESTS_PER_MINUTE.items()}
         self._client = client or boto3.session.Session(region_name=region).client(
             "bedrock-runtime",
-            config=Config(retries={"max_attempts": 4, "mode": "adaptive"}, read_timeout=180),
+            config=Config(retries={"max_attempts": 2, "mode": "standard"}, read_timeout=180),
         )
 
     async def ask(
@@ -209,7 +246,7 @@ class ModelClient:
                 return await self._ask(binding, contract, system, prompt, images or [], max_tokens)
             except ClientError as exc:
                 code = exc.response.get("Error", {}).get("Code", "")
-                refused = code in _ACCESS_REFUSED or code in _REQUEST_REFUSED
+                refused = code in _ACCESS_REFUSED or code in _REQUEST_REFUSED or code in _THROTTLED
                 if not refused or fallback is None or fallback == binding:
                     raise ModelError(f"{binding.model_id}: {code or exc}") from exc
                 if code in _ACCESS_REFUSED:
@@ -303,6 +340,27 @@ class ModelClient:
             latency_ms=int((time.monotonic() - started) * 1000),
         )
 
+    async def _send(
+        self,
+        binding: Binding,
+        converse: Any,
+        messages: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """One Converse call, paced per model family and patient with throttling."""
+        pacer = self._pacers.get(binding.family)
+        for delay in (*_BACKOFF_SECONDS, None):
+            if pacer is not None:
+                await pacer.wait()
+            try:
+                return dict(await anyio.to_thread.run_sync(converse, messages))
+            except ClientError as exc:
+                code = exc.response.get("Error", {}).get("Code", "")
+                if code not in _THROTTLED or delay is None:
+                    raise
+                log.warning("models.throttled", model=binding.model_id, retry_in_s=delay)
+                await asyncio.sleep(delay + random.uniform(0, delay / 2))  # noqa: S311
+        raise AssertionError("unreachable")  # pragma: no cover
+
     async def _ask(
         self,
         binding: Binding,
@@ -341,7 +399,7 @@ class ModelClient:
             )
 
         for _attempt in range(2):
-            response = await anyio.to_thread.run_sync(_converse, messages)
+            response = await self._send(binding, _converse, messages)
             usage = response.get("usage", {})
             input_tokens += int(usage.get("inputTokens", 0))
             output_tokens += int(usage.get("outputTokens", 0))
