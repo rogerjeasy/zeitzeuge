@@ -36,6 +36,8 @@ MODELS: tuple[tuple[str, str, str, float, float], ...] = (
     ("eu.anthropic.claude-haiku-4-5", "anthropic", "Claude Haiku 4.5", 1.0, 5.0),
     ("global.openai.", "openai", "OpenAI (Bedrock)", 2.5, 10.0),
     ("gpt-5.5", "openai", "GPT-5.5 + Websuche", 5.0, 30.0),
+    ("openai/gpt-6.1-sol", "openai", "GPT-6.1 Sol (Red Team)", 2.5, 10.0),
+    ("gpt-6.1-sol", "openai", "GPT-6.1 Sol (Red Team)", 2.5, 10.0),
     ("gpt-6", "openai", "GPT-6", 2.5, 10.0),
     ("gemini-4-argon", "google", "Gemini 4 Argon + Google Search", 2.0, 12.0),
     ("gemini", "google", "Gemini", 2.0, 12.0),

@@ -94,11 +94,11 @@ export function CostDashboard({ report }: { report: CostReport }) {
 
       <DailySpend report={report} vendors={present} usd={usd} />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="flex flex-col gap-5">
         <section aria-labelledby="by-model" className="flex min-w-0 flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-4 sm:p-5">
           <Heading id="by-model" title={t("byModel.title")} hint={t("byModel.hint")} />
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] border-collapse text-[0.75rem]">
+            <table className="w-full min-w-[48rem] border-collapse text-[0.75rem]">
               <thead>
                 <tr className="border-b border-line text-left text-muted">
                   <th scope="col" className="py-2 pr-3 font-medium">{t("byModel.model")}</th>
@@ -131,16 +131,16 @@ export function CostDashboard({ report }: { report: CostReport }) {
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-right font-mono tabular-nums">{int(m.calls)}</td>
-                    <td className="py-2 pr-3 text-right font-mono tabular-nums text-muted">
+                    <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums text-muted">
                       {compact(m.input_tokens)} / {compact(m.output_tokens)}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono tabular-nums text-muted">
+                    <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums text-muted">
                       {m.price_in_per_mtok !== null && m.price_out_per_mtok !== null
                         ? `${usd(m.price_in_per_mtok)} / ${usd(m.price_out_per_mtok)}`
                         : "—"}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono tabular-nums">{m.cost_per_call !== null ? usd(m.cost_per_call, 3) : "—"}</td>
-                    <td className="py-2 text-right font-mono font-medium tabular-nums text-foreground-strong">{usd(m.cost_usd)}</td>
+                    <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{m.cost_per_call !== null ? usd(m.cost_per_call, 3) : "—"}</td>
+                    <td className="whitespace-nowrap py-2 text-right font-mono font-medium tabular-nums text-foreground-strong">{usd(m.cost_usd)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -285,8 +285,9 @@ function DailySpend({ report, vendors, usd }: { report: CostReport; vendors: Cos
   const [asTable, setAsTable] = useState(false);
   const days = report.by_day;
   const max = Math.max(...days.map((d) => d.total), 0);
-  const top = niceCeil(max);
-  const ticks = [0, top / 4, top / 2, (3 * top) / 4, top];
+  const step = niceStep(max / 4);
+  const top = Math.max(step, Math.ceil(max / step) * step);
+  const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
   const W = 720;
   const H = 240;
   const pad = { l: 52, r: 12, t: 12, b: 28 };
@@ -358,7 +359,7 @@ function DailySpend({ report, vendors, usd }: { report: CostReport; vendors: Cos
               <g key={tick}>
                 <line x1={pad.l} x2={W - pad.r} y1={y(tick)} y2={y(tick)} stroke="var(--grid)" strokeWidth={1} />
                 <text x={pad.l - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-[var(--color-muted)] text-[10px]" style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {usd(tick, tick < 10 ? 2 : 0)}
+                  {usd(tick, step < 1 ? 2 : 0)}
                 </text>
               </g>
             ))}
@@ -445,11 +446,12 @@ function DailySpend({ report, vendors, usd }: { report: CostReport; vendors: Cos
   );
 }
 
-function niceCeil(v: number): number {
+/** A round tick step (1, 2, 5 × 10ⁿ) so the axis reads 0 / 5 / 10, never 6.25. */
+function niceStep(v: number): number {
   if (v <= 0) return 1;
   const exp = 10 ** Math.floor(Math.log10(v));
   const f = v / exp;
-  const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
   return nice * exp;
 }
 
