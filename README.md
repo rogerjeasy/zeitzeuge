@@ -312,6 +312,6 @@ Then push to `main`. The deploy workflows build `linux/amd64` images, push `:<sh
 Built in 24 hours at **Zentral Hack 2026** (HSLU, Campus Zug-Rotkreuz) for the Staatsarchiv des Kantons Schwyz:
 
 - **Roger Jeasy Bavibidila**, full-stack and AI engineering
-- **Richard**, solution architecture
+- **Richard Thanikkal**, solution architecture
 
 The Prio-1 photographs belong to the Staatsarchiv Schwyz and are used with its permission for this challenge. The historical prints on the public site are public-domain Photochrom prints from the Library of Congress; their attribution is in [`apps/web/public/archive/ATTRIBUTION.json`](apps/web/public/archive/ATTRIBUTION.json).
