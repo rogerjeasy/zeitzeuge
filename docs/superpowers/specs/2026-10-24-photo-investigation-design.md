@@ -169,3 +169,7 @@ Prompt wording; Overpass query shapes; the Staatsarchiv catalogue access method 
 - **Address complexes** report their base number («Grundstrasse 32»; the register holds entrances 32a–32h), with the entrances in the observation. Catalogue titles of a confirmed building («Grundstrasse 32 (Acherhof)») are `archival` evidence for the street.
 - **Mirror:** `POST /batches/{id}/mirror`, allowed only from the `stasz` archive into the `is_demo` archive, re-runnable. The seed attaches `ZZ_STASZ_MEMBERS` (verified, active accounts only) to `stasz`.
 - **Regression status of SG.CIV.17.3 on Sonnet 4.6:** «Schwyz» · «Schwyz» · «Mythen» at Prüfbedarf (0.70–0.73); Gebäude and Strasse open. The test that demands the brief's five values exactly is the target for a stronger perception model, not a number tuned for one photo.
+
+## 11. Superseded in part (07:30)
+
+The first run of the 50 (export 04:39) produced 0 übernahmefähig rows, 11 buildings and 1 street. [`2026-10-24-identification-upgrade.md`](2026-10-24-identification-upgrade.md) diagnoses why and changes §3's strengths (a register name lookup is existence evidence, 0.35), adds the source classes `reverse_image` and `open_research`, adds the Sighting and Research stages, drops the canton filter in grounding, and lets Point → Fields run from any identifying witness. Everything else in this note stands.

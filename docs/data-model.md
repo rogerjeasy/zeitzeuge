@@ -76,7 +76,7 @@ These are inherited from the code that already exists (`apps/api/src/zeitzeuge_a
 | Regions on an image | Normalised bbox `{x,y,w,h}` ∈ [0,1], origin top-left, **relative to the recto master file** | Exactly the `Region` type in `record.ts`; converts to IIIF `xywh=` pixels with the master's width/height |
 | Years | `SMALLINT` years; brackets as `(year_from, year_to, circa BOOLEAN)` with `CHECK (year_from <= year_to)` | The UI's `"1893–1900"` string is a rendering, never storage (§15) |
 | Text from outside | Verso transcriptions, OCR, tips, steer hints and external API responses are stored as **data** in columns named `*_raw`/`claim`/`hint`, never concatenated into prompts without the untrusted-block wrapper | Prompt-injection posture (`architecture.md` §14.1) |
-| Source classes | Every evidence item carries `source_class` (`exif · visual · text_in_image · geodata_layer · reference_image · open_web · terrain_geometry · street_level · archival · human`), NOT NULL. Independence is counted per class: ten hits from one website are one class | The confidence formula (I-14) and the Excel `*_Quellen` columns are computed from it |
+| Source classes | Every evidence item carries `source_class` (`exif · visual · text_in_image · geodata_layer · reference_image · reverse_image · open_research · open_web · terrain_geometry · street_level · archival · human`), NOT NULL. Independence is counted per class: ten hits from one website are one class | The confidence formula (I-14) and the Excel `*_Quellen` columns are computed from it |
 | Excel columns | Column names are German, ASCII-safe (`Gebaeude`, `Pruefbedarf`), defined **once** in `field_definitions.excel_column`; the `Ergebnisse` sheet order is `priority_rank`, then the fixed trailing columns (§8.12) | The archive reads the workbook; the later scopeArchiv import is a mapping edit |
 | Soft delete | Only on `users` (`deleted_at`) — attribution must survive account closure. Catalogue data is never deleted, only superseded | §17 of the proposal; `user.py` docstring |
 | Naming | `snake_case` tables (plural), FK `<entity>_id`, constraint names from `NAMING_CONVENTION` | Stable Alembic diffs |
@@ -454,7 +454,7 @@ Source: proposal §5.3 + Appendix B `EvidenceItem`; `record.ts`/`editor.ts` `Evi
 | `id`, `org_id`, `run_id` | uuid | | |
 | `local_id` | varchar(8) | | `ev_001`; `UNIQUE (run_id, local_id)` |
 | `kind` | `evidence_kind` | | `visual · textual · geometric · external · archival · human` |
-| `source_class` | `evidence_source_class` | | **NOT NULL.** `exif · visual · text_in_image · geodata_layer · reference_image · open_web · terrain_geometry · street_level · archival · human` — the unit of independence for the confidence formula (I-14): ten hits from one website are one class; a federal layer, a reference image and a street plate are three. Printed in the Excel `*_Quellen` columns |
+| `source_class` | `evidence_source_class` | | **NOT NULL.** `exif · visual · text_in_image · geodata_layer · reference_image · reverse_image · open_research · open_web · terrain_geometry · street_level · archival · human` — the unit of independence for the confidence formula (I-14): ten hits from one website are one class; a federal layer, a reference image and a street plate are three. Printed in the Excel `*_Quellen` columns |
 | `agent_id` | `agent_id` | ✓ | Null only for `human` |
 | `invocation_id` | uuid FK | ✓ | The agent call that produced it |
 | `model_id` | varchar(128) | ✓ | Null for geometry (`falsifier`) and human |
@@ -1157,7 +1157,7 @@ Source: `admin.ts` `ADMIN_DEFAULTS`, `BUDGET`.
 | `terrain_corroborate`, `terrain_refute` | numeric(4,3) | 0.85, 0.45 | Falsifier thresholds |
 | `street_corroborate`, `street_refute` | numeric(4,3) | 0.75, 0.35 | Street-level verifier thresholds (§7.15) |
 | `research_tier` | `research_tier` | `public_tools` | `swiss_only · eu · public_tools`. The brief clears the images for public tools and names Claude, OpenAI, Google Maps and Google image search as allowed aids, so the Staatsarchiv and demo tenants run `public_tools`; `swiss_only`/`eu` keep the residency-only posture for archives that need it. The router and the tool library consult it before every call; every change lands in `audit_log` (`policy.research_tier_changed`) |
-| `source_class_weights` | jsonb | `{exif: 0.6, visual: 0.3, text_in_image: 0.5, geodata_layer: 0.7, reference_image: 0.6, open_web: 0.4, terrain_geometry: 0.9, street_level: 0.5, archival: 0.7, human: 0.95}` | The `w_class` of the confidence formula (I-14) — defaults, re-fitted by calibration; the values in force are printed on the Excel `Methode` sheet |
+| `source_class_weights` | jsonb | `{exif: 0.6, visual: 0.3, text_in_image: 0.5, geodata_layer: 0.7, reference_image: 0.6, reverse_image: 0.8, open_research: 0.5, open_web: 0.4, terrain_geometry: 0.9, street_level: 0.5, archival: 0.7, human: 0.95}` | The `w_class` of the confidence formula (I-14) — defaults, re-fitted by calibration; the values in force are printed on the Excel `Methode` sheet |
 | `allow_abstention` | bool | true | Switchable off only with a recorded warning |
 | `fail_closed` | bool | true | Sensitivity gate default |
 | `per_run_cap_usd` | numeric(8,2) | 1.50 | Router refuses to start a stage that would exceed it |
@@ -1325,7 +1325,7 @@ Agents **never** write to Aurora directly; the ledger writer Lambda validates th
 {
   "id": "ev_007",                        // run-local
   "kind": "geometric",                   // visual|textual|geometric|external|archival|human
-  "source_class": "terrain_geometry",    // exif|visual|text_in_image|geodata_layer|reference_image|open_web|terrain_geometry|street_level|archival|human
+  "source_class": "terrain_geometry",    // exif|visual|text_in_image|geodata_layer|reference_image|reverse_image|open_research|open_web|terrain_geometry|street_level|archival|human
   "agent": "falsifier",
   "model": null,
   "observation": "DEM horizon re-rendered from 2687540/1206310 LV95, bearing 74.6°, hfov 38.6° (EXIF) — NCC 0.941 over 1280 columns",
@@ -1671,7 +1671,7 @@ offen       : record in_review with ≥ 1 ranked field still abstain and not fil
 | `invocation_status` | pending, running, succeeded, failed, skipped, reused | new |
 | `run_event_kind` | note, evidence, objection, abstain, verdict, state, cost, error | `theater.ts` |
 | `evidence_kind` | visual, textual, geometric, external, archival, human | proposal / `record.ts` |
-| `evidence_source_class` | exif, visual, text_in_image, geodata_layer, reference_image, open_web, terrain_geometry, street_level, archival, human | the confidence rule (I-14) |
+| `evidence_source_class` | exif, visual, text_in_image, geodata_layer, reference_image, reverse_image, open_research, open_web, terrain_geometry, street_level, archival, human | the confidence rule (I-14); `reverse_image` and `open_research` added by migration `0006` ([identification upgrade](superpowers/specs/2026-10-24-identification-upgrade.md)) |
 | `hypothesis_kind` | place, building, street, feature, date, subject, photographer | Appendix B + the five ranked fields |
 | `hypothesis_status` | open, refuted, surviving, selected, rejected | new |
 | `hypothesis_origin` | synthesiser, exif, reference_match, steer, tip | new |
