@@ -170,3 +170,23 @@ async def test_the_pacer_spaces_requests_evenly() -> None:
     for _ in range(4):
         await pacer.wait()
     assert time.monotonic() - started >= 0.29
+
+
+async def test_a_dropped_connection_is_retried(monkeypatch) -> None:
+    from botocore.exceptions import SSLError
+
+    from zeitzeuge_api.investigation import models
+
+    monkeypatch.setattr(models, "_BACKOFF_SECONDS", (0.0,))
+
+    class Dropping(FakeBedrock):
+        def converse(self, **kwargs: Any) -> dict[str, Any]:
+            if not self.calls:
+                self.calls.append(kwargs["modelId"])
+                raise SSLError(endpoint_url="https://bedrock", error="UNEXPECTED_EOF_WHILE_READING")
+            return super().converse(**kwargs)
+
+    fake = Dropping(refuse=set())
+    reply = await ModelClient(client=fake).ask(Task.PERCEIVE, Challenge, system="s", prompt="p")
+    assert reply.model_id == OPUS.model_id
+    assert fake.calls == [OPUS.model_id, OPUS.model_id]

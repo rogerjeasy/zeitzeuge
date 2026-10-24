@@ -35,7 +35,14 @@ import anyio
 import boto3
 import httpx
 from botocore.config import Config
-from botocore.exceptions import BotoCoreError, ClientError
+from botocore.exceptions import (
+    BotoCoreError,
+    ClientError,
+    ConnectionClosedError,
+    EndpointConnectionError,
+    ReadTimeoutError,
+    SSLError,
+)
 from PIL import Image
 from pydantic import BaseModel, ValidationError
 
@@ -119,6 +126,7 @@ _THROTTLED = {
     "ModelNotReadyException",
 }
 """Bedrock is busy, not refusing: wait and try again, then fall back for this call only."""
+_TRANSIENT = (SSLError, ConnectionClosedError, EndpointConnectionError, ReadTimeoutError)
 _BACKOFF_SECONDS = (4.0, 8.0, 15.0)
 """≈ 30 s plus jitter before switching to the fallback model. On the prod re-run Opus 4.6
 stayed throttled even at two calls per photo (EU capacity, not our request rate);
@@ -367,7 +375,13 @@ class ModelClient:
                 if code not in _THROTTLED or delay is None:
                     raise
                 log.warning("models.throttled", model=binding.model_id, retry_in_s=delay)
-                await asyncio.sleep(delay + random.uniform(0, delay / 2))  # noqa: S311
+            except _TRANSIENT as exc:
+                # A dropped TLS connection or a read timeout (SG.CIV.17.485 failed on
+                # «SSL: UNEXPECTED_EOF_WHILE_READING») is the network, not the model.
+                if delay is None:
+                    raise
+                log.warning("models.transient", model=binding.model_id, error=type(exc).__name__)
+            await asyncio.sleep(delay + random.uniform(0, delay / 2))  # noqa: S311
         raise AssertionError("unreachable")  # pragma: no cover
 
     async def _ask(
