@@ -69,7 +69,8 @@ OPENAI = Binding("global.openai.gpt-6.1-sol", "openai", 2.5, 10.0)
 OPENAI_DIRECT = Binding("gpt-6.1-sol", "openai", 2.5, 10.0)
 """The same model through OpenAI's own API: Bedrock does not offer OpenAI models to
 this account, the brief allows public tools, and OpenAI is the event's sponsor."""
-OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_URL = "https://api.openai.com/v1/responses"
+"""The Responses API: function tools on reasoning models are only offered here."""
 
 _FAMILIES = {
     "anthropic.claude-opus": "claude-opus",
@@ -192,7 +193,7 @@ class ModelClient:
                     return await self._ask_openai(
                         binding, contract, system, prompt, images or [], max_tokens
                     )
-                except (httpx.HTTPError, ValueError, KeyError, ModelError) as exc:
+                except (httpx.HTTPError, ValueError, KeyError, StopIteration, ModelError) as exc:
                     log.warning("models.openai_failed", error=str(exc)[:300])
             if fallback is None:
                 raise ModelError("OpenAI unavailable and no fallback")
@@ -228,33 +229,31 @@ class ModelClient:
         images: list[bytes],
         max_tokens: int,
     ) -> Reply[T]:
-        """Chat Completions with one forced function call, the same contract as Converse."""
+        """The Responses API with one forced function call: the same contract as Converse."""
         content: list[dict[str, Any]] = [
             {
-                "type": "image_url",
-                "image_url": {"url": "data:image/jpeg;base64," + base64.b64encode(i).decode()},
+                "type": "input_image",
+                "image_url": "data:image/jpeg;base64," + base64.b64encode(i).decode(),
             }
             for i in images
         ]
-        content.append({"type": "text", "text": prompt})
+        content.append({"type": "input_text", "text": prompt})
         body = {
             "model": binding.model_id,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": content},
-            ],
+            "instructions": system,
+            "input": [{"role": "user", "content": content}],
             "tools": [
                 {
                     "type": "function",
-                    "function": {
-                        "name": "answer",
-                        "description": "Return the answer. This is the only way to reply.",
-                        "parameters": contract.model_json_schema(),
-                    },
+                    "name": "answer",
+                    "description": "Return the answer. This is the only way to reply.",
+                    "parameters": contract.model_json_schema(),
+                    "strict": False,
                 }
             ],
-            "tool_choice": {"type": "function", "function": {"name": "answer"}},
-            "max_completion_tokens": max_tokens * 4,
+            "tool_choice": {"type": "function", "name": "answer"},
+            "reasoning": {"effort": "medium"},
+            "max_output_tokens": max_tokens * 4,
         }
         started = time.monotonic()
         http = self._http or httpx.AsyncClient()
@@ -273,14 +272,18 @@ class ModelClient:
             code = response.json().get("error", {}).get("code") if response.content else None
             raise ModelError(f"{binding.model_id}: HTTP {response.status_code} {code or ''}")
         payload = response.json()
-        call_ = payload["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"]
+        call_ = next(
+            item["arguments"]
+            for item in payload.get("output", [])
+            if item.get("type") == "function_call" and item.get("name") == "answer"
+        )
         try:
             data = contract.model_validate(json.loads(call_))
         except (ValidationError, ValueError) as exc:
             raise ModelError(f"{binding.model_id}: reply did not fit {contract.__name__}") from exc
         usage = payload.get("usage", {})
-        tokens_in = int(usage.get("prompt_tokens", 0))
-        tokens_out = int(usage.get("completion_tokens", 0))
+        tokens_in = int(usage.get("input_tokens", 0))
+        tokens_out = int(usage.get("output_tokens", 0))
         return Reply(
             data=data,
             model_id=f"openai/{binding.model_id}",

@@ -88,16 +88,11 @@ class FakeOpenAI:
         self.bodies.append(json)
         payload = (
             {
-                "choices": [
-                    {
-                        "message": {
-                            "tool_calls": [
-                                {"function": {"name": "answer", "arguments": '{"items": []}'}}
-                            ]
-                        }
-                    }
+                "output": [
+                    {"type": "reasoning", "summary": []},
+                    {"type": "function_call", "name": "answer", "arguments": '{"items": []}'},
                 ],
-                "usage": {"prompt_tokens": 100, "completion_tokens": 20},
+                "usage": {"input_tokens": 100, "output_tokens": 20},
             }
             if self.status == 200
             else {"error": {"code": "rate_limit_exceeded", "message": "echo of the prompt"}}
@@ -112,8 +107,8 @@ async def test_the_red_team_is_openai_when_a_key_is_present() -> None:
     assert reply.model_id == "openai/gpt-6.1-sol"
     assert reply.family == "openai" and reply.region == "external"
     assert reply.same_family_fallback is False
-    assert http.bodies[0]["tool_choice"]["function"]["name"] == "answer"
-    assert http.bodies[0]["messages"][1]["content"][0]["image_url"]["url"].startswith("data:image/")
+    assert http.bodies[0]["tool_choice"] == {"type": "function", "name": "answer"}
+    assert http.bodies[0]["input"][0]["content"][0]["image_url"].startswith("data:image/")
 
 
 async def test_an_openai_failure_falls_back_and_says_so() -> None:
