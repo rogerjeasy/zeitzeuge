@@ -14,7 +14,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import Any, ClassVar
 
-from sqlalchemy import CHAR, DateTime, Enum, MetaData, func
+from sqlalchemy import CHAR, DateTime, Enum, MetaData, String, func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import JSON, TypeDecorator
@@ -64,6 +64,26 @@ class JSONDict(TypeDecorator[dict]):
         if dialect.name == "postgresql":
             return dialect.type_descriptor(postgresql.JSONB())
         return dialect.type_descriptor(JSON())
+
+
+class StringArray(TypeDecorator[list]):
+    """`varchar[]` on PostgreSQL, a JSON list elsewhere.
+
+    `record_fields.source_classes` is an array in the data model because the
+    Excel prints it and the CI property test queries it; SQLite has no arrays,
+    so the unit suite stores the same list as JSON.
+    """
+
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(postgresql.ARRAY(String(64)))
+        return dialect.type_descriptor(JSON())
+
+    def process_result_value(self, value: Any, dialect: Any) -> list[str]:
+        return list(value or [])
 
 
 class Base(DeclarativeBase):
