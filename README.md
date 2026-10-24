@@ -51,8 +51,6 @@ ZEITZEUGE investigates each photograph like a witness. Models read the picture, 
 | Investigation time | **7 min 2 s** average, 4 min 53 s median, 12.5 photos an hour in parallel |
 | Cost | **$ 0.52** per photograph, every model call metered |
 
-The first pipeline scored 58 % on the same labels. The redesign — find, then prove — is written up in [`docs/superpowers/specs/2026-10-24-identification-upgrade.md`](docs/superpowers/specs/2026-10-24-identification-upgrade.md), failures included.
-
 ## Why this is hard
 
 A vision model asked «where is this?» answers fluently, and is often wrong in a way that *looks* sourced. On one Prio-1 photograph a web-searching model found a genuine catalogue entry and a genuine hospital address, then named the wrong building at 0.84 confidence. An archive filled with rows like that is worse than an empty one. An earlier attempt at this task failed for exactly this reason: confident guesses nobody could verify.
