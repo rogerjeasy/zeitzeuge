@@ -44,6 +44,11 @@ class RunNotifier:
             self._connection = None
 
     async def stop(self) -> None:
+        # Wake every open stream so it ends instead of holding the shutdown.
+        for queues in self._subscribers.values():
+            for queue in queues:
+                if not queue.full():
+                    queue.put_nowait({"closing": True})
         if self._connection is not None:
             await self._connection.close()
             self._connection = None

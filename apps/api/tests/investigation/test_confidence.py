@@ -52,7 +52,7 @@ def test_one_exact_register_match_alone_needs_review() -> None:
     result = score([Support(G, 1.0)])
     assert result.raw == pytest.approx(0.7)
     assert result.decision is FieldDecisionKind.EMIT_WITH_REVIEW
-    assert result.explanation == "1 Quellenart bestätigt (Geodaten) · 0 Einwände"
+    assert result.explanation == "1 Quellenart bestätigt (Geodaten) · 0 anerkannte Einwände"
 
 
 def test_three_independent_classes_reach_acceptance() -> None:
@@ -63,7 +63,8 @@ def test_three_independent_classes_reach_acceptance() -> None:
     assert result.source_classes == (G, R, T)
     assert result.corroborating_count == 3
     assert result.explanation == (
-        "3 Quellenarten bestätigen (Geodaten, Referenzbild, Schrift im Bild) · 0 Einwände"
+        "3 Quellenarten bestätigen (Geodaten, Referenzbild, Schrift im Bild) "
+        "· 0 anerkannte Einwände"
     )
 
 

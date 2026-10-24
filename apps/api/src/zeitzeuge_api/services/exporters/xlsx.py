@@ -472,7 +472,7 @@ def _write_methode(
         "zehn. Innerhalb einer Quellenart zählt nur der stärkste Beleg."
     )
     lines.text(
-        "Zweitens kostet ein Widerspruch etwas. Ein bestätigter Einwand senkt die Konfidenz, "
+        "Zweitens kostet ein Widerspruch etwas. Ein anerkannter Einwand senkt die Konfidenz, "
         "eine Widerlegung setzt sie auf null."
     )
 
@@ -554,7 +554,7 @@ def _write_methode(
     lines.section("5. Einwände und Widerlegungen")
     lines.text(
         "Ein eigener Prüfschritt sucht gezielt nach Gründen, warum eine Angabe falsch sein "
-        "könnte. Jeder bestätigte Einwand mit der Schwere s multipliziert die Konfidenz mit "
+        "könnte. Jeder anerkannte Einwand mit der Schwere s multipliziert die Konfidenz mit "
         f"(1 {_MINUS} s). Eine Widerlegung (Schwere 1 oder ein widersprechender Beleg) "
         "setzt die "
         "Konfidenz auf 0: Das Feld bleibt leer und erscheint in «Unbestimmt» mit dem Grund "
@@ -676,8 +676,8 @@ def _column_definitions(ranked: Sequence[_Ranked]) -> dict[str, str]:
             "bewusst leer gelassen wurde, nie 0."
         )
         definitions[f"{f.column}_Quellen"] = (
-            "Welche Quellenarten den Wert bestätigen und wie viele Einwände es gab; die "
-            "einzelnen Belege stehen im Blatt «Belege»."
+            "Welche Quellenarten den Wert bestätigen und wie viele Einwände die Prüfung "
+            "anerkannt hat; die einzelnen Belege stehen im Blatt «Belege»."
         )
         if f.key == "municipality":
             definitions[f"{f.column}_BFS"] = "BFS-Gemeindenummer der politischen Gemeinde."
@@ -833,7 +833,7 @@ def _render_sources(rf: RecordField) -> str:
     """The source line when a version predates the stored `explanation`."""
     names = [_source_class_de(c) for c in rf.source_classes]
     n, k = len(names), rf.objection_count
-    einwaende = f"{k} Einwand" if k == 1 else f"{k} Einwände"
+    einwaende = "1 anerkannter Einwand" if k == 1 else f"{k} anerkannte Einwände"
     if n == 0:
         return f"{rf.corroborating_count} Belege · {einwaende}"
     verb = "Quellenart bestätigt" if n == 1 else "Quellenarten bestätigen"

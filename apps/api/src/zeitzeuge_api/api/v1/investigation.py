@@ -201,6 +201,9 @@ async def stream_batch(
                 except TimeoutError:
                     yield b": keep-alive\n\n"
                     continue
+                if event.get("closing"):
+                    yield _sse("bye", {"reason": "server shutting down"})
+                    return
                 if event.get("org_id") != org_id:
                     continue
                 yield _sse(

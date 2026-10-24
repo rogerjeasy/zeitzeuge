@@ -171,7 +171,8 @@ def row_confidence(fields: Iterable[Scored | None]) -> float | None:
 
 
 def _explain(classes: Sequence[SourceClass], objections: int, *, refuted: bool) -> str:
-    einwaende = f"{objections} Einwand" if objections == 1 else f"{objections} Einwände"
+    # Only objections the adjudicator upheld are charged — and only those are counted.
+    einwaende = "1 anerkannter Einwand" if objections == 1 else f"{objections} anerkannte Einwände"
     if refuted:
         return f"Widerlegt · {einwaende} · bewusst leer gelassen"
     if not classes:

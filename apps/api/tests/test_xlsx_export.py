@@ -274,7 +274,9 @@ async def batch(app) -> dict[str, Any]:
         await session.flush()
         b.field(
             v_a, "locality", "Schwyz", "0.930", evidence=(geo, ref),
-            explanation="2 Quellenarten bestätigen (Geodaten, Referenzbild) · 0 Einwände",
+            explanation=(
+                "2 Quellenarten bestätigen (Geodaten, Referenzbild) · 0 anerkannte Einwände"
+            ),
         )  # fmt: skip
         b.field(
             v_a, "municipality", "Schwyz", "0.950", evidence=(geo,),
@@ -283,7 +285,7 @@ async def batch(app) -> dict[str, Any]:
         b.field(
             v_a, "building", "Alterszentrum Acherhof", "0.810", evidence=(ref, web),
             decision=FieldDecisionKind.EMIT_WITH_REVIEW,
-            explanation="2 Quellenarten bestätigen (Referenzbild, Web) · 1 Einwand",
+            explanation="2 Quellenarten bestätigen (Referenzbild, Web) · 1 anerkannter Einwand",
         )  # fmt: skip
         b.field(
             v_a, "landscape_feature", None, None,
@@ -292,7 +294,7 @@ async def batch(app) -> dict[str, Any]:
         )  # fmt: skip
         b.field(
             v_a, "street", "Grundstrasse 32", "0.920", evidence=(geo,),
-            explanation="1 Quellenart bestätigt (Geodaten) · 0 Einwände",
+            explanation="1 Quellenart bestätigt (Geodaten) · 0 anerkannte Einwände",
         )  # fmt: skip
         b.field(
             v_a, "subject_point", "2692500, 1208300", "0.920", evidence=(geo,),
@@ -377,7 +379,7 @@ async def test_the_machine_row(app, batch) -> None:
     assert a["Gemeinde"] == "Schwyz"
     assert a["Gemeinde_BFS"] == 1372
     # No stored explanation: rendered from the source classes.
-    assert a["Gemeinde_Quellen"] == "1 Quellenart bestätigt (Geodaten) · 0 Einwände"
+    assert a["Gemeinde_Quellen"] == "1 Quellenart bestätigt (Geodaten) · 0 anerkannte Einwände"
     assert a["Gebaeude"] == "Alterszentrum Acherhof"
     assert a["Gebaeude_Konfidenz"] == pytest.approx(0.81)
     # The abstained field: empty value, and an empty confidence cell, never 0.
