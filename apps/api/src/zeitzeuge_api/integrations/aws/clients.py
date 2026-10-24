@@ -46,6 +46,15 @@ class AwsClients:
             # Only local development redirects the SDK — at moto or LocalStack.
             if self._settings.aws_endpoint_url:
                 kwargs["endpoint_url"] = self._settings.aws_endpoint_url
+            elif service == "s3":
+                # Zurich is an opt-in region: S3's global endpoint does not serve
+                # its buckets, so a presigned POST or GET built on it fails in the
+                # browser before CORS even applies. Sign for the regional host.
+                region = self._settings.region
+                kwargs["endpoint_url"] = f"https://s3.{region}.amazonaws.com"
+                kwargs["config"] = _RETRY_CONFIG.merge(
+                    Config(signature_version="s3v4", s3={"addressing_style": "virtual"})
+                )
             self._cache[service] = self._session.client(service, **kwargs)
         return self._cache[service]
 
