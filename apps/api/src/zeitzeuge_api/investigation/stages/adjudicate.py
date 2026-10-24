@@ -108,8 +108,13 @@ def decide(
     cited: list[str],
     upheld: list[int],
     rationale: str,
+    excluded: frozenset[str] = frozenset(),
 ) -> tuple[FieldDecision, Scored]:
-    """The deterministic half: verify citations, apply the rule."""
+    """The deterministic half: verify citations, apply the rule.
+
+    `excluded` are evidence ids that may not count for this field — an address
+    derived only from a building the adjudicator left open (`via_building`).
+    """
     hypothesis: HypothesisOut | None = next(
         (h for h in ctx.ledger.hypotheses if h.local_id == hypothesis_id and h.field == field), None
     )
@@ -125,7 +130,20 @@ def decide(
             scored,
         )
 
-    valid = [c for c in cited if c in hypothesis.supporting] or list(hypothesis.supporting)
+    usable = [s for s in hypothesis.supporting if s not in excluded]
+    valid = [c for c in cited if c in usable] or usable
+    if not valid:
+        scored = score([])
+        return (
+            FieldDecision(
+                field=field,  # type: ignore[arg-type]
+                decision=FieldDecisionKind.ABSTAIN,
+                hypothesis=hypothesis.local_id,
+                abstain_reason=AbstainReason.INSUFFICIENT_EVIDENCE,
+                rationale="Die Adresse stützt sich nur auf ein Gebäude, das offen bleibt.",
+            ),
+            scored,
+        )
     support = [
         Support(item.source_class, item.strength)
         for item in (ctx.ledger.by_id(local_id) for local_id in valid)
@@ -146,8 +164,14 @@ def decide(
     # Weaker counter-evidence (a reference photo that shows another building) is
     # charged like an upheld objection of that strength: it is a stated reason
     # the value may be wrong, and it must cost something.
+    # Counter-evidence is charged like support is counted: once per source class, at
+    # its strongest. Four photos of a namesake in another town are one doubt, not four.
+    counter: dict[SourceClass, float] = {}
+    for item in refuting:
+        if item.strength < REFUTING_STRENGTH:
+            counter[item.source_class] = max(item.strength, counter.get(item.source_class, 0.0))
     charges = [Objection(o.severity) for o in objections] + [
-        Objection(item.strength) for item in refuting if item.strength < REFUTING_STRENGTH
+        Objection(strength) for strength in counter.values()
     ]
     scored = score(support, charges, refuted=refuted)
     upheld_indexes = [ctx.ledger.objections.index(o) for o in objections]
@@ -197,6 +221,11 @@ async def run(ctx: RunContext) -> None:
     scores: dict[str, Scored] = {}
     for field in RANKED_FIELDS:
         pick = chosen.get(field)
+        excluded: frozenset[str] = frozenset()
+        if field == "street" and decisions["building"].decision is FieldDecisionKind.ABSTAIN:
+            excluded = frozenset(
+                e.local_id for e in ctx.ledger.for_field("street") if e.attrs.get("via_building")
+            )
         decision, scored = decide(
             ctx,
             field,
@@ -204,6 +233,7 @@ async def run(ctx: RunContext) -> None:
             list(pick.evidence) if pick else [],
             list(pick.upheld_objections) if pick else [],
             pick.rationale if pick else "",
+            excluded,
         )
         decisions[field], scores[field] = decision, scored
         summary = (

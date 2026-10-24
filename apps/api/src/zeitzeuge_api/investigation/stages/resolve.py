@@ -139,7 +139,14 @@ def _proposed_building(ctx: RunContext) -> BuildingCandidate | None:
     return None
 
 
-def _restate(ctx: RunContext, witness: Evidence, field: str, value: str, why: str) -> None:
+def _restate(
+    ctx: RunContext,
+    witness: Evidence,
+    field: str,
+    value: str,
+    why: str,
+    extra: dict[str, Any] | None = None,
+) -> None:
     """Carry the witness that placed the point over to a field derived from it."""
     ctx.ledger.add(
         kind=witness.kind,
@@ -152,7 +159,7 @@ def _restate(ctx: RunContext, witness: Evidence, field: str, value: str, why: st
         source_uri=witness.source_uri,
         field=field,
         value=value,
-        attrs={"derived_from": witness.local_id},
+        attrs={"derived_from": witness.local_id, **(extra or {})},
     )
 
 
@@ -302,6 +309,7 @@ async def run(ctx: RunContext) -> None:
                 strength=1.0 if exact else NEAREST_ADDRESS_STRENGTH,
                 field="street",
                 value=complex_label,
+                attrs_extra={"via_building": building.name},
                 typed_value={
                     "name": address.label,
                     "street": address.attrs.get("street"),
@@ -316,6 +324,7 @@ async def run(ctx: RunContext) -> None:
                 "street",
                 complex_label or address.label,
                 f"Gebäude «{building.name}» bestätigt; Adresse {complex_label}",
+                {"via_building": building.name},
             )
             if exact:
                 ctx.ledger.add_from_hit(

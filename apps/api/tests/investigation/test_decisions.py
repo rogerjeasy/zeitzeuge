@@ -105,11 +105,25 @@ async def test_counter_evidence_costs_confidence() -> None:
     [hyp] = ctx.ledger.hypotheses
     assert len(hyp.refuting) == 2
     decision, scored = decide(ctx, "building", hyp.local_id, [], [], "")
-    # 1 - 0.405*0.52 = 0.789, * 0.6 * 0.6 = 0.284 -> left empty
-    assert scored.raw == pytest.approx(0.284, abs=2e-3)
+    # 1 - 0.405*0.52 = 0.789; two photos of one class are one doubt: * 0.6 = 0.473 -> empty
+    assert scored.raw == pytest.approx(0.473, abs=2e-3)
     assert decision.decision is FieldDecisionKind.ABSTAIN
     assert decision.abstain_reason is AbstainReason.INSUFFICIENT_EVIDENCE
-    assert scored.objection_count == 2
+    assert scored.objection_count == 1
+
+
+async def test_an_address_resting_only_on_an_open_building_stays_open() -> None:
+    ctx = _ctx()
+    _add(ctx, "street", "Waldeggstrasse 10", SourceClass.GEODATA_LAYER, 1.0, via_building="Spital")
+    _add(
+        ctx, "street", "Waldeggstrasse 10", SourceClass.REFERENCE_IMAGE, 0.8, via_building="Spital"
+    )
+    await hypothesise.run(ctx)
+    [hyp] = ctx.ledger.hypotheses
+    excluded = frozenset(hyp.supporting)
+    decision, _ = decide(ctx, "street", hyp.local_id, [], [], "", excluded)
+    assert decision.decision is FieldDecisionKind.ABSTAIN
+    assert decision.value is None
 
 
 async def test_no_hypothesis_is_an_abstention() -> None:

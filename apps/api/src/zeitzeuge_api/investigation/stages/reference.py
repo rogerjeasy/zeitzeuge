@@ -30,12 +30,13 @@ from zeitzeuge_api.investigation.confidence import (
 from zeitzeuge_api.investigation.context import RunContext
 from zeitzeuge_api.investigation.contracts import ReferenceVerdicts
 from zeitzeuge_api.investigation.models import Task, prepare_image
-from zeitzeuge_api.investigation.names import distinctive, is_placeholder
+from zeitzeuge_api.investigation.names import PLACE_WORDS, distinctive, is_placeholder
 from zeitzeuge_api.investigation.stages.grounding import Anchor, BuildingCandidate
+from zeitzeuge_api.investigation.stages.hypothesise import group_key
 from zeitzeuge_api.investigation.tools.base import MatchKind, ToolHit, ToolUnavailable
 from zeitzeuge_api.investigation.tools.geo import lv95_to_wgs84
 from zeitzeuge_api.investigation.tools.registers import names_match
-from zeitzeuge_api.investigation.tools.text import fold
+from zeitzeuge_api.investigation.tools.text import fold, tokens
 
 STAGE = "reference"
 ADDRESS = re.compile(r"\b[A-ZÄÖÜ][\wäöüéè-]*(?:strasse|gasse|weg|platz|rain|matt)\s+\d+\b")
@@ -141,6 +142,16 @@ async def _own_pictures(ctx: RunContext, candidate: BuildingCandidate, place: st
     return pictures + _found_images(ctx, candidate)
 
 
+def _elsewhere(title: str, place: str, candidate: BuildingCandidate) -> bool:
+    """The reference names another town: «Hotel Seehof du Lac, Gersau» says nothing against
+    the Seehof in Küssnacht. Its «different building» verdict is not counter-evidence."""
+    here = set(tokens(place))
+    if candidate.hit is not None:
+        here |= set(tokens(str(candidate.hit.attrs.get("municipality") or "")))
+    named = {t for t in tokens(title) if t in PLACE_WORDS}
+    return bool(named - here)
+
+
 async def _references(ctx: RunContext, candidate: BuildingCandidate, place: str) -> list[ToolHit]:
     found: list[ToolHit] = await _own_pictures(ctx, candidate, place)
     core = distinctive(candidate.name)
@@ -192,7 +203,12 @@ async def run(ctx: RunContext) -> None:
     confirmed: list[BuildingCandidate] = []
     compared = 0
 
+    compared_keys: set[str] = set()
     for candidate in candidates:
+        key = group_key("building", candidate.name)
+        if key in compared_keys:
+            continue
+        compared_keys.add(key)
         references = await _references(ctx, candidate, place)
         images: list[bytes] = []
         kept: list[ToolHit] = []
@@ -253,6 +269,7 @@ async def run(ctx: RunContext) -> None:
                 verdict.same_object == "no"
                 and verdict.confidence >= 0.8
                 and (hit.tool in OWN or names_match(hit.label, candidate.name))
+                and not _elsewhere(hit.label, place, candidate)
             ):
                 # Only a picture *of this candidate* can speak against it: a catalogue
                 # photo of another named house that looks different says nothing.
