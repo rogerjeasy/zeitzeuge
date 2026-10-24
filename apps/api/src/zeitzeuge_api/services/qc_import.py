@@ -37,8 +37,9 @@ from zeitzeuge_api.schemas import investigation as schemas
 from zeitzeuge_api.services.investigation_service import InvestigationService
 
 MAX_BYTES = 5 * 1024 * 1024
-MAX_UNPACKED = 40 * 1024 * 1024
-"""An .xlsx is a zip: a 5 MB upload could inflate to gigabytes inside openpyxl."""
+MAX_UNPACKED = 10 * 1024 * 1024
+"""An .xlsx is a zip: a 5 MB upload could inflate to gigabytes inside openpyxl.
+A 600-photo results sheet unpacks to about 2 MB."""
 MAX_PARTS = 300
 MAX_RATIO = 200
 MAX_ROWS = 5_000

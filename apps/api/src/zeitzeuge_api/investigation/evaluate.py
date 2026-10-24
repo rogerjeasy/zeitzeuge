@@ -136,27 +136,43 @@ def _rgb(cell: object) -> str:
     return str(fill.fgColor.rgb)
 
 
+MAX_HEADER_COLUMNS = 128
+"""The export has a few dozen columns; anything wider is not one of ours."""
+
+
 def read_labels(path: Path | IO[bytes], max_rows: int | None = None) -> dict[str, dict[str, str]]:
-    # openpyxl parses with defusedxml when it is installed (it is a dependency),
-    # so entity-expansion tricks in an uploaded workbook are refused.
-    sheet = load_workbook(path).worksheets[0]
-    if max_rows is not None and sheet.max_row > max_rows:
-        raise ValueError(f"The sheet has more than {max_rows} rows.")
-    header = [c.value for c in sheet[1]]
-    missing = [c for c in ("Dateiname", *(column for column, _ in FIELDS)) if c not in header]
-    if missing:
-        raise ValueError(f"Not a ZEITZEUGE results sheet: missing {', '.join(missing)}.")
-    labels: dict[str, dict[str, str]] = {}
-    for row in sheet.iter_rows(min_row=2):
-        name = row[0].value
-        if not name:
-            continue
-        labels[str(name)] = {
-            column: str(row[header.index(column)].value).strip()
-            for column, _ in FIELDS
-            if row[header.index(column)].value and _rgb(row[header.index(column)]) == GREEN
-        }
-    return labels
+    """The green cells of the first sheet, per photo (`Dateiname`).
+
+    Streams the rows (read-only mode keeps the fills) and reads only the
+    columns it needs, so an uploaded workbook is never materialised whole.
+    openpyxl parses with defusedxml (a dependency), so entity-expansion tricks
+    are refused.
+    """
+    book = load_workbook(path, read_only=True)
+    try:
+        sheet = book.worksheets[0]
+        rows = sheet.iter_rows(min_row=1, max_col=MAX_HEADER_COLUMNS)
+        header = [c.value for c in next(rows, ())]
+        missing = [c for c in ("Dateiname", *(column for column, _ in FIELDS)) if c not in header]
+        if missing:
+            raise ValueError(f"Not a ZEITZEUGE results sheet: missing {', '.join(missing)}.")
+        name_at = header.index("Dateiname")
+        wanted = {column: header.index(column) for column, _ in FIELDS}
+        width = max(name_at, *wanted.values()) + 1
+        labels: dict[str, dict[str, str]] = {}
+        for count, row in enumerate(sheet.iter_rows(min_row=2, max_col=width), start=1):
+            if max_rows is not None and count > max_rows:
+                raise ValueError(f"The sheet has more than {max_rows} rows.")
+            if len(row) <= name_at or not row[name_at].value:
+                continue
+            labels[str(row[name_at].value)] = {
+                column: str(row[at].value).strip()
+                for column, at in wanted.items()
+                if at < len(row) and row[at].value and _rgb(row[at]) == GREEN
+            }
+        return labels
+    finally:
+        book.close()
 
 
 def read_export(path: Path) -> dict[str, dict[str, tuple[str, float | None]]]:
