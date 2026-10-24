@@ -23,7 +23,15 @@ APP_ROLE = "zeitzeuge_app"
 _PASSWORD = re.compile(r"[A-Za-z0-9]{32,128}")
 _IDENTIFIER = re.compile(r"[a-z_][a-z0-9_]{0,62}")
 
-_ATTRIBUTES = "LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT"
+_CREATE_ATTRIBUTES = "LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT"
+# Aurora's master user is `rds_superuser`, not a superuser: it may create a role
+# with these attributes but may not *alter* SUPERUSER or BYPASSRLS afterwards.
+# A re-sync therefore changes only what it may, and then verifies the rest.
+_ALTER_ATTRIBUTES = "LOGIN"
+
+
+class RoleProvisioningError(RuntimeError):
+    """Raised without the failing statement: that statement carries the password."""
 
 
 def provision_app_role(connection: Connection, password: str, *, role: str = APP_ROLE) -> None:
@@ -37,8 +45,25 @@ def provision_app_role(connection: Connection, password: str, *, role: str = APP
         text("SELECT 1 FROM pg_roles WHERE rolname = :role"), {"role": role}
     ).scalar()
     literal = connection.execute(text("SELECT quote_literal(:p)"), {"p": password}).scalar_one()
-    verb = "ALTER" if exists else "CREATE"
-    connection.exec_driver_sql(f"{verb} ROLE {role} WITH {_ATTRIBUTES} PASSWORD {literal}")
+    verb, attributes = ("ALTER", _ALTER_ATTRIBUTES) if exists else ("CREATE", _CREATE_ATTRIBUTES)
+    try:
+        connection.exec_driver_sql(f"{verb} ROLE {role} WITH {attributes} PASSWORD {literal}")
+    except Exception as exc:
+        # `from None`: the driver's message quotes the SQL, password included,
+        # and this lands in CloudWatch. The SQLSTATE is enough to act on.
+        state = getattr(getattr(exc, "orig", None), "sqlstate", None) or type(exc).__name__
+        raise RoleProvisioningError(f"{verb} ROLE {role} failed ({state})") from None
+
+    unsafe = connection.execute(
+        text(
+            "SELECT rolsuper OR rolbypassrls OR rolcreaterole OR rolcreatedb "
+            "FROM pg_roles WHERE rolname = :role"
+        ),
+        {"role": role},
+    ).scalar_one()
+    if unsafe:
+        # Every RLS policy is decorative for such a role; refuse to deploy on it.
+        raise RoleProvisioningError(f"{role} holds SUPERUSER, BYPASSRLS, CREATEROLE or CREATEDB")
 
     database = connection.execute(text("SELECT quote_ident(current_database())")).scalar_one()
     connection.exec_driver_sql(f"GRANT CONNECT ON DATABASE {database} TO {role}")
